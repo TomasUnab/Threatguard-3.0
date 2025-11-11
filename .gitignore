@@ -40,6 +40,10 @@ config/config.ini
 config/master.ini
 config/agent.ini
 
+# Transfer scripts (may contain credentials)
+transfer_to_ec2.ps1
+prepare_ec2_package.sh
+
 # IDE
 .vscode/
 .idea/
