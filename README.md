@@ -25,8 +25,8 @@ Sistema de detección de amenazas y gestión de seguridad con IA.
 ### 1. Clonar el repositorio
 
 ```bash
-git clone https://github.com/TU_USUARIO/ThreatGuard.git
-cd ThreatGuard
+git clone https://github.com/TomasUnab/Threatguard-3.0.git
+cd Threatguard-3.0
 ```
 
 ### 2. Configurar el entorno
