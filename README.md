@@ -32,14 +32,7 @@ cd Threatguard-3.0
 ### 2. Instalar dependencias
 
 ```bash
-# Servidor principal
 pip install -r requirements.txt
-
-# Agente
-pip install -r requirements-agent.txt
-
-# Cliente del agente
-pip install -r requirements-agent-client.txt
 ```
 
 ### 3. Inicializar la base de datos
