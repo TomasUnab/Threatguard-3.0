@@ -1,0 +1,252 @@
+services:
+  # ThreatGuard API - Machine Learning Core
+  threatguard-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: threatguard-api
+    hostname: threatguard-api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+      - "8001:8001"
+    environment:
+      - DATABASE_HOST=postgres
+      - DATABASE_PORT=5432
+      - DATABASE_NAME=threatguard_db
+      - DATABASE_USER=threatguard_user
+      - DATABASE_PASSWORD=secure_password_2024!
+      - DATABASE_URL=postgresql+psycopg2://threatguard_user:secure_password_2024!@postgres:5432/threatguard_db
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=redis_password_2024
+      - OPENVAS_HOST=openvas
+      - OPENVAS_PORT=9390
+      - ELASTICSEARCH_HOST=elasticsearch
+      - ELASTICSEARCH_PORT=9200
+      - LOG_LEVEL=INFO
+      - ML_MODEL_PATH=/app/models/threat_detection_model.pkl
+      - DATASET_PATH=/app/data
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models
+      - ./logs:/app/logs
+      - ./config:/app/config
+      - threatguard_models:/app/models
+      - threatguard_logs:/app/logs
+    depends_on:
+      - postgres
+      - redis
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - threatguard-network
+
+  # Frontend web (Nginx)
+  frontend:
+    build:
+      context: ./PAGINA WEB
+      dockerfile: Dockerfile
+    container_name: threatguard-frontend
+    hostname: threatguard-frontend
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    depends_on:
+      - openvas-api
+    networks:
+      - threatguard-network
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: threatguard-postgres
+    environment:
+      POSTGRES_DB: threatguard_db
+      POSTGRES_USER: threatguard_user
+      POSTGRES_PASSWORD: secure_password_2024!
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    networks:
+      - threatguard-network
+
+  # Redis Cache and Message Broker
+  redis:
+    image: redis:7-alpine
+    container_name: threatguard-redis
+    command: redis-server --appendonly yes --requirepass redis_password_2024
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    networks:
+      - threatguard-network
+
+  # OpenVAS Vulnerability Scanner
+  openvas:
+    image: immauss/openvas:latest
+    container_name: threatguard-openvas
+    restart: unless-stopped
+    ports:
+      - "9390:9390" # GVM API
+      - "9392:9392" # Web UI
+      - "443:443"   # HTTPS (si se configura)
+    environment:
+      - PASSWORD=admin
+      - TIMEZONE=America/Mexico_City
+    volumes:
+      - openvas_data:/data
+      - openvas_logs:/var/log/gvm
+    networks:
+      - threatguard-network
+    healthcheck:
+      test: ["CMD-SHELL", "test -S /var/run/ospd/ospd-openvas.sock || exit 1"]
+      interval: 60s
+      timeout: 10s
+      retries: 10
+      start_period: 600s
+
+  # Elasticsearch (para logs adicionales si es necesario)
+  elasticsearch:
+    image: elasticsearch:8.11.0
+    container_name: threatguard-elasticsearch
+    environment:
+      - node.name=es-node
+      - cluster.name=threatguard-cluster
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms2g -Xmx2g"
+      - xpack.security.enabled=false
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    ports:
+      - "9201:9200"
+      - "9301:9300"
+    networks:
+      - threatguard-network
+
+  # OpenVAS API Integration
+  openvas-api:
+    build:
+      context: ./PAGINA WEB/vulnerability_management
+      dockerfile: Dockerfile
+    container_name: threatguard-openvas-api
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - OPENVAS_HOST=openvas
+      - OPENVAS_PORT=9390
+      - OPENVAS_USER=admin
+      - OPENVAS_PASSWORD=admin
+    depends_on:
+      - openvas
+    networks:
+      - threatguard-network
+
+  # OpenVAS Auto-Scan Service
+  openvas-autoscan:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: threatguard-autoscan
+    restart: unless-stopped
+    command: python openvas_auto_scan.py
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=redis_password_2024
+      - OPENVAS_HOST=openvas
+      - OPENVAS_PORT=9390
+      - OPENVAS_USER=admin
+      - OPENVAS_PASSWORD=ThreatGuard2024
+    depends_on:
+      - redis
+      - openvas
+    networks:
+      - threatguard-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys; sys.exit(0)"]
+      interval: 60s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  # Snort 3 IDS
+  snort:
+    build:
+      context: .
+      dockerfile: Dockerfile.snort
+    container_name: threatguard-snort
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    volumes:
+      - ./config/snort.lua:/usr/local/etc/snort/snort.lua
+      - ./config/local.rules:/usr/local/etc/snort/rules/local.rules
+      - snort_logs:/var/log/snort
+    networks:
+      - threatguard-network
+    environment:
+      - INTERFACE=eth0
+
+  # Snort Integration Service
+  snort-integration:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: threatguard-snort-integration
+    restart: unless-stopped
+    command: python -m src.data_collection.snort_integration
+    environment:
+      - THREATGUARD_API_URL=http://threatguard-api:8000
+      - SNORT_ALERT_FILE=/var/log/snort/alert
+    volumes:
+      - snort_logs:/var/log/snort:ro
+    depends_on:
+      threatguard-api:
+        condition: service_healthy
+      snort:
+        condition: service_started
+    networks:
+      - threatguard-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://threatguard-api:8000/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  postgres_data:
+  redis_data:
+  elasticsearch_data:
+  # ThreatGuard volumes
+  threatguard_models:
+  threatguard_logs:
+  # OpenVAS volumes
+  openvas_data:
+  openvas_logs:
+  # Snort volumes
+  snort_logs:
+  filebeat_etc:
+  filebeat_var:
+
+networks:
+  threatguard-network:
+    driver: bridge

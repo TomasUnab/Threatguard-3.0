@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+<meta http-equiv="Pragma" content="no-cache"/>
+<meta http-equiv="Expires" content="0"/>
+<title>ThreatGuard Settings</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#137fec",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101922",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        
+        .animate-spin {
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+        
+        .animate-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-white">
+<div class="relative flex h-auto min-h-screen w-full flex-col">
+<header class="sticky top-0 z-50 flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#283039] bg-background-dark px-10 py-3">
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-4 text-white">
+<div class="size-6 text-primary">
+<span class="material-symbols-outlined !text-3xl">security</span>
+</div>
+<h2 class="text-white text-xl font-bold leading-tight tracking-[-0.015em]">ThreatGuard</h2>
+</div>
+<div class="flex items-center gap-9">
+<a class="text-white text-sm font-medium leading-normal" href="/executive_summary/code.html">Dashboard</a>
+<a class="text-white text-sm font-medium leading-normal" href="/alerts/code.html">Alerts</a>
+<a class="text-white text-sm font-medium leading-normal" href="/assets/code.html">Assets</a>
+<a class="text-white text-sm font-medium leading-normal" href="/vulnerability_management/code.html">Vulnerability Management</a>
+<a class="text-white text-sm font-medium leading-normal" href="/soar/code.html">SOAR</a>
+<a class="text-white text-sm font-medium leading-normal" href="/reports/code.html">Reports</a>
+<a class="text-white text-sm font-medium leading-normal" href="/settings/code.html">Settings</a>
+</div>
+</div>
+<div class="flex flex-1 justify-end gap-4">
+<div class="flex gap-2 relative">
+<button id="btn-notifications" class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 bg-[#283039] text-white gap-2 text-sm font-bold leading-normal tracking-[0.015em] min-w-0 px-3 hover:bg-[#3b4754]">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button id="btn-settings" class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 bg-[#283039] text-white gap-2 text-sm font-bold leading-normal tracking-[0.015em] min-w-0 px-3 hover:bg-[#3b4754]">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<div id="settings-menu" class="hidden absolute right-0 top-12 w-48 bg-[#1c2127] border border-[#3b4754] rounded-lg shadow-lg z-50">
+<button onclick="toggleTheme()" class="w-full px-4 py-3 text-left text-white hover:bg-[#283039] flex items-center gap-2">
+<span class="material-symbols-outlined">dark_mode</span>
+Cambiar Tema
+</button>
+</div>
+</div>
+</div>
+</header>
+<script src="/header-utils.js"></script>
+<div class="flex flex-1 pt-16">
+<aside class="w-64 min-h-full bg-[#111418] p-4 border-r border-solid border-r-[#283039]">
+<div class="flex flex-col gap-4">
+<div class="flex flex-col gap-2">
+<div data-section="integrations" class="menu-item flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/20 text-primary cursor-pointer">
+<span class="material-symbols-outlined">settings</span>
+<p class="text-sm font-medium leading-normal">Integraciones</p>
+</div>
+<div data-section="model" class="menu-item flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-primary/10 transition-colors cursor-pointer">
+<span class="material-symbols-outlined">model_training</span>
+<p class="text-white text-sm font-medium leading-normal">Gestión del Modelo (IA)</p>
+</div>
+
+<div data-section="users" class="menu-item flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-primary/10 transition-colors cursor-pointer">
+<span class="material-symbols-outlined">group</span>
+<p class="text-white text-sm font-medium leading-normal">Gestión de Usuarios</p>
+</div>
+<div data-section="assets" class="menu-item flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-primary/10 transition-colors cursor-pointer">
+<span class="material-symbols-outlined">label</span>
+<p class="text-white text-sm font-medium leading-normal">Gestión de Activos (Tags)</p>
+</div>
+</div>
+</div>
+</aside>
+<main class="flex-1 p-8 overflow-y-auto">
+<div id="section-integrations" class="section-content max-w-5xl mx-auto">
+<div class="flex flex-wrap justify-between gap-3 p-4 mb-8">
+<div class="flex min-w-72 flex-col gap-3">
+<p class="text-white text-4xl font-black leading-tight tracking-[-0.033em]">Integraciones (Conectores)</p>
+<p class="text-[#9dabb9] text-base font-normal leading-normal">Conecte y configure sus herramientas de seguridad.</p>
+</div>
+<button id="add-connector-btn" class="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
+<span class="material-symbols-outlined">add</span>
+<span>Agregar Conector</span>
+</button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+<div class="flex flex-col gap-4 bg-[#111418] p-6 rounded-xl border border-solid border-[#283039]" data-integration="openvas">
+<div class="flex items-center gap-4">
+<div class="text-white flex items-center justify-center rounded-lg bg-[#283039] shrink-0 size-12">
+<span class="material-symbols-outlined text-3xl">scanner</span>
+</div>
+<div class="flex flex-col justify-center">
+<p class="text-white text-lg font-semibold leading-normal">OpenVAS</p>
+<div class="flex items-center gap-2">
+<span class="status-dot w-2 h-2 rounded-full bg-gray-500"></span>
+<p class="status-text text-gray-400 text-sm font-normal leading-normal">No verificado</p>
+</div>
+</div>
+</div>
+<button class="w-full flex items-center justify-center gap-2 overflow-hidden rounded-lg h-10 px-4 bg-primary text-white text-sm font-medium leading-normal mt-2 hover:bg-primary/90 transition-colors">
+<span class="truncate">Probar Conexión</span>
+</button>
+</div>
+<div class="flex flex-col gap-4 bg-[#111418] p-6 rounded-xl border border-solid border-[#283039]" data-integration="postgresql">
+<div class="flex items-center gap-4">
+<div class="text-white flex items-center justify-center rounded-lg bg-[#283039] shrink-0 size-12">
+<span class="material-symbols-outlined text-3xl">database</span>
+</div>
+<div class="flex flex-col justify-center">
+<p class="text-white text-lg font-semibold leading-normal">PostgreSQL</p>
+<div class="flex items-center gap-2">
+<span class="status-dot w-2 h-2 rounded-full bg-gray-500"></span>
+<p class="status-text text-gray-400 text-sm font-normal leading-normal">No verificado</p>
+</div>
+</div>
+</div>
+<button class="w-full flex items-center justify-center gap-2 overflow-hidden rounded-lg h-10 px-4 bg-primary text-white text-sm font-medium leading-normal mt-2 hover:bg-primary/90 transition-colors">
+<span class="truncate">Probar Conexión</span>
+</button>
+</div>
+</div>
+</div>
+<div id="add-connector-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
+<div class="bg-[#111418] rounded-xl border border-[#283039] p-6 w-full max-w-md">
+<div class="flex justify-between items-center mb-6">
+<h3 class="text-white text-xl font-bold">Agregar Nuevo Conector</h3>
+<button id="close-modal" class="text-[#9dabb9] hover:text-white">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<div class="space-y-4">
+<div>
+<label class="text-white text-sm font-medium mb-2 block">Nombre del Conector</label>
+<input id="connector-name" type="text" placeholder="Ej: Splunk, Elastic, etc." class="w-full px-4 py-2 bg-[#283039] text-white rounded-lg border border-[#3b4754] focus:outline-none focus:border-primary">
+</div>
+<div>
+<label class="text-white text-sm font-medium mb-2 block">URL/Host</label>
+<input id="connector-url" type="text" placeholder="https://..." class="w-full px-4 py-2 bg-[#283039] text-white rounded-lg border border-[#3b4754] focus:outline-none focus:border-primary">
+</div>
+<div>
+<label class="text-white text-sm font-medium mb-2 block">Puerto</label>
+<input id="connector-port" type="text" placeholder="8080" class="w-full px-4 py-2 bg-[#283039] text-white rounded-lg border border-[#3b4754] focus:outline-none focus:border-primary">
+</div>
+<div>
+<label class="text-white text-sm font-medium mb-2 block">API Key / Token</label>
+<input id="connector-token" type="password" placeholder="Token de autenticación" class="w-full px-4 py-2 bg-[#283039] text-white rounded-lg border border-[#3b4754] focus:outline-none focus:border-primary">
+</div>
+<div class="flex gap-3 mt-6">
+<button id="save-connector" class="flex-1 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
+Guardar
+</button>
+<button id="cancel-connector" class="flex-1 px-4 py-2 bg-[#283039] text-white rounded-lg hover:bg-[#3b4754] transition-colors">
+Cancelar
+</button>
+</div>
+</div>
+</div>
+</div>
+<div id="section-model" class="section-content max-w-5xl mx-auto mt-12 hidden">
+<div class="flex flex-wrap justify-between gap-3 p-4 mb-8">
+<div class="flex min-w-72 flex-col gap-3">
+<p class="text-white text-3xl font-bold leading-tight tracking-[-0.033em]">Gestión del Modelo (IA)</p>
+<p class="text-[#9dabb9] text-base font-normal leading-normal">Administre el modelo de inteligencia artificial para detección de amenazas.</p>
+</div>
+</div>
+
+<!-- Estado del Modelo Actual -->
+<div class="bg-[#111418] p-6 rounded-xl border border-solid border-[#283039] mb-6">
+<div class="flex items-center justify-between mb-6">
+<h3 class="text-white text-xl font-bold flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">neurology</span>
+Modelo Actual
+</h3>
+<span class="px-3 py-1 bg-yellow-500/20 text-yellow-400 rounded-full text-sm font-medium flex items-center gap-2">
+<span class="w-2 h-2 bg-yellow-500 rounded-full"></span>
+<span data-model-status>Cargando...</span>
+</span>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+<div class="bg-[#1c2127] p-4 rounded-lg border border-[#3b4754]">
+<div class="flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-blue-400" style="font-size: 20px;">folder_data</span>
+<p class="text-[#9dabb9] text-sm font-medium">Dataset</p>
+</div>
+<p class="text-white text-lg font-bold" data-model-dataset>Cargando...</p>
+<p class="text-[#9dabb9] text-xs mt-1" data-model-dataset-desc>-</p>
+</div>
+
+<div class="bg-[#1c2127] p-4 rounded-lg border border-[#3b4754]">
+<div class="flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-green-400" style="font-size: 20px;">analytics</span>
+<p class="text-[#9dabb9] text-sm font-medium">Precisión</p>
+</div>
+<p class="text-white text-lg font-bold" data-model-accuracy>-</p>
+<p class="text-[#9dabb9] text-xs mt-1" data-model-accuracy-change>-</p>
+</div>
+
+<div class="bg-[#1c2127] p-4 rounded-lg border border-[#3b4754]">
+<div class="flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-purple-400" style="font-size: 20px;">calendar_today</span>
+<p class="text-[#9dabb9] text-sm font-medium">Entrenamiento</p>
+</div>
+<p class="text-white text-lg font-bold" data-model-last-training>-</p>
+<p class="text-[#9dabb9] text-xs mt-1" data-model-training-ago>-</p>
+</div>
+
+<div class="bg-[#1c2127] p-4 rounded-lg border border-[#3b4754]">
+<div class="flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-yellow-400" style="font-size: 20px;">memory</span>
+<p class="text-[#9dabb9] text-sm font-medium">Tamaño</p>
+</div>
+<p class="text-white text-lg font-bold" data-model-size>-</p>
+<p class="text-[#9dabb9] text-xs mt-1" data-model-algorithm>-</p>
+</div>
+</div>
+
+<div class="flex gap-3 mt-6">
+<button data-action="reload" class="flex items-center justify-center gap-2 px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-medium">
+<span class="material-symbols-outlined" style="font-size: 20px;">refresh</span>
+<span>Recargar Modelo</span>
+</button>
+<button data-action="check" class="flex items-center justify-center gap-2 px-6 py-3 bg-[#283039] text-white rounded-lg hover:bg-[#3b4754] transition-colors font-medium">
+<span class="material-symbols-outlined" style="font-size: 20px;">info</span>
+<span>Revisar Estado</span>
+</button>
+</div>
+</div>
+
+<!-- Cargar Nuevo Modelo -->
+<div class="bg-[#111418] p-6 rounded-xl border border-solid border-[#283039] mb-6">
+<h3 class="text-white text-xl font-bold mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">upload_file</span>
+Cargar Nuevo Modelo
+</h3>
+<p class="text-[#9dabb9] text-sm mb-6">Cargue un archivo de modelo entrenado (.pkl) para reemplazar el modelo actual. El sistema validará el formato antes de aplicar los cambios.</p>
+
+<div class="space-y-4">
+<div class="bg-[#1c2127] p-4 rounded-lg border border-dashed border-[#3b4754] hover:border-primary transition-colors">
+<label for="model-file" class="cursor-pointer flex flex-col items-center gap-3">
+<span class="material-symbols-outlined text-[#9dabb9] text-5xl">cloud_upload</span>
+<div class="text-center">
+<p class="text-white font-medium">Haga clic para seleccionar archivo</p>
+<p class="text-[#9dabb9] text-sm">o arrastre y suelte aquí</p>
+<p class="text-[#9dabb9] text-xs mt-2">Formatos soportados: .pkl, .joblib (máx. 500MB)</p>
+</div>
+<input id="model-file" type="file" accept=".pkl,.joblib" class="hidden">
+</label>
+<div id="file-info" class="hidden mt-3 p-3 bg-[#283039] rounded-lg">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-green-400">check_circle</span>
+<span id="file-name" class="text-white text-sm font-medium"></span>
+</div>
+<span id="file-size" class="text-[#9dabb9] text-xs"></span>
+</div>
+</div>
+</div>
+
+<div class="flex gap-3">
+<button id="upload-model-btn" class="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+<span class="material-symbols-outlined" style="font-size: 20px;">upload</span>
+<span>Cargar Modelo</span>
+</button>
+<button id="cancel-upload" class="px-6 py-3 bg-[#283039] text-white rounded-lg hover:bg-[#3b4754] transition-colors font-medium">
+Cancelar
+</button>
+</div>
+</div>
+</div>
+
+<!-- Historial de Modelos -->
+<div class="bg-[#111418] p-6 rounded-xl border border-solid border-[#283039]">
+<h3 class="text-white text-xl font-bold mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">history</span>
+Historial de Modelos
+</h3>
+
+<div id="model-history-list" class="space-y-3">
+<div class="bg-[#1c2127] p-6 rounded-lg border border-[#3b4754] text-center">
+<p class="text-[#9dabb9]">Cargando historial...</p>
+</div>
+</div>
+</div>
+</div>
+
+<div id="section-users" class="section-content max-w-5xl mx-auto hidden">
+<div class="flex flex-wrap justify-between gap-3 p-4 mb-8">
+<div class="flex min-w-72 flex-col gap-3">
+<p class="text-white text-3xl font-bold leading-tight tracking-[-0.033em]">Gestión de Usuarios</p>
+<p class="text-[#9dabb9] text-base font-normal leading-normal">Administre los usuarios y permisos del sistema.</p>
+</div>
+<button id="add-user-btn" class="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-medium">
+<span class="material-symbols-outlined">person_add</span>
+<span>Agregar Usuario</span>
+</button>
+</div>
+
+<!-- Estadísticas de Usuarios -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+<div class="bg-[#111418] p-4 rounded-xl border border-[#3b4754]">
+<div class="flex items-center gap-3 mb-2">
+<span class="material-symbols-outlined text-blue-400">group</span>
+<p class="text-[#9dabb9] text-sm">Total Usuarios</p>
+</div>
+<p class="text-white text-2xl font-bold" id="total-users">0</p>
+</div>
+
+<div class="bg-[#111418] p-4 rounded-xl border border-[#3b4754]">
+<div class="flex items-center gap-3 mb-2">
+<span class="material-symbols-outlined text-green-400">check_circle</span>
+<p class="text-[#9dabb9] text-sm">Activos</p>
+</div>
+<p class="text-white text-2xl font-bold" id="active-users">0</p>
+</div>
+
+<div class="bg-[#111418] p-4 rounded-xl border border-[#3b4754]">
+<div class="flex items-center gap-3 mb-2">
+<span class="material-symbols-outlined text-red-400">shield</span>
+<p class="text-[#9dabb9] text-sm">Administradores</p>
+</div>
+<p class="text-white text-2xl font-bold" id="admin-users">0</p>
+</div>
+
+<div class="bg-[#111418] p-4 rounded-xl border border-[#3b4754]">
+<div class="flex items-center gap-3 mb-2">
+<span class="material-symbols-outlined text-purple-400">schedule</span>
+<p class="text-[#9dabb9] text-sm">Últimos 30 días</p>
+</div>
+<p class="text-white text-2xl font-bold">+2</p>
+</div>
+</div>
+
+<!-- Tabla de Usuarios -->
+<div class="bg-[#111418] p-6 rounded-xl border border-solid border-[#283039]">
+<div class="flex items-center justify-between mb-6">
+<h3 class="text-white text-xl font-bold flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">group</span>
+Usuarios del Sistema
+</h3>
+<div class="flex items-center gap-3">
+<div class="relative">
+<input 
+type="text" 
+id="search-users"
+placeholder="Buscar usuarios..." 
+class="pl-10 pr-4 py-2 bg-[#283039] text-white rounded-lg border border-[#3b4754] focus:outline-none focus:border-primary text-sm w-64"
+>
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#9dabb9]" style="font-size: 20px;">search</span>
+</div>
+</div>
+</div>
+
+<div class="overflow-x-auto">
+<table class="w-full">
+<thead>
+<tr class="bg-[#1c2127] border-b border-[#3b4754]">
+<th class="px-4 py-3 text-left text-white text-sm font-medium">Usuario</th>
+<th class="px-4 py-3 text-left text-white text-sm font-medium">Email</th>
+<th class="px-4 py-3 text-left text-white text-sm font-medium">Rol</th>
+<th class="px-4 py-3 text-left text-white text-sm font-medium">Estado</th>
+<th class="px-4 py-3 text-left text-white text-sm font-medium">Creado</th>
+<th class="px-4 py-3 text-left text-white text-sm font-medium">Acciones</th>
+</tr>
+</thead>
+<tbody id="users-table-body">
+<!-- Usuarios se cargarán dinámicamente -->
+</tbody>
+</table>
+</div>
+</div>
+</div>
+
+<!-- Sección de Gestión de Activos (Tags) -->
+<div id="section-assets" class="section-content max-w-6xl mx-auto hidden">
+    <div class="flex flex-wrap justify-between gap-3 p-4 mb-8">
+        <div class="flex min-w-72 flex-col gap-3">
+            <p class="text-white text-3xl font-bold leading-tight tracking-[-0.033em]">Gestión de Activos (Tags)</p>
+            <p class="text-[#9dabb9] text-sm">Organice sus activos con etiquetas.</p>
+        </div>
+    </div>
+    
+    <!-- Tabs -->
+    <div class="flex gap-2 mb-6 border-b border-[#3b4754]">
+        <button id="tab-assets" class="tab-button px-6 py-3 text-primary border-b-2 border-primary font-medium">
+            Activos
+        </button>
+        <button id="tab-tags" class="tab-button px-6 py-3 text-[#9dabb9] hover:text-white transition-colors">
+            Tags
+        </button>
+    </div>
+    
+    <!-- Panel de Activos -->
+    <div id="panel-assets" class="tab-panel">
+        <!-- Controles superiores -->
+        <div class="flex justify-between items-center mb-6">
+            <div class="flex items-center gap-3">
+                <button id="auto-tag-btn" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2">
+                    <span class="material-symbols-outlined" style="font-size: 20px;">auto_fix_high</span>
+                    <span>Auto-Tag</span>
+                </button>
+                <button id="refresh-assets-btn" class="px-4 py-2 bg-[#283039] text-white rounded-lg hover:bg-[#3b4754] transition-colors flex items-center gap-2">
+                    <span class="material-symbols-outlined" style="font-size: 20px;">refresh</span>
+                    <span>Actualizar</span>
+                </button>
+            </div>
+            <div class="flex items-center gap-3">
+                <select id="filter-os" class="px-4 py-2 bg-[#283039] text-white rounded-lg border border-[#3b4754] focus:outline-none focus:border-primary">
+                    <option value="">Todos los SO</option>
+                    <option value="windows">Windows</option>
+                    <option value="linux">Linux</option>
+                    <option value="macos">macOS</option>
+                </select>
+                <select id="filter-antivirus" class="px-4 py-2 bg-[#283039] text-white rounded-lg border border-[#3b4754] focus:outline-none focus:border-primary">
+                    <option value="">Antivirus</option>
+                    <option value="true">Con Antivirus</option>
+                    <option value="false">Sin Antivirus</option>
+                </select>
+                <select id="filter-telemetry" class="px-4 py-2 bg-[#283039] text-white rounded-lg border border-[#3b4754] focus:outline-none focus:border-primary">
+                    <option value="">Telemetría</option>
+                    <option value="true">Con Telemetría</option>
+                    <option value="false">Sin Telemetría</option>
+                </select>
+            </div>
+        </div>
+        
+        <!-- Tabla de Activos -->
+        <div class="bg-[#111418] rounded-xl border border-[#3b4754] overflow-hidden">
+            <table class="w-full">
+                <thead class="bg-[#1c2127]">
+                    <tr class="border-b border-[#3b4754]">
+                        <th class="px-4 py-3 text-left text-[#9dabb9] text-xs font-medium uppercase">Estado</th>
+                        <th class="px-4 py-3 text-left text-[#9dabb9] text-xs font-medium uppercase">Activo</th>
+                        <th class="px-4 py-3 text-left text-[#9dabb9] text-xs font-medium uppercase">IP / MAC</th>
+                        <th class="px-4 py-3 text-left text-[#9dabb9] text-xs font-medium uppercase">Sistema Operativo</th>
+                        <th class="px-4 py-3 text-left text-[#9dabb9] text-xs font-medium uppercase">Seguridad</th>
+                        <th class="px-4 py-3 text-left text-[#9dabb9] text-xs font-medium uppercase">Tags</th>
+                        <th class="px-4 py-3 text-left text-[#9dabb9] text-xs font-medium uppercase">Riesgo</th>
+                        <th class="px-4 py-3 text-left text-[#9dabb9] text-xs font-medium uppercase">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="assets-table-body">
+                    <tr>
+                        <td colspan="8" class="px-4 py-8 text-center text-[#9dabb9]">
+                            <div class="flex flex-col items-center gap-3">
+                                <span class="material-symbols-outlined text-4xl">devices</span>
+                                <p>Cargando activos...</p>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Panel de Tags -->
+    <div id="panel-tags" class="tab-panel hidden">
+        <!-- Controles superiores -->
+        <div class="flex justify-between items-center mb-6">
+            <button id="add-tag-btn" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2">
+                <span class="material-symbols-outlined" style="font-size: 20px;">add</span>
+                <span>Crear Tag</span>
+            </button>
+            <div class="flex gap-2">
+                <button class="px-3 py-2 bg-[#283039] text-white rounded-lg hover:bg-[#3b4754] transition-colors" title="Vista de tarjetas">
+                    <span class="material-symbols-outlined" style="font-size: 20px;">grid_view</span>
+                </button>
+                <button class="px-3 py-2 bg-primary/20 text-primary rounded-lg" title="Vista de lista">
+                    <span class="material-symbols-outlined" style="font-size: 20px;">view_list</span>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Grid de Tags -->
+        <div id="tags-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div class="bg-[#111418] border border-[#3b4754] rounded-xl p-6 text-center">
+                <span class="material-symbols-outlined text-4xl text-[#9dabb9] mb-3">label</span>
+                <p class="text-[#9dabb9]">Cargando tags...</p>
+            </div>
+        </div>
+    </div>
+</div>
+</main>
+</div>
+<button class="fixed bottom-8 right-8 flex items-center justify-center w-14 h-14 bg-primary text-white rounded-full shadow-lg hover:bg-primary/90 transition-colors z-50">
+<span class="material-symbols-outlined text-3xl">auto_awesome</span>
+</button>
+<div id="test-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
+<div class="bg-[#1c2127] rounded-lg w-96 border border-[#3b4754] p-6">
+<div class="flex justify-between items-center mb-4">
+<h3 id="test-modal-title" class="text-white text-xl font-bold"></h3>
+<button onclick="closeTestModal()" class="text-[#9dabb9] hover:text-white">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<p id="test-modal-message" class="text-[#9dabb9]"></p>
+</div>
+</div>
+</div>
+<script src="/settings/settings-v2.js?v=20241207"></script>
+</body></html>

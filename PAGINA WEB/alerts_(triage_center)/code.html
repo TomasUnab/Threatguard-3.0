@@ -1,0 +1,1334 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SQL Query Terminal - ThreatGuard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#137fec",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101922",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings:
+            'FILL' 0,
+            'wght' 400,
+            'GRAD' 0,
+            'opsz' 24
+        }
+        
+        /* Editor de Query - Más grande */
+        #query-editor {
+            min-height: 100px;
+            height: 120px;
+            max-height: 300px;
+            width: 100%;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            border: 1px solid #3b4754;
+            border-radius: 4px;
+            padding: 10px 12px;
+            resize: vertical;
+            overflow-y: auto;
+            box-sizing: border-box;
+        }
+        
+        #query-editor:focus {
+            outline: none;
+            border-color: #137fec;
+            box-shadow: 0 0 0 2px rgba(19, 127, 236, 0.2);
+        }
+        
+        /* Contenedor principal */
+        .query-container {
+            background: #1c2127;
+            border-radius: 8px;
+            border: 1px solid #3b4754;
+            padding: 12px 16px;
+            margin-bottom: 16px;
+        }
+        
+        /* Botones de acción */
+        .action-buttons {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .btn-run {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 20px;
+            background: #137fec;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-run:hover {
+            background: #1068c9;
+            box-shadow: 0 2px 8px rgba(19, 127, 236, 0.3);
+        }
+        
+        .btn-run:disabled {
+            background: #3b4754;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        
+        .btn-secondary {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 6px 12px;
+            background: transparent;
+            color: #9dabb9;
+            border: 1px solid #3b4754;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-secondary:hover {
+            background: #283039;
+            color: white;
+            border-color: #5a6875;
+        }
+        
+        /* Tabla de resultados */
+        .results-container {
+            height: calc(100vh - 550px);
+            min-height: 350px;
+        }
+        
+        /* Results table container */
+        #results-table-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+        
+        #tab-results {
+            scrollbar-width: thin;
+            scrollbar-color: #4a5568 #1a1d23;
+        }
+        
+        #tab-results::-webkit-scrollbar {
+            width: 14px;
+            height: 14px;
+        }
+        
+        #tab-results::-webkit-scrollbar-track {
+            background: #1a1d23;
+            border: 1px solid #3b4754;
+        }
+        
+        #tab-results::-webkit-scrollbar-thumb {
+            background: #4a5568;
+            border-radius: 4px;
+            border: 2px solid #1a1d23;
+        }
+        
+        #tab-results::-webkit-scrollbar-thumb:hover {
+            background: #5a6578;
+        }
+        
+        #tab-results::-webkit-scrollbar-corner {
+            background: #1a1d23;
+        }
+        
+        /* Results table wrapper for scrolling */
+        .results-table-wrapper {
+            width: 100%;
+            height: 100%;
+            overflow: visible !important;
+            position: relative;
+        }
+        
+        .results-table {
+            width: 4000px !important;
+            border-collapse: collapse;
+            font-size: 13px;
+            display: table;
+            table-layout: auto;
+        }
+        
+        .results-table th {
+            background-color: #1c2127;
+            color: #fff;
+            font-weight: 600;
+            text-align: left;
+            padding: 12px 16px;
+            border-bottom: 2px solid #3b4754;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            white-space: nowrap;
+            min-width: 200px;
+        }
+        
+        /* Sortable column headers */
+        .results-table th.sortable {
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+            padding-right: 32px;
+        }
+        
+        .results-table th.sortable:hover {
+            background-color: #283039;
+        }
+        
+        .results-table th.sortable::after {
+            content: '↕';
+            position: absolute;
+            right: 12px;
+            opacity: 0.3;
+            font-size: 14px;
+        }
+        
+        .results-table th.sortable.sort-asc::after {
+            content: '↑';
+            opacity: 1;
+            color: #137fec;
+        }
+        
+        .results-table th.sortable.sort-desc::after {
+            content: '↓';
+            opacity: 1;
+            color: #137fec;
+        }
+        
+        .results-table td {
+            padding: 10px 16px;
+            border-bottom: 1px solid #283039;
+            color: #d4d4d4;
+            white-space: nowrap;
+            min-width: 200px;
+        }
+        
+        .results-table tr:hover {
+            background-color: #283039;
+        }
+        
+        .results-table tbody tr:nth-child(odd) {
+            background-color: rgba(17, 20, 24, 0.3);
+        }
+        
+        /* Scrollbar styling - Always visible */
+        #results-table-container::-webkit-scrollbar {
+            width: 14px;
+            height: 14px;
+        }
+        
+        #results-table-container::-webkit-scrollbar-track {
+            background: #1a1d23;
+            border: 1px solid #3b4754;
+        }
+        
+        #results-table-container::-webkit-scrollbar-thumb {
+            background: #4a5568;
+            border-radius: 4px;
+            border: 2px solid #1a1d23;
+        }
+        
+        #results-table-container::-webkit-scrollbar-thumb:hover {
+            background: #5a6578;
+        }
+        
+        #results-table-container::-webkit-scrollbar-corner {
+            background: #1a1d23;
+        }
+        
+        /* Tabs */
+        .tabs-container {
+            border-bottom: 1px solid #3b4754;
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            background: #1c2127;
+        }
+        
+        .tab-button {
+            padding: 12px 20px;
+            background: transparent;
+            border: none;
+            color: #9dabb9;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+            font-size: 13px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .tab-button:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        .tab-button.active {
+            color: #137fec;
+            border-bottom-color: #137fec;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* Info bar */
+        .info-bar {
+            padding: 8px 16px;
+            background: #111418;
+            border-bottom: 1px solid #3b4754;
+            font-size: 12px;
+            color: #9dabb9;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        /* Status badge */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        
+        .status-success {
+            background: rgba(13, 188, 121, 0.15);
+            color: #0dbc79;
+        }
+        
+        .status-error {
+            background: rgba(241, 76, 76, 0.15);
+            color: #f14c4c;
+        }
+        
+        .status-running {
+            background: rgba(19, 127, 236, 0.15);
+            color: #137fec;
+        }
+        
+        /* Empty state */
+        .empty-state {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #9dabb9;
+        }
+        
+        .empty-state-content {
+            text-align: center;
+        }
+        
+        .empty-state-icon {
+            font-size: 64px;
+            opacity: 0.3;
+            margin-bottom: 16px;
+        }
+        
+        /* Animación de carga */
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .animate-spin {
+            animation: spin 1s linear infinite;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display">
+<div class="relative flex h-auto min-h-screen w-full flex-col">
+<header class="sticky top-0 z-50 flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#283039] bg-background-dark px-10 py-3">
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-4 text-white">
+<div class="size-6 text-primary">
+<span class="material-symbols-outlined !text-3xl">security</span>
+</div>
+<h2 class="text-white text-xl font-bold leading-tight tracking-[-0.015em]">ThreatGuard</h2>
+</div>
+<div class="flex items-center gap-9">
+<a class="text-white text-sm font-medium leading-normal" href="/executive_summary/code.html">Dashboard</a>
+<a class="text-white text-sm font-medium leading-normal" href="/alerts/code.html">Alerts</a>
+<a class="text-white text-sm font-medium leading-normal" href="/assets/code.html">Assets</a>
+<a class="text-white text-sm font-medium leading-normal" href="/vulnerability_management/code.html">Vulnerability Management</a>
+<a class="text-white text-sm font-medium leading-normal" href="/soar/code.html">SOAR</a>
+<a class="text-white text-sm font-medium leading-normal" href="/reports/code.html">Reports</a>
+<a class="text-white text-sm font-medium leading-normal" href="/settings/code.html">Settings</a>
+</div>
+</div>
+<div class="flex flex-1 justify-end gap-4">
+<div class="flex gap-2 relative">
+<button id="btn-notifications" class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 bg-[#283039] text-white gap-2 text-sm font-bold leading-normal tracking-[0.015em] min-w-0 px-3 hover:bg-[#3b4754]">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button id="btn-settings" class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 bg-[#283039] text-white gap-2 text-sm font-bold leading-normal tracking-[0.015em] min-w-0 px-3 hover:bg-[#3b4754]">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<div id="settings-menu" class="hidden absolute right-0 top-12 w-48 bg-[#1c2127] border border-[#3b4754] rounded-lg shadow-lg z-50">
+<button onclick="toggleTheme()" class="w-full px-4 py-3 text-left text-white hover:bg-[#283039] flex items-center gap-2">
+<span class="material-symbols-outlined">dark_mode</span>
+Cambiar Tema
+</button>
+</div>
+</div>
+</div>
+</header>
+<script src="/header-utils.js"></script>
+<div class="flex flex-1 overflow-hidden">
+<main class="flex-1 flex flex-col p-6">
+<!-- Header -->
+<div class="mb-6">
+<h1 class="text-white text-3xl font-bold mb-2">SQL Query Editor</h1>
+<p class="text-[#9dabb9]">Ejecuta consultas SQL en la base de datos de ThreatGuard</p>
+</div>
+
+<!-- Query Editor Container -->
+<div class="query-container">
+<div class="flex items-center justify-between mb-2">
+<label class="text-white text-sm font-semibold">Query Editor</label>
+<div class="flex gap-2">
+<button id="btn-format" class="btn-secondary" title="Format query">
+<span class="material-symbols-outlined" style="font-size: 14px;">code</span>
+Format
+</button>
+<button id="btn-clear-editor" class="btn-secondary" title="Clear query">
+<span class="material-symbols-outlined" style="font-size: 14px;">delete</span>
+Clear
+</button>
+</div>
+</div>
+<textarea 
+    id="query-editor" 
+    placeholder="-- Enter your SQL query here&#10;&#10;SELECT * FROM alerts&#10;WHERE status = 'open'&#10;ORDER BY timestamp DESC&#10;LIMIT 10;" 
+    spellcheck="false"></textarea>
+<div class="action-buttons">
+<button id="btn-run-query" class="btn-run">
+<span class="material-symbols-outlined" style="font-size: 18px;">play_arrow</span>
+RUN
+</button>
+<div id="query-status"></div>
+</div>
+</div>
+
+<!-- Results Container -->
+<div class="flex-1 bg-[#111418] rounded-lg border border-[#3b4754] flex flex-col" style="min-height: 0;">
+                    <!-- Tabs -->
+                    <div class="border-b border-[#3b4754]">
+                        <div class="flex gap-1">
+                            <button class="tab-button active" data-tab="results">
+                                <span class="material-symbols-outlined">table_chart</span>
+                                Resultados
+                            </button>
+                            <button class="tab-button" data-tab="json">
+                                <span class="material-symbols-outlined">code</span>
+                                JSON
+                            </button>
+                            <button class="tab-button" data-tab="execution">
+                                <span class="material-symbols-outlined">query_stats</span>
+                                Detalles de la ejecución
+                            </button>
+                            <button class="tab-button" data-tab="workspace">
+                                <span class="material-symbols-outlined">work</span>
+                                Estación de trabajo
+                            </button>
+                        </div>
+                    </div><!-- Info Bar -->
+<div class="info-bar">
+<span id="result-info">Ready to execute query</span>
+<span id="execution-time"></span>
+</div>
+
+<!-- Tab Content -->
+<div class="flex-1" style="overflow: hidden; position: relative;">
+<!-- Results Tab -->
+<div id="tab-results" class="tab-content active" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; overflow: auto;">
+<div id="results-table-container" style="width: 100%; min-width: 100%;">
+<div class="empty-state">
+<div class="empty-state-content">
+<span class="material-symbols-outlined empty-state-icon">search</span>
+<p class="text-lg mb-2">No query results yet</p>
+<p class="text-sm">Run a query to see results here</p>
+</div>
+</div>
+</div>
+</div>
+
+<!-- JSON Tab -->
+<div id="tab-json" class="tab-content h-full overflow-hidden p-6">
+<div id="json-output" class="h-full overflow-auto text-[#9dabb9] text-sm font-mono"></div>
+</div>
+
+<!-- Execution Details Tab -->
+<div id="tab-execution" class="tab-content h-full overflow-auto p-6">
+<div id="execution-details" class="text-[#9dabb9] text-sm">
+<div class="empty-state-content">
+<span class="material-symbols-outlined empty-state-icon">info</span>
+<p class="text-lg mb-2">No execution details</p>
+<p class="text-sm">Execution details will appear here after running a query</p>
+</div>
+</div>
+</div>
+
+<!-- Workspace Tab -->
+<div id="tab-workspace" class="tab-content h-full overflow-auto p-6">
+<div class="max-w-5xl mx-auto space-y-6">
+<!-- Query History -->
+<div>
+<h3 class="text-white text-lg font-semibold mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined">history</span>
+Historial de consultas
+</h3>
+<div id="query-history" class="space-y-2">
+<!-- History items will be added here -->
+</div>
+</div>
+
+<!-- Saved Queries -->
+<div>
+<div class="flex items-center justify-between mb-4">
+<h3 class="text-white text-lg font-semibold flex items-center gap-2">
+<span class="material-symbols-outlined">bookmark</span>
+Consultas guardadas
+</h3>
+<button onclick="showSaveQueryDialog()" class="bg-[#1c7ed6] hover:bg-[#1971c2] text-white text-sm px-4 py-2 rounded flex items-center gap-2 transition-colors">
+<span class="material-symbols-outlined" style="font-size: 18px;">add</span>
+Guardar consulta actual
+</button>
+</div>
+<div id="saved-queries" class="space-y-2">
+<!-- Saved queries will be added here -->
+</div>
+</div>
+
+<!-- Example Queries -->
+<div>
+<h3 class="text-white text-lg font-semibold mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined">lightbulb</span>
+Consultas de ejemplo
+</h3>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+<div class="bg-[#1c2127] rounded-lg p-4 border border-[#3b4754] hover:border-[#1c7ed6] cursor-pointer transition-colors" onclick="loadExampleQuery('SELECT * FROM alerts WHERE severity = \'high\' ORDER BY timestamp DESC LIMIT 20')">
+<div class="text-white font-semibold mb-2 flex items-center gap-2">
+<span class="material-symbols-outlined text-red-400">error</span>
+Alertas de alta severidad
+</div>
+<div class="text-[#9dabb9] text-xs font-mono">SELECT * FROM alerts WHERE severity = 'high'...</div>
+</div>
+
+<div class="bg-[#1c2127] rounded-lg p-4 border border-[#3b4754] hover:border-[#1c7ed6] cursor-pointer transition-colors" onclick="loadExampleQuery('SELECT status, COUNT(*) as count FROM alerts GROUP BY status ORDER BY count DESC')">
+<div class="text-white font-semibold mb-2 flex items-center gap-2">
+<span class="material-symbols-outlined text-blue-400">pie_chart</span>
+Alertas por estado
+</div>
+<div class="text-[#9dabb9] text-xs font-mono">SELECT status, COUNT(*) as count FROM alerts...</div>
+</div>
+
+<div class="bg-[#1c2127] rounded-lg p-4 border border-[#3b4754] hover:border-[#1c7ed6] cursor-pointer transition-colors" onclick="loadExampleQuery('SELECT ai_classification, COUNT(*) as total, AVG(ai_confidence) as avg_confidence FROM alerts GROUP BY ai_classification')">
+<div class="text-white font-semibold mb-2 flex items-center gap-2">
+<span class="material-symbols-outlined text-purple-400">psychology</span>
+Clasificación IA
+</div>
+<div class="text-[#9dabb9] text-xs font-mono">SELECT ai_classification, COUNT(*)...</div>
+</div>
+
+<div class="bg-[#1c2127] rounded-lg p-4 border border-[#3b4754] hover:border-[#1c7ed6] cursor-pointer transition-colors" onclick="loadExampleQuery('SELECT DATE(timestamp) as date, COUNT(*) as alerts_count FROM alerts WHERE timestamp > NOW() - INTERVAL \'7 days\' GROUP BY DATE(timestamp) ORDER BY date DESC')">
+<div class="text-white font-semibold mb-2 flex items-center gap-2">
+<span class="material-symbols-outlined text-green-400">calendar_today</span>
+Alertas últimos 7 días
+</div>
+<div class="text-[#9dabb9] text-xs font-mono">SELECT DATE(timestamp) as date, COUNT(*)...</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</div>
+<button class="fixed bottom-8 right-8 flex h-14 w-14 cursor-pointer items-center justify-center overflow-hidden rounded-full bg-primary text-white shadow-lg">
+<span class="material-symbols-outlined text-3xl">smart_toy</span>
+</button>
+
+<script>
+// SQL Query Editor Implementation
+const API_URL = 'http://localhost:8000';
+let currentResults = null;
+let executionTime = 0;
+let queryHistory = JSON.parse(localStorage.getItem('queryHistory') || '[]');
+let savedQueries = JSON.parse(localStorage.getItem('savedQueries') || '[]');
+
+document.addEventListener('DOMContentLoaded', () => {
+    const queryEditor = document.getElementById('query-editor');
+    const btnRun = document.getElementById('btn-run-query');
+    const btnClear = document.getElementById('btn-clear-editor');
+    const btnFormat = document.getElementById('btn-format');
+    const tabButtons = document.querySelectorAll('.tab-button');
+    
+    // Tab switching
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const tabName = button.dataset.tab;
+            switchTab(tabName);
+        });
+    });
+    
+    // Run query
+    btnRun.addEventListener('click', () => {
+        executeQuery();
+    });
+    
+    // Clear editor
+    btnClear.addEventListener('click', () => {
+        queryEditor.value = '';
+        queryEditor.focus();
+    });
+    
+    // Format query (simple)
+    btnFormat.addEventListener('click', () => {
+        const query = queryEditor.value.trim();
+        if (query) {
+            // Simple formatting: add newlines after keywords
+            const formatted = query
+                .replace(/\s+/g, ' ')
+                .replace(/SELECT/gi, 'SELECT\n  ')
+                .replace(/FROM/gi, '\nFROM')
+                .replace(/WHERE/gi, '\nWHERE')
+                .replace(/GROUP BY/gi, '\nGROUP BY')
+                .replace(/ORDER BY/gi, '\nORDER BY')
+                .replace(/LIMIT/gi, '\nLIMIT')
+                .trim();
+            queryEditor.value = formatted;
+        }
+    });
+    
+    // Keyboard shortcuts
+    queryEditor.addEventListener('keydown', (e) => {
+        // Ctrl + Enter to run
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+            e.preventDefault();
+            executeQuery();
+        }
+        
+        // Tab for indentation
+        if (e.key === 'Tab') {
+            e.preventDefault();
+            const start = queryEditor.selectionStart;
+            const end = queryEditor.selectionEnd;
+            queryEditor.value = queryEditor.value.substring(0, start) + '  ' + queryEditor.value.substring(end);
+            queryEditor.selectionStart = queryEditor.selectionEnd = start + 2;
+        }
+    });
+    
+    // Load example query on first load
+    if (!queryEditor.value) {
+        queryEditor.value = 'SELECT * FROM alerts\nWHERE status = \'open\'\nORDER BY timestamp DESC\nLIMIT 10;';
+    }
+});
+
+function switchTab(tabName) {
+    // Update buttons
+    document.querySelectorAll('.tab-button').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.tab === tabName) {
+            btn.classList.add('active');
+        }
+    });
+    
+    // Update content
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.remove('active');
+    });
+    document.getElementById(`tab-${tabName}`).classList.add('active');
+    
+    // Load workspace if switching to that tab
+    if (tabName === 'workspace') {
+        loadWorkspace();
+    }
+}
+
+async function executeQuery() {
+    const queryEditor = document.getElementById('query-editor');
+    const query = queryEditor.value.trim();
+    
+    if (!query) {
+        showError('Please enter a SQL query');
+        return;
+    }
+    
+    // Update UI
+    const btnRun = document.getElementById('btn-run-query');
+    const originalText = btnRun.innerHTML;
+    btnRun.innerHTML = '<span class="material-symbols-outlined animate-spin" style="font-size: 18px;">progress_activity</span> RUNNING';
+    btnRun.disabled = true;
+    
+    document.getElementById('query-status').innerHTML = '<span class="status-badge status-running">Running query...</span>';
+    
+    const startTime = performance.now();
+    
+    try {
+        const response = await fetch(`${API_URL}/api/sql/query`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ query: query })
+        });
+        
+        const endTime = performance.now();
+        executionTime = ((endTime - startTime) / 1000).toFixed(2);
+        
+        const result = await response.json();
+        
+        if (!response.ok) {
+            showError(result.detail || result.error || 'Query execution failed');
+            return;
+        }
+        
+        currentResults = result;
+        displayResults(result);
+        document.getElementById('query-status').innerHTML = `<span class="status-badge status-success">Query completed in ${executionTime}s</span>`;
+        
+    } catch (error) {
+        showError(`Connection error: ${error.message}`);
+    } finally {
+        btnRun.innerHTML = originalText;
+        btnRun.disabled = false;
+    }
+}
+
+function displayResults(result) {
+    // Update result info
+    const rowCount = result.rows ? result.rows.length : 0;
+    const colCount = result.columns ? result.columns.length : 0;
+    document.getElementById('result-info').textContent = `Query returned ${rowCount.toLocaleString()} row${rowCount !== 1 ? 's' : ''} (${colCount} column${colCount !== 1 ? 's' : ''})`;
+    document.getElementById('execution-time').textContent = `Execution time: ${executionTime}s`;
+    
+    // Get current query
+    const currentQuery = document.getElementById('query-editor').value.trim();
+    
+    // Display table
+    displayTableResults(result);
+    
+    // Display JSON
+    displayJsonResults(result);
+    
+    // Display execution details
+    displayExecutionDetails(result, currentQuery);
+    
+    // Add to history
+    addToHistory(currentQuery, result.rows.length);
+    
+    // Switch to results tab
+    switchTab('results');
+}
+
+function displayTableResults(result) {
+    const container = document.getElementById('results-table-container');
+    
+    // Verificar si result es un objeto con la estructura esperada
+    if (!result || typeof result !== 'object') {
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-content">
+                    <span class="material-symbols-outlined empty-state-icon">error</span>
+                    <p class="text-lg mb-2">Error en formato de datos</p>
+                    <p class="text-sm">Los datos recibidos no tienen el formato esperado</p>
+                </div>
+            </div>
+        `;
+        return;
+    }
+    
+    if (!result.rows || result.rows.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-content">
+                    <span class="material-symbols-outlined empty-state-icon">search_off</span>
+                    <p class="text-lg mb-2">No results found</p>
+                    <p class="text-sm">Query returned 0 rows</p>
+                </div>
+            </div>
+        `;
+        return;
+    }
+    
+    const columns = result.columns || Object.keys(result.rows[0]);
+    
+    // Store data for sorting (keep original rows reference)
+    window.tableData = {
+        columns: columns,
+        originalRows: result.rows.map(row => ({...row})), // Deep copy
+        rows: result.rows.map(row => ({...row})), // Working copy
+        currentSort: { column: null, direction: null }
+    };
+    
+    renderTable();
+}
+
+function renderTable() {
+    const container = document.getElementById('results-table-container');
+    const { columns, rows, currentSort } = window.tableData;
+    
+    let html = '<table class="results-table"><thead><tr>';
+    columns.forEach((col, index) => {
+        const sortClass = currentSort.column === index 
+            ? `sortable sort-${currentSort.direction}` 
+            : 'sortable';
+        html += `<th class="${sortClass}" onclick="sortTable(${index})">${escapeHtml(col)}</th>`;
+    });
+    html += '</tr></thead><tbody>';
+    
+    rows.forEach(row => {
+        html += '<tr>';
+        columns.forEach(col => {
+            const value = row[col];
+            html += `<td>${formatValue(value)}</td>`;
+        });
+        html += '</tr>';
+    });
+    
+    html += '</tbody></table>';
+    container.innerHTML = html;
+}
+
+function sortTable(columnIndex) {
+    const { columns, originalRows, currentSort } = window.tableData;
+    const column = columns[columnIndex];
+    
+    // Determine sort direction
+    let direction = 'asc';
+    if (currentSort.column === columnIndex) {
+        if (currentSort.direction === 'asc') {
+            direction = 'desc';
+        } else if (currentSort.direction === 'desc') {
+            direction = null; // Reset to original order
+        }
+    }
+    
+    // Sort or reset
+    if (direction === null) {
+        // Reset to original order
+        window.tableData.rows = originalRows.map(row => ({...row}));
+        window.tableData.currentSort = { column: null, direction: null };
+    } else {
+        // Create a new sorted array
+        const sortedRows = [...window.tableData.rows].sort((a, b) => {
+            let valA = a[column];
+            let valB = b[column];
+            
+            // Handle null/undefined
+            if (valA === null || valA === undefined) return direction === 'asc' ? 1 : -1;
+            if (valB === null || valB === undefined) return direction === 'asc' ? -1 : 1;
+            
+            // Try to parse as ISO date/timestamp first (e.g., 2025-10-25T22:49:23.613956)
+            const isoDateRegex = /^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}/;
+            if (typeof valA === 'string' && typeof valB === 'string' && 
+                isoDateRegex.test(valA) && isoDateRegex.test(valB)) {
+                const dateA = new Date(valA);
+                const dateB = new Date(valB);
+                return direction === 'asc' ? dateA - dateB : dateB - dateA;
+            }
+            
+            // Try to parse as number
+            const numA = parseFloat(valA);
+            const numB = parseFloat(valB);
+            
+            if (!isNaN(numA) && !isNaN(numB)) {
+                return direction === 'asc' ? numA - numB : numB - numA;
+            }
+            
+            // String comparison
+            const strA = String(valA).toLowerCase();
+            const strB = String(valB).toLowerCase();
+            
+            if (direction === 'asc') {
+                return strA < strB ? -1 : strA > strB ? 1 : 0;
+            } else {
+                return strA > strB ? -1 : strA < strB ? 1 : 0;
+            }
+        });
+        
+        window.tableData.rows = sortedRows;
+        window.tableData.currentSort = { column: columnIndex, direction: direction };
+    }
+    
+    renderTable();
+}
+
+function displayJsonResults(result) {
+    const jsonOutput = document.getElementById('json-output');
+    const rowCount = result.rows ? result.rows.length : 0;
+    const colCount = result.columns ? result.columns.length : 0;
+    const jsonSize = (JSON.stringify(result).length / 1024).toFixed(2);
+    
+    // Create pretty JSON with syntax highlighting
+    const prettyJson = JSON.stringify(result, null, 2);
+    const highlightedJson = syntaxHighlightJson(prettyJson);
+    
+    jsonOutput.innerHTML = `
+        <div class="h-full flex flex-col" style="gap: 8px;">
+            <!-- JSON Header -->
+            <div class="flex items-center justify-between bg-[#1c2127] rounded-lg p-3 border border-[#3b4754] flex-shrink-0">
+                <div class="flex items-center gap-4">
+                    <h3 class="text-white text-sm font-semibold flex items-center gap-2">
+                        <span class="material-symbols-outlined" style="font-size: 18px;">data_object</span>
+                        Respuesta JSON
+                    </h3>
+                    <div class="flex gap-3 text-xs text-[#9dabb9]">
+                        <span>📊 ${rowCount} registro${rowCount !== 1 ? 's' : ''}</span>
+                        <span>📋 ${colCount} columna${colCount !== 1 ? 's' : ''}</span>
+                        <span>💾 ${jsonSize} KB</span>
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="copyJsonToClipboard(event)" class="bg-[#283039] hover:bg-[#3b4754] text-white px-3 py-2 rounded text-sm flex items-center gap-2 transition-colors">
+                        <span class="material-symbols-outlined" style="font-size: 18px;">content_copy</span>
+                        Copiar
+                    </button>
+                    <button onclick="downloadJson()" class="bg-[#283039] hover:bg-[#3b4754] text-white px-3 py-2 rounded text-sm flex items-center gap-2 transition-colors">
+                        <span class="material-symbols-outlined" style="font-size: 18px;">download</span>
+                        Descargar
+                    </button>
+                </div>
+            </div>
+            
+            <!-- JSON Content -->
+            <div class="flex-1 bg-[#1c2127] rounded-lg border border-[#3b4754] overflow-auto" style="min-height: 0; max-height: 600px;">
+                <pre id="json-content" class="p-4 text-sm font-mono leading-relaxed whitespace-pre">${highlightedJson}</pre>
+            </div>
+        </div>
+    `;
+    
+    // Store the result for later use
+    window.currentJsonResult = result;
+}
+
+function syntaxHighlightJson(json) {
+    json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+        let cls = 'text-[#ce9178]'; // string color (orange)
+        if (/^"/.test(match)) {
+            if (/:$/.test(match)) {
+                cls = 'text-[#9cdcfe]'; // key color (light blue)
+            }
+        } else if (/true|false/.test(match)) {
+            cls = 'text-[#569cd6]'; // boolean color (blue)
+        } else if (/null/.test(match)) {
+            cls = 'text-[#808080]'; // null color (gray)
+        } else {
+            cls = 'text-[#b5cea8]'; // number color (light green)
+        }
+        return '<span class="' + cls + '">' + match + '</span>';
+    });
+}
+
+function copyJsonToClipboard(event) {
+    const json = JSON.stringify(window.currentJsonResult, null, 2);
+    navigator.clipboard.writeText(json).then(() => {
+        // Show success message
+        const btn = event.target.closest('button');
+        const originalContent = btn.innerHTML;
+        btn.innerHTML = '<span class="material-symbols-outlined" style="font-size: 18px;">check</span> Copiado';
+        btn.classList.add('bg-green-600');
+        setTimeout(() => {
+            btn.innerHTML = originalContent;
+            btn.classList.remove('bg-green-600');
+        }, 2000);
+    }).catch(err => {
+        alert('Error al copiar: ' + err);
+    });
+}
+
+function downloadJson() {
+    const json = JSON.stringify(window.currentJsonResult, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `query_result_${new Date().getTime()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+// Store execution history in localStorage
+let executionHistory = JSON.parse(localStorage.getItem('executionHistory') || '[]');
+
+function displayExecutionDetails(result, currentQuery) {
+    const container = document.getElementById('execution-details');
+    const rowCount = result.rows ? result.rows.length : 0;
+    const colCount = result.columns ? result.columns.length : 0;
+    
+    const bytesProcessed = JSON.stringify(result).length;
+    const kbProcessed = (bytesProcessed / 1024).toFixed(2);
+    const mbProcessed = (bytesProcessed / (1024 * 1024)).toFixed(2);
+    
+    // Add to execution history
+    const executionRecord = {
+        id: Date.now(),
+        timestamp: new Date().toISOString(),
+        query: currentQuery.substring(0, 100) + (currentQuery.length > 100 ? '...' : ''),
+        fullQuery: currentQuery,
+        status: 'RUNNING',
+        duration: executionTime,
+        rows: rowCount,
+        bytes: bytesProcessed,
+        kbProcessed: kbProcessed,
+        mbProcessed: mbProcessed
+    };
+    
+    executionHistory.unshift(executionRecord);
+    if (executionHistory.length > 50) executionHistory = executionHistory.slice(0, 50);
+    localStorage.setItem('executionHistory', JSON.stringify(executionHistory));
+    
+    // Display execution history table
+    container.innerHTML = `
+        <div class="space-y-4">
+            <!-- Header -->
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-white text-base font-semibold flex items-center gap-2">
+                        <span class="material-symbols-outlined" style="font-size: 20px;">bar_chart</span>
+                        Historial de trabajos
+                    </h3>
+                    <p class="text-[#9dabb9] text-xs mt-1">Todas las consultas ejecutadas en esta sesión</p>
+                </div>
+                <button onclick="clearExecutionHistory()" class="bg-[#283039] hover:bg-[#3b4754] text-white px-3 py-1.5 rounded text-xs flex items-center gap-2 transition-colors">
+                    <span class="material-symbols-outlined" style="font-size: 16px;">delete</span>
+                    Limpiar historial
+                </button>
+            </div>
+            
+            <!-- Summary Cards -->
+            <div class="grid grid-cols-4 gap-3">
+                <div class="bg-[#1c2127] rounded-lg p-3 border border-[#3b4754]">
+                    <div class="text-[#9dabb9] text-xs mb-1">Tiempo transcurrido</div>
+                    <div class="text-white text-lg font-bold">${executionTime}s</div>
+                </div>
+                <div class="bg-[#1c2127] rounded-lg p-3 border border-[#3b4754]">
+                    <div class="text-[#9dabb9] text-xs mb-1">Declaraciones procesadas</div>
+                    <div class="text-white text-lg font-bold">${executionHistory.length}</div>
+                </div>
+                <div class="bg-[#1c2127] rounded-lg p-3 border border-[#3b4754]">
+                    <div class="text-[#9dabb9] text-xs mb-1">Etapas finalizadas</div>
+                    <div class="text-white text-lg font-bold">0</div>
+                </div>
+                <div class="bg-[#1c2127] rounded-lg p-3 border border-[#3b4754]">
+                    <div class="text-[#9dabb9] text-xs mb-1">Bytes procesados</div>
+                    <div class="text-white text-lg font-bold">${mbProcessed > 1 ? mbProcessed + ' MB' : kbProcessed + ' KB'}</div>
+                </div>
+            </div>
+            
+            <!-- Execution History Table -->
+            <div class="bg-[#1c2127] rounded-lg border border-[#3b4754] overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-xs">
+                        <thead>
+                            <tr class="bg-[#0f1419] border-b border-[#283039]">
+                                <th class="py-2 px-3 text-left text-[#9dabb9] font-semibold">Estado</th>
+                                <th class="py-2 px-3 text-left text-[#9dabb9] font-semibold">Hora de finalización</th>
+                                <th class="py-2 px-3 text-left text-[#9dabb9] font-semibold">SQL</th>
+                                <th class="py-2 px-3 text-right text-[#9dabb9] font-semibold">Etapas finalizadas</th>
+                                <th class="py-2 px-3 text-right text-[#9dabb9] font-semibold">Bytes procesados</th>
+                                <th class="py-2 px-3 text-right text-[#9dabb9] font-semibold">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${executionHistory.map((exec, index) => `
+                                <tr class="border-b border-[#283039] hover:bg-[#1a1f26] transition-colors">
+                                    <td class="py-2.5 px-3">
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs ${
+                                            index === 0 ? 'bg-blue-500/20 text-blue-400' : 'bg-green-500/20 text-green-400'
+                                        }">
+                                            <span class="material-symbols-outlined" style="font-size: 12px;">
+                                                ${index === 0 ? 'pending' : 'check_circle'}
+                                            </span>
+                                            ${index === 0 ? 'RUNNING' : 'COMPLETADO'}
+                                        </span>
+                                    </td>
+                                    <td class="py-2.5 px-3 text-white font-mono">
+                                        ${new Date(exec.timestamp).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' })} 
+                                        <span class="text-[#9dabb9]">[${exec.duration}s]</span>
+                                    </td>
+                                    <td class="py-2.5 px-3 text-white font-mono max-w-md truncate" title="${exec.fullQuery.replace(/"/g, '&quot;')}">
+                                        ${exec.query}
+                                    </td>
+                                    <td class="py-2.5 px-3 text-right text-white">${index === 0 ? '0' : '6'}</td>
+                                    <td class="py-2.5 px-3 text-right text-white font-mono">
+                                        ${exec.mbProcessed > 1 ? exec.mbProcessed + ' MB' : exec.kbProcessed + ' KB'}
+                                    </td>
+                                    <td class="py-2.5 px-3 text-right">
+                                        <button onclick="executeQueryFromHistory(\`${exec.fullQuery.replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`)" 
+                                                class="text-blue-400 hover:text-blue-300 transition-colors">
+                                            Ver resultados
+                                        </button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function clearExecutionHistory() {
+    if (confirm('¿Estás seguro de que quieres limpiar el historial de ejecución?')) {
+        executionHistory = [];
+        localStorage.removeItem('executionHistory');
+        document.getElementById('execution-details').innerHTML = `
+            <div class="empty-state-content">
+                <span class="material-symbols-outlined empty-state-icon">info</span>
+                <p class="text-lg mb-2">No execution details</p>
+                <p class="text-sm">Execution details will appear here after running a query</p>
+            </div>
+        `;
+    }
+}
+
+function executeQueryFromHistory(query) {
+    document.getElementById('query-editor').value = query;
+    // Execute the query
+    executeQuery();
+}
+
+function showError(message) {
+    document.getElementById('query-status').innerHTML = `<span class="status-badge status-error">Query failed</span>`;
+    document.getElementById('result-info').textContent = 'Query execution failed';
+    document.getElementById('execution-time').textContent = '';
+    
+    const container = document.getElementById('results-table-container');
+    container.innerHTML = `
+        <div class="empty-state">
+            <div class="max-w-3xl bg-[#1c2127] border-2 border-red-900 rounded-lg p-8">
+                <div class="flex items-start gap-4">
+                    <span class="material-symbols-outlined text-red-500" style="font-size: 48px;">error</span>
+                    <div class="flex-1">
+                        <h3 class="text-red-500 font-semibold text-xl mb-3">Query Execution Error</h3>
+                        <pre class="text-[#d4d4d4] text-sm whitespace-pre-wrap font-mono bg-[#111418] p-4 rounded border border-[#3b4754]">${escapeHtml(message)}</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function formatValue(value) {
+    if (value === null || value === undefined) {
+        return '<span class="text-[#666]">NULL</span>';
+    }
+    if (typeof value === 'boolean') {
+        return value ? '<span class="text-green-500">true</span>' : '<span class="text-red-500">false</span>';
+    }
+    if (typeof value === 'number') {
+        return `<span class="text-blue-400">${value.toLocaleString()}</span>`;
+    }
+    return escapeHtml(String(value));
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function addToHistory(query, rowCount) {
+    const historyItem = {
+        id: Date.now(),
+        query: query,
+        timestamp: new Date().toISOString(),
+        rowCount: rowCount
+    };
+    
+    queryHistory.unshift(historyItem);
+    if (queryHistory.length > 50) queryHistory.pop(); // Keep last 50
+    localStorage.setItem('queryHistory', JSON.stringify(queryHistory));
+}
+
+function loadWorkspace() {
+    // Load query history
+    const historyContainer = document.getElementById('query-history');
+    if (queryHistory.length === 0) {
+        historyContainer.innerHTML = `
+            <div class="bg-[#1c2127] rounded-lg p-8 border border-[#3b4754] text-center">
+                <span class="material-symbols-outlined text-4xl text-[#9dabb9] mb-2">history</span>
+                <p class="text-[#9dabb9]">No hay consultas en el historial</p>
+                <p class="text-[#9dabb9] text-sm mt-1">Ejecuta una consulta para verla aquí</p>
+            </div>
+        `;
+    } else {
+        historyContainer.innerHTML = queryHistory.slice(0, 10).map(item => `
+            <div class="bg-[#1c2127] rounded-lg p-4 border border-[#3b4754] hover:border-[#1c7ed6] transition-colors">
+                <div class="flex items-start justify-between gap-4">
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="material-symbols-outlined text-[#9dabb9]" style="font-size: 18px;">query_stats</span>
+                            <span class="text-[#9dabb9] text-xs">${new Date(item.timestamp).toLocaleString('es-ES')}</span>
+                            <span class="text-[#9dabb9] text-xs">•</span>
+                            <span class="text-[#9dabb9] text-xs">${item.rowCount} filas</span>
+                        </div>
+                        <pre class="text-[#d4d4d4] text-sm font-mono whitespace-pre-wrap overflow-hidden">${escapeHtml(item.query)}</pre>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="loadQueryFromHistory(${item.id})" class="text-[#1c7ed6] hover:text-[#1971c2] transition-colors" title="Cargar consulta">
+                            <span class="material-symbols-outlined">play_arrow</span>
+                        </button>
+                        <button onclick="deleteFromHistory(${item.id})" class="text-[#9dabb9] hover:text-red-400 transition-colors" title="Eliminar">
+                            <span class="material-symbols-outlined">delete</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+    
+    // Load saved queries
+    const savedContainer = document.getElementById('saved-queries');
+    if (savedQueries.length === 0) {
+        savedContainer.innerHTML = `
+            <div class="bg-[#1c2127] rounded-lg p-8 border border-[#3b4754] text-center">
+                <span class="material-symbols-outlined text-4xl text-[#9dabb9] mb-2">bookmark</span>
+                <p class="text-[#9dabb9]">No hay consultas guardadas</p>
+                <p class="text-[#9dabb9] text-sm mt-1">Guarda tus consultas favoritas para acceder rápidamente</p>
+            </div>
+        `;
+    } else {
+        savedContainer.innerHTML = savedQueries.map(item => `
+            <div class="bg-[#1c2127] rounded-lg p-4 border border-[#3b4754] hover:border-[#1c7ed6] transition-colors">
+                <div class="flex items-start justify-between gap-4">
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="material-symbols-outlined text-yellow-400" style="font-size: 18px;">bookmark</span>
+                            <span class="text-white font-semibold">${escapeHtml(item.name)}</span>
+                        </div>
+                        ${item.description ? `<p class="text-[#9dabb9] text-sm mb-2">${escapeHtml(item.description)}</p>` : ''}
+                        <pre class="text-[#d4d4d4] text-sm font-mono whitespace-pre-wrap overflow-hidden">${escapeHtml(item.query)}</pre>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="loadSavedQuery(${item.id})" class="text-[#1c7ed6] hover:text-[#1971c2] transition-colors" title="Cargar consulta">
+                            <span class="material-symbols-outlined">play_arrow</span>
+                        </button>
+                        <button onclick="deleteSavedQuery(${item.id})" class="text-[#9dabb9] hover:text-red-400 transition-colors" title="Eliminar">
+                            <span class="material-symbols-outlined">delete</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+}
+
+function loadQueryFromHistory(id) {
+    const item = queryHistory.find(q => q.id === id);
+    if (item) {
+        document.getElementById('query-editor').value = item.query;
+        switchTab('results');
+    }
+}
+
+function deleteFromHistory(id) {
+    queryHistory = queryHistory.filter(q => q.id !== id);
+    localStorage.setItem('queryHistory', JSON.stringify(queryHistory));
+    loadWorkspace();
+}
+
+function loadSavedQuery(id) {
+    const item = savedQueries.find(q => q.id === id);
+    if (item) {
+        document.getElementById('query-editor').value = item.query;
+        switchTab('results');
+    }
+}
+
+function deleteSavedQuery(id) {
+    if (confirm('¿Estás seguro de que quieres eliminar esta consulta guardada?')) {
+        savedQueries = savedQueries.filter(q => q.id !== id);
+        localStorage.setItem('savedQueries', JSON.stringify(savedQueries));
+        loadWorkspace();
+    }
+}
+
+function loadExampleQuery(query) {
+    document.getElementById('query-editor').value = query;
+    switchTab('results');
+}
+
+function showSaveQueryDialog() {
+    const currentQuery = document.getElementById('query-editor').value.trim();
+    if (!currentQuery) {
+        alert('No hay ninguna consulta para guardar');
+        return;
+    }
+    
+    const name = prompt('Nombre de la consulta:');
+    if (!name) return;
+    
+    const description = prompt('Descripción (opcional):');
+    
+    const savedQuery = {
+        id: Date.now(),
+        name: name,
+        description: description || '',
+        query: currentQuery,
+        timestamp: new Date().toISOString()
+    };
+    
+    savedQueries.unshift(savedQuery);
+    localStorage.setItem('savedQueries', JSON.stringify(savedQueries));
+    
+    alert('Consulta guardada exitosamente');
+}
+</script>
+</body></html>

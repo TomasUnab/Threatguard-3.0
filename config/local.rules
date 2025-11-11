@@ -1,0 +1,186 @@
+# ThreatGuard - Snort 3 Local Rules
+# ==================================
+
+# ===========================
+# ICMP Rules (Optimizadas)
+# ===========================
+# Ignorar ICMP multicast IPv6 normal (descubrimiento de vecinos)
+pass icmp any any -> ff02::/16 any ( msg:"Normal IPv6 Neighbor Discovery"; sid:1000120; rev:1; )
+
+# Ignorar respuestas ICMP normales (tipo 0 = echo reply, tipo 8 = echo request)
+pass icmp any any <> any any ( msg:"Normal ICMP Echo"; itype:0; sid:1000121; rev:1; )
+
+# ICMP Flood - múltiples pings en poco tiempo (AMENAZA REAL)
+alert icmp any any -> any any ( msg:"ICMP Flood Attack Detected"; itype:8; detection_filter:track by_src, count 50, seconds 5; sid:1000001; rev:2; priority:1; classtype:attempted-dos; )
+
+# ICMP Ping Sweep - escaneo de red (RECONOCIMIENTO)
+alert icmp any any -> any any ( msg:"ICMP Ping Sweep - Network Reconnaissance"; itype:8; detection_filter:track by_src, count 10, seconds 10; sid:1000002; rev:2; priority:2; classtype:network-scan; )
+
+# ICMP con payload sospechoso (posible exfiltración de datos)
+alert icmp any any -> any any ( msg:"ICMP with Suspicious Payload Size"; dsize:>1000; sid:1000003; rev:1; priority:1; classtype:suspicious-traffic; )
+
+# ICMP fragmentado (posible evasión)
+alert icmp any any -> any any ( msg:"Fragmented ICMP Packet - Evasion Attempt"; fragbits:M; sid:1000004; rev:1; priority:2; classtype:bad-unknown; )
+
+# ===========================
+# Port Scan Detection
+# ===========================
+# SYN Scan (escaneo sigiloso)
+alert tcp any any -> any any ( msg:"TCP SYN Port Scan Detected"; flags:S,12; detection_filter:track by_src, count 20, seconds 60; sid:1000005; rev:2; priority:2; classtype:attempted-recon; )
+
+# NULL Scan (todos los flags en 0)
+alert tcp any any -> any any ( msg:"TCP NULL Scan Detected"; flags:0; detection_filter:track by_src, count 10, seconds 60; sid:1000006; rev:1; priority:2; classtype:attempted-recon; )
+
+# XMAS Scan (flags FPU activos)
+alert tcp any any -> any any ( msg:"TCP XMAS Scan Detected"; flags:FPU,12; detection_filter:track by_src, count 10, seconds 60; sid:1000007; rev:1; priority:2; classtype:attempted-recon; )
+
+# FIN Scan
+alert tcp any any -> any any ( msg:"TCP FIN Scan Detected"; flags:F,12; detection_filter:track by_src, count 15, seconds 60; sid:1000008; rev:1; priority:2; classtype:attempted-recon; )
+
+# ===========================
+# Brute Force Attacks
+# ===========================
+
+# ===========================
+# Brute Force Attacks
+# ===========================
+# SSH Brute Force
+alert tcp any any -> any 22 ( msg:"SSH Brute Force Attack"; flags:S; detection_filter:track by_src, count 5, seconds 60; sid:1000010; rev:2; priority:1; classtype:attempted-admin; )
+
+# RDP Brute Force
+alert tcp any any -> any 3389 ( msg:"RDP Brute Force Attack"; flags:S; detection_filter:track by_src, count 5, seconds 60; sid:1000011; rev:1; priority:1; classtype:attempted-admin; )
+
+# FTP Brute Force
+alert tcp any any -> any 21 ( msg:"FTP Brute Force Attack"; detection_filter:track by_src, count 5, seconds 60; sid:1000012; rev:2; priority:1; classtype:attempted-admin; )
+
+# SMB Brute Force
+alert tcp any any -> any 445 ( msg:"SMB Brute Force Attack"; detection_filter:track by_src, count 5, seconds 60; sid:1000013; rev:2; priority:1; classtype:attempted-admin; )
+
+# Telnet Brute Force
+alert tcp any any -> any 23 ( msg:"Telnet Brute Force Attack"; detection_filter:track by_src, count 5, seconds 60; sid:1000014; rev:1; priority:1; classtype:attempted-admin; )
+
+# MySQL Brute Force
+alert tcp any any -> any 3306 ( msg:"MySQL Brute Force Attack"; detection_filter:track by_src, count 5, seconds 60; sid:1000015; rev:1; priority:1; classtype:attempted-admin; )
+
+# PostgreSQL Brute Force
+alert tcp any any -> any 5432 ( msg:"PostgreSQL Brute Force Attack"; detection_filter:track by_src, count 5, seconds 60; sid:1000016; rev:1; priority:1; classtype:attempted-admin; )
+
+# ===========================
+# Web Application Attacks
+# ===========================
+
+# ===========================
+# Web Application Attacks
+# ===========================
+# SQL Injection - múltiples patrones
+alert tcp any any -> any [80,443,8080,8000,8001] ( msg:"SQL Injection - UNION Attack"; content:"union",nocase; content:"select",nocase; sid:1000020; rev:2; priority:1; classtype:web-application-attack; )
+alert tcp any any -> any [80,443,8080,8000,8001] ( msg:"SQL Injection - OR 1=1 Attack"; content:"or",nocase; content:"1=1",nocase; sid:1000021; rev:1; priority:1; classtype:web-application-attack; )
+alert tcp any any -> any [80,443,8080,8000,8001] ( msg:"SQL Injection - Comment Bypass"; content:"--",nocase; sid:1000022; rev:1; priority:1; classtype:web-application-attack; )
+
+# XSS (Cross-Site Scripting)
+alert tcp any any -> any [80,443,8080,8000,8001] ( msg:"XSS Attack - Script Tag"; content:"<script",nocase; sid:1000023; rev:2; priority:1; classtype:web-application-attack; )
+alert tcp any any -> any [80,443,8080,8000,8001] ( msg:"XSS Attack - JavaScript Event"; content:"onerror=",nocase; sid:1000024; rev:1; priority:1; classtype:web-application-attack; )
+alert tcp any any -> any [80,443,8080,8000,8001] ( msg:"XSS Attack - JavaScript Event"; content:"onload=",nocase; sid:1000025; rev:1; priority:1; classtype:web-application-attack; )
+
+# Directory Traversal / Path Traversal
+alert tcp any any -> any [80,443,8080,8000,8001] ( msg:"Directory Traversal Attack"; content:"../",nocase; sid:1000026; rev:2; priority:2; classtype:web-application-attack; )
+alert tcp any any -> any [80,443,8080,8000,8001] ( msg:"Directory Traversal - Windows"; content:"..\\",nocase; sid:1000027; rev:1; priority:2; classtype:web-application-attack; )
+
+# Command Injection
+alert tcp any any -> any [80,443,8080,8000,8001] ( msg:"OS Command Injection - cmd.exe"; content:"cmd.exe",nocase; sid:1000028; rev:2; priority:1; classtype:web-application-attack; )
+alert tcp any any -> any [80,443,8080,8000,8001] ( msg:"OS Command Injection - /bin/sh"; content:"/bin/sh",nocase; sid:1000029; rev:1; priority:1; classtype:web-application-attack; )
+alert tcp any any -> any [80,443,8080,8000,8001] ( msg:"OS Command Injection - PowerShell"; content:"powershell",nocase; sid:1000030; rev:1; priority:1; classtype:web-application-attack; )
+
+# File Upload Attacks
+alert tcp any any -> any [80,443,8080,8000,8001] ( msg:"Malicious File Upload - PHP"; content:".php",nocase; content:"<?php",nocase; sid:1000031; rev:1; priority:1; classtype:web-application-attack; )
+alert tcp any any -> any [80,443,8080,8000,8001] ( msg:"Malicious File Upload - JSP"; content:".jsp",nocase; sid:1000032; rev:1; priority:1; classtype:web-application-attack; )
+
+# ===========================
+# DoS/DDoS Attacks
+# ===========================
+
+# ===========================
+# DoS/DDoS Attacks
+# ===========================
+# SYN Flood
+alert tcp any any -> any any ( msg:"SYN Flood Attack"; flags:S,12; detection_filter:track by_dst, count 100, seconds 10; sid:1000040; rev:2; priority:1; classtype:attempted-dos; )
+
+# HTTP Flood
+alert tcp any any -> any [80,443,8080,8000,8001] ( msg:"HTTP Flood Attack"; detection_filter:track by_dst, count 100, seconds 10; sid:1000041; rev:2; priority:1; classtype:attempted-dos; )
+
+# UDP Flood
+alert udp any any -> any any ( msg:"UDP Flood Attack"; detection_filter:track by_dst, count 200, seconds 10; sid:1000042; rev:1; priority:1; classtype:attempted-dos; )
+
+# DNS Amplification Attack
+alert udp any any -> any 53 ( msg:"DNS Query Flood - Possible Amplification Attack"; detection_filter:track by_src, count 50, seconds 10; sid:1000043; rev:2; priority:2; classtype:attempted-dos; )
+
+# Slowloris Attack (HTTP slow attack)
+alert tcp any any -> any [80,443,8080,8000,8001] ( msg:"Slowloris Attack - Multiple Incomplete Connections"; flags:S; detection_filter:track by_src, count 50, seconds 60; sid:1000044; rev:1; priority:1; classtype:attempted-dos; )
+
+# ===========================
+# Malware & Backdoor Communication
+# ===========================
+# Reverse Shell (conexiones sospechosas salientes)
+alert tcp any any -> any [4444,4445,5555,6666,7777,8888,9999] ( msg:"Suspicious Outbound Connection - Possible Reverse Shell"; flags:S; sid:1000050; rev:1; priority:1; classtype:trojan-activity; )
+
+# Metasploit/Meterpreter (puertos comunes)
+alert tcp any any -> any [4444,31337,8080] ( msg:"Metasploit/Meterpreter Connection Detected"; sid:1000051; rev:1; priority:1; classtype:trojan-activity; )
+
+# NetBus/BackOrifice (troyanos clásicos)
+alert tcp any any -> any [12345,12346,31337,31338] ( msg:"NetBus/BackOrifice Trojan Activity"; sid:1000052; rev:1; priority:1; classtype:trojan-activity; )
+
+# Beacon Activity (C2 communication)
+alert tcp any any -> any any ( msg:"Possible C2 Beacon - Regular Outbound Traffic"; detection_filter:track by_src, count 10, seconds 60; sid:1000053; rev:1; priority:2; classtype:trojan-activity; )
+
+# ===========================
+# Ransomware Detection
+# ===========================
+# SMB Traffic Spike (posible propagación lateral)
+alert tcp any any -> any 445 ( msg:"SMB Traffic Spike - Possible Ransomware Lateral Movement"; detection_filter:track by_src, count 50, seconds 60; sid:1000060; rev:1; priority:1; classtype:misc-attack; )
+
+# Múltiples conexiones salientes (exfiltración/encriptación)
+alert tcp any any -> any any ( msg:"Multiple Outbound Connections - Possible Data Exfiltration"; flags:S; detection_filter:track by_src, count 100, seconds 30; sid:1000061; rev:1; priority:1; classtype:suspicious-traffic; )
+
+# ===========================
+# Exploit Attempts
+# ===========================
+# EternalBlue (MS17-010)
+alert tcp any any -> any 445 ( msg:"EternalBlue Exploit Attempt (MS17-010)"; content:"|fe|SMB"; content:"|00 00 00 ff ff|"; sid:1000070; rev:1; priority:1; classtype:attempted-admin; )
+
+# Log4Shell (CVE-2021-44228)
+alert tcp any any -> any any ( msg:"Log4Shell Exploit Attempt"; content:"${jndi:",nocase; sid:1000071; rev:1; priority:1; classtype:web-application-attack; )
+
+# Shellshock
+alert tcp any any -> any any ( msg:"Shellshock Exploit Attempt"; content:"() {",nocase; sid:1000072; rev:1; priority:1; classtype:web-application-attack; )
+
+# ===========================
+# Cryptocurrency Mining
+# ===========================
+# Stratum Protocol (minería)
+alert tcp any any -> any [3333,4444,8333,9999,14444] ( msg:"Cryptocurrency Mining - Stratum Protocol Detected"; sid:1000080; rev:1; priority:2; classtype:policy-violation; )
+
+# ===========================
+# Network Anomalies
+# ===========================
+# Conexiones a IPs privadas desde internet (spoofing)
+alert ip any any -> [10.0.0.0/8,172.16.0.0/12,192.168.0.0/16] any ( msg:"Internet Traffic to Private IP - Possible Spoofing"; sid:1000090; rev:1; priority:2; classtype:bad-unknown; )
+
+# TTL muy bajo (posible proxy/VPN/routing anómalo)
+alert ip any any -> any any ( msg:"Abnormally Low TTL - Possible Evasion"; ttl:<5; sid:1000091; rev:1; priority:3; classtype:suspicious-traffic; )
+
+# Paquete con tamaño inusual
+alert ip any any -> any any ( msg:"Abnormally Large Packet"; dsize:>5000; sid:1000092; rev:1; priority:3; classtype:suspicious-traffic; )
+
+# ===========================
+# Data Exfiltration
+# ===========================
+# DNS Tunneling (queries muy largas)
+alert udp any any -> any 53 ( msg:"DNS Tunneling - Abnormally Long Query"; dsize:>100; sid:1000095; rev:1; priority:2; classtype:policy-violation; )
+
+# ICMP Tunneling (payload grande) - usar SID diferente
+alert icmp any any -> any any ( msg:"ICMP Tunneling - Large Payload Data Exfiltration"; dsize:>1024; sid:1000096; rev:1; priority:1; classtype:policy-violation; )
+
+# ===========================
+# Protocolo TOR Detection
+# ===========================
+alert tcp any any -> any [9001,9030,9150] ( msg:"TOR Network Connection Detected"; sid:1000110; rev:1; priority:3; classtype:policy-violation; )

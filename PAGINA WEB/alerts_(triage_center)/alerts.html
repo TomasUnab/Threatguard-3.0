@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Alertas de Snort - ThreatGuard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet"/>
+<script>
+tailwind.config = {
+    darkMode: "class",
+    theme: {
+        extend: {
+            colors: {
+                "primary": "#137fec",
+                "background-dark": "#101922",
+            },
+            fontFamily: {
+                "display": ["Inter", "sans-serif"]
+            },
+        },
+    },
+}
+</script>
+<style>
+.severity-critical { background: rgba(220, 38, 38, 0.2); color: #ef4444; }
+.severity-high { background: rgba(249, 115, 22, 0.2); color: #f97316; }
+.severity-medium { background: rgba(234, 179, 8, 0.2); color: #eab308; }
+.severity-low { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
+.severity-info { background: rgba(59, 130, 246, 0.2); color: #3b82f6; }
+</style>
+</head>
+<body class="bg-background-dark font-display">
+<div class="relative flex h-screen w-full flex-col">
+<!-- Header -->
+<header class="sticky top-0 z-50 flex items-center justify-between border-b border-[#283039] bg-background-dark px-10 py-3">
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-4 text-white">
+<span class="material-symbols-outlined text-3xl text-primary">security</span>
+<h2 class="text-xl font-bold">ThreatGuard</h2>
+</div>
+<nav class="flex gap-9">
+<a href="../executive_summary/code.html" class="text-sm font-medium text-white hover:text-primary">Dashboard</a>
+<a href="alerts.html" class="text-sm font-medium text-primary">Alerts</a>
+<a href="../assets_(asset_&_asrm_mgmt.)/code.html" class="text-sm font-medium text-white hover:text-primary">Assets</a>
+<a href="../vulnerability_management/code.html" class="text-sm font-medium text-white hover:text-primary">Vulnerabilities</a>
+<a href="../soar_(automation_&_orchestration)/code.html" class="text-sm font-medium text-white hover:text-primary">SOAR</a>
+<a href="../reports/code.html" class="text-sm font-medium text-white hover:text-primary">Reports</a>
+<a href="../settings/code.html" class="text-sm font-medium text-white hover:text-primary">Settings</a>
+</nav>
+</div>
+</header>
+
+<main class="flex-1 overflow-auto p-6">
+<!-- Header -->
+<div class="mb-6 flex items-center justify-between">
+<div>
+<h1 class="text-3xl font-bold text-white mb-2">Alertas de Snort IDS</h1>
+<p class="text-[#9dabb9]">Monitoreo en tiempo real de amenazas detectadas</p>
+</div>
+<button onclick="refreshAlerts()" class="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-white hover:bg-blue-600">
+<span class="material-symbols-outlined">refresh</span>
+Actualizar
+</button>
+</div>
+
+<!-- Stats Cards -->
+<div class="mb-6 grid grid-cols-4 gap-4">
+<div class="rounded-lg bg-[#1c2127] border border-[#3b4754] p-4">
+<div class="text-[#9dabb9] text-sm mb-1">Total Alertas</div>
+<div class="text-white text-2xl font-bold" id="stat-total">0</div>
+</div>
+<div class="rounded-lg bg-[#1c2127] border border-[#3b4754] p-4">
+<div class="text-[#9dabb9] text-sm mb-1">Críticas</div>
+<div class="text-red-500 text-2xl font-bold" id="stat-critical">0</div>
+</div>
+<div class="rounded-lg bg-[#1c2127] border border-[#3b4754] p-4">
+<div class="text-[#9dabb9] text-sm mb-1">Altas</div>
+<div class="text-orange-500 text-2xl font-bold" id="stat-high">0</div>
+</div>
+<div class="rounded-lg bg-[#1c2127] border border-[#3b4754] p-4">
+<div class="text-[#9dabb9] text-sm mb-1">Última Actualización</div>
+<div class="text-white text-sm font-bold" id="stat-updated">-</div>
+</div>
+</div>
+
+<!-- Alerts Table -->
+<div class="rounded-lg bg-[#1c2127] border border-[#3b4754] overflow-hidden">
+<div class="overflow-x-auto">
+<table class="w-full">
+<thead class="bg-[#0f1419] border-b border-[#283039]">
+<tr>
+<th class="py-3 px-4 text-left text-[#9dabb9] font-semibold text-sm">Timestamp</th>
+<th class="py-3 px-4 text-left text-[#9dabb9] font-semibold text-sm">Mensaje</th>
+<th class="py-3 px-4 text-left text-[#9dabb9] font-semibold text-sm">Origen</th>
+<th class="py-3 px-4 text-left text-[#9dabb9] font-semibold text-sm">Destino</th>
+<th class="py-3 px-4 text-left text-[#9dabb9] font-semibold text-sm">Protocolo</th>
+<th class="py-3 px-4 text-left text-[#9dabb9] font-semibold text-sm">SID</th>
+</tr>
+</thead>
+<tbody id="alerts-tbody">
+<tr>
+<td colspan="6" class="py-12 text-center text-[#9dabb9]">
+<span class="material-symbols-outlined text-5xl mb-2 opacity-30">shield</span>
+<p>Cargando alertas...</p>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</main>
+</div>
+
+<script>
+const API_URL = 'http://localhost:8000';
+let autoRefresh = true;
+
+async function loadAlerts() {
+    try {
+        const response = await fetch(`${API_URL}/api/snort/alerts?limit=100`);
+        const data = await response.json();
+        
+        if (data.alerts && data.alerts.length > 0) {
+            displayAlerts(data.alerts);
+            updateStats(data.alerts);
+        } else {
+            document.getElementById('alerts-tbody').innerHTML = `
+                <tr>
+                    <td colspan="6" class="py-12 text-center text-[#9dabb9]">
+                        <span class="material-symbols-outlined text-5xl mb-2 opacity-30">check_circle</span>
+                        <p>No hay alertas registradas</p>
+                    </td>
+                </tr>
+            `;
+        }
+    } catch (error) {
+        document.getElementById('alerts-tbody').innerHTML = `
+            <tr>
+                <td colspan="6" class="py-12 text-center text-red-500">
+                    <span class="material-symbols-outlined text-5xl mb-2">error</span>
+                    <p>Error al cargar alertas: ${error.message}</p>
+                </td>
+            </tr>
+        `;
+    }
+}
+
+function displayAlerts(alerts) {
+    const tbody = document.getElementById('alerts-tbody');
+    tbody.innerHTML = alerts.map(alert => `
+        <tr class="border-b border-[#283039] hover:bg-[#283039] transition-colors">
+            <td class="py-3 px-4 text-white text-sm font-mono">${formatTimestamp(alert.timestamp)}</td>
+            <td class="py-3 px-4 text-white text-sm">${escapeHtml(alert.message || alert.msg || '-')}</td>
+            <td class="py-3 px-4 text-white text-sm font-mono">${alert.src_ip || '-'}</td>
+            <td class="py-3 px-4 text-white text-sm font-mono">${alert.dst_ip || '-'}</td>
+            <td class="py-3 px-4 text-white text-sm">${alert.protocol || '-'}</td>
+            <td class="py-3 px-4 text-white text-sm font-mono">${alert.sid || '-'}</td>
+        </tr>
+    `).join('');
+}
+
+function updateStats(alerts) {
+    document.getElementById('stat-total').textContent = alerts.length;
+    document.getElementById('stat-critical').textContent = alerts.filter(a => a.priority === 1).length;
+    document.getElementById('stat-high').textContent = alerts.filter(a => a.priority === 2).length;
+    document.getElementById('stat-updated').textContent = new Date().toLocaleTimeString('es-ES');
+}
+
+function formatTimestamp(ts) {
+    if (!ts) return '-';
+    const date = new Date(ts);
+    return date.toLocaleString('es-ES');
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function refreshAlerts() {
+    loadAlerts();
+}
+
+// Auto-refresh every 5 seconds
+setInterval(() => {
+    if (autoRefresh) loadAlerts();
+}, 5000);
+
+// Initial load
+loadAlerts();
+</script>
+</body>
+</html>
