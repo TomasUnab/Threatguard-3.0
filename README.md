@@ -88,7 +88,7 @@ Consulta la carpeta `docs/` para documentación detallada:
 
 ## 📝 Licencia
 
-Copyright © 2025 Tomas Unab. Todos los derechos reservados.
+Copyright © 2025 ThreatGuard. Todos los derechos reservados.
 
 Este software es propietario y confidencial. Queda estrictamente prohibida cualquier copia, modificación, distribución o uso no autorizado sin el permiso expreso por escrito del titular de los derechos de autor.
 
