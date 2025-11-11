@@ -88,7 +88,9 @@ Consulta la carpeta `docs/` para documentación detallada:
 
 ## 📝 Licencia
 
-[Especifica tu licencia aquí]
+Copyright © 2025 Tomas Unab. Todos los derechos reservados.
+
+Este software es propietario y confidencial. Queda estrictamente prohibida cualquier copia, modificación, distribución o uso no autorizado sin el permiso expreso por escrito del titular de los derechos de autor.
 
 ## 👥 Contribuciones
 
