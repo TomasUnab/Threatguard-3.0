@@ -29,17 +29,7 @@ git clone https://github.com/TomasUnab/Threatguard-3.0.git
 cd Threatguard-3.0
 ```
 
-### 2. Configurar el entorno
-
-```bash
-# Copiar archivos de configuración de ejemplo
-cp config/config.ini.example config/config.ini
-cp config/master.ini.example config/master.ini
-
-# Editar los archivos .ini con tus credenciales
-```
-
-### 3. Instalar dependencias
+### 2. Instalar dependencias
 
 ```bash
 # Servidor principal
@@ -52,13 +42,13 @@ pip install -r requirements-agent.txt
 pip install -r requirements-agent-client.txt
 ```
 
-### 4. Inicializar la base de datos
+### 3. Inicializar la base de datos
 
 ```bash
 python scripts/init_database.py
 ```
 
-### 5. Descargar modelos (opcional)
+### 4. Descargar modelos (opcional)
 
 Los modelos de ML entrenados son muy grandes. Puedes:
 - Entrenar tus propios modelos usando los scripts en `src/ai_models/`
