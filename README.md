@@ -35,13 +35,7 @@ cd Threatguard-3.0
 pip install -r requirements.txt
 ```
 
-### 3. Inicializar la base de datos
-
-```bash
-python scripts/init_database.py
-```
-
-### 4. Descargar modelos (opcional)
+### 3. Descargar modelos (opcional)
 
 Los modelos de ML entrenados son muy grandes. Puedes:
 - Entrenar tus propios modelos usando los scripts en `src/ai_models/`
