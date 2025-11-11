@@ -65,8 +65,10 @@ TrafficLabelling/
 *.pcap
 *.csv
 
-# Reports
-reports/
+# Reports (generated reports, not the frontend folder)
+/reports/
+*.pdf
+*.docx
 
 # Docker
 .dockerignore

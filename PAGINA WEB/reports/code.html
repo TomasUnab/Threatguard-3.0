@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ThreatGuard - Reporting and Auditing</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings:
+            'FILL' 0,
+            'wght' 400,
+            'GRAD' 0,
+            'opsz' 24
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#137fec",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101922",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display">
+<div class="relative flex h-auto min-h-screen w-full flex-col">
+<header class="sticky top-0 z-50 flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#283039] bg-background-dark px-10 py-3">
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-4 text-white">
+<div class="size-6 text-primary">
+<span class="material-symbols-outlined !text-3xl">security</span>
+</div>
+<h2 class="text-white text-xl font-bold leading-tight tracking-[-0.015em]">ThreatGuard</h2>
+</div>
+<div class="flex items-center gap-9">
+<a class="text-white text-sm font-medium leading-normal" href="/executive_summary/code.html">Dashboard</a>
+<a class="text-white text-sm font-medium leading-normal" href="/alerts/code.html">Alerts</a>
+<a class="text-white text-sm font-medium leading-normal" href="/assets/code.html">Assets</a>
+<a class="text-white text-sm font-medium leading-normal" href="/vulnerability_management/code.html">Vulnerability Management</a>
+<a class="text-white text-sm font-medium leading-normal" href="/soar/code.html">SOAR</a>
+<a class="text-white text-sm font-medium leading-normal" href="/reports/code.html">Reports</a>
+<a class="text-white text-sm font-medium leading-normal" href="/settings/code.html">Settings</a>
+</div>
+</div>
+<div class="flex flex-1 justify-end gap-4">
+<div class="flex gap-2 relative">
+<button id="btn-notifications" class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 bg-[#283039] text-white gap-2 text-sm font-bold leading-normal tracking-[0.015em] min-w-0 px-3 hover:bg-[#3b4754]">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button id="btn-settings" class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 bg-[#283039] text-white gap-2 text-sm font-bold leading-normal tracking-[0.015em] min-w-0 px-3 hover:bg-[#3b4754]">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<div id="settings-menu" class="hidden absolute right-0 top-12 w-48 bg-[#1c2127] border border-[#3b4754] rounded-lg shadow-lg z-50">
+<button onclick="toggleTheme()" class="w-full px-4 py-3 text-left text-white hover:bg-[#283039] flex items-center gap-2">
+<span class="material-symbols-outlined">dark_mode</span>
+Cambiar Tema
+</button>
+</div>
+</div>
+</div>
+</header>
+<script src="/header-utils.js"></script>
+<div class="px-10 flex flex-1 justify-center py-5">
+<div class="layout-content-container flex flex-col max-w-[960px] flex-1">
+<div class="flex flex-wrap justify-between gap-3 p-4">
+<p class="text-white text-4xl font-black leading-tight tracking-[-0.033em] min-w-72">Reporting and Auditing</p>
+</div>
+<h2 class="text-white text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">Report Templates</h2>
+<div class="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-4 p-4">
+<div class="report-template flex flex-col gap-3 pb-3 bg-[#1a1f25] p-4 rounded-lg border border-[#283039] hover:border-primary transition-colors duration-200 cursor-pointer">
+<span class="material-symbols-outlined text-primary text-4xl">summarize</span>
+<div>
+<p class="text-white text-base font-medium leading-normal">Vulnerability Summary (OpenVAS)</p>
+<p class="text-[#9dabb9] text-sm font-normal leading-normal">A comprehensive summary of all identified vulnerabilities.</p>
+</div>
+</div>
+<div class="report-template flex flex-col gap-3 pb-3 bg-[#1a1f25] p-4 rounded-lg border border-[#283039] hover:border-primary transition-colors duration-200 cursor-pointer">
+<span class="material-symbols-outlined text-primary text-4xl">notifications_active</span>
+<div>
+<p class="text-white text-base font-medium leading-normal">Alert Summary (Wazuh/AI)</p>
+<p class="text-[#9dabb9] text-sm font-normal leading-normal">An overview of alerts generated by Wazuh and our AI engine.</p>
+</div>
+</div>
+<div class="report-template flex flex-col gap-3 pb-3 bg-[#1a1f25] p-4 rounded-lg border border-[#283039] hover:border-primary transition-colors duration-200 cursor-pointer">
+<span class="material-symbols-outlined text-primary text-4xl">verified_user</span>
+<div>
+<p class="text-white text-base font-medium leading-normal">Patch Compliance</p>
+<p class="text-[#9dabb9] text-sm font-normal leading-normal">Report on the status of software patches across your systems.</p>
+</div>
+</div>
+</div>
+<h2 class="text-white text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">Generated Reports</h2>
+<div class="overflow-x-auto p-4">
+<table class="w-full text-left text-sm text-gray-400">
+<thead class="text-xs text-gray-400 uppercase bg-[#1a1f25]">
+<tr>
+<th class="px-6 py-3 rounded-l-lg" scope="col">Name</th>
+<th class="px-6 py-3" scope="col">Date</th>
+<th class="px-6 py-3 rounded-r-lg text-right" scope="col">Download</th>
+</tr>
+</thead>
+<tbody>
+<tr class="bg-[#111418] border-b border-[#283039] hover:bg-[#1a1f25]">
+<td class="px-6 py-4 font-medium text-white whitespace-nowrap">Vulnerability Scan</td>
+<td class="px-6 py-4 text-gray-300">2023-09-30</td>
+<td class="px-6 py-4 text-right">
+<button class="btn-pdf text-primary hover:text-white mr-2" data-type="vulnerabilities"><span class="material-symbols-outlined align-middle">picture_as_pdf</span> PDF</button>
+<button class="btn-csv text-primary hover:text-white" data-type="vulnerabilities"><span class="material-symbols-outlined align-middle">description</span> CSV</button>
+</td>
+</tr>
+<tr class="bg-[#111418] border-b border-[#283039] hover:bg-[#1a1f25]">
+<td class="px-6 py-4 font-medium text-white whitespace-nowrap">Alert Summary</td>
+<td class="px-6 py-4 text-gray-300">2023-10-05</td>
+<td class="px-6 py-4 text-right">
+<button class="btn-pdf text-primary hover:text-white mr-2" data-type="alerts"><span class="material-symbols-outlined align-middle">picture_as_pdf</span> PDF</button>
+<button class="btn-csv text-primary hover:text-white" data-type="alerts"><span class="material-symbols-outlined align-middle">description</span> CSV</button>
+</td>
+</tr>
+<tr class="bg-[#111418] hover:bg-[#1a1f25]">
+<td class="px-6 py-4 font-medium text-white whitespace-nowrap">Patch Compliance Audit</td>
+<td class="px-6 py-4 text-gray-300">2023-10-01</td>
+<td class="px-6 py-4 text-right">
+<button class="btn-pdf text-primary hover:text-white mr-2" data-type="vulnerabilities"><span class="material-symbols-outlined align-middle">picture_as_pdf</span> PDF</button>
+<button class="btn-csv text-primary hover:text-white" data-type="vulnerabilities"><span class="material-symbols-outlined align-middle">description</span> CSV</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+<button class="fixed bottom-8 right-8 bg-primary text-white rounded-full p-4 shadow-lg hover:bg-blue-600 transition-colors duration-200">
+<span class="material-symbols-outlined text-3xl">psychology</span>
+</button>
+</div>
+<script src="reports.js"></script>
+</body></html>
