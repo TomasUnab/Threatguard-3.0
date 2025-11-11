@@ -91,12 +91,3 @@ Consulta la carpeta `docs/` para documentación detallada:
 Copyright © 2025 ThreatGuard. Todos los derechos reservados.
 
 Este software es propietario y confidencial. Queda estrictamente prohibida cualquier copia, modificación, distribución o uso no autorizado sin el permiso expreso por escrito del titular de los derechos de autor.
-
-## 👥 Contribuciones
-
-Las contribuciones son bienvenidas. Por favor:
-1. Fork el proyecto
-2. Crea una rama para tu feature
-3. Commit tus cambios
-4. Push a la rama
-5. Abre un Pull Request
