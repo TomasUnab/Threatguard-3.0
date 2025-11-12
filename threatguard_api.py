@@ -27,7 +27,7 @@ from sqlalchemy.orm import sessionmaker
 # Importaciones locales
 from src.utils.database import Alert, AlertRepository
 from src.utils.elasticsearch_client import es_client
-from soar_engine import soar_engine
+# from soar_engine import soar_engine  # TODO: Implementar módulo soar_engine
 from report_generator import (
     generate_vulnerability_report_pdf,
     generate_vulnerability_report_csv,
@@ -506,7 +506,7 @@ async def create_alert(alert: AlertCreate):
             "host_afectado": alert.title,
             "descripcion": alert.description
         }
-        await soar_engine.process_event("alert", event_data)
+        # await soar_engine.process_event("alert", event_data)  # TODO: Implementar SOAR
         
         return {"id": str(new_alert.id), "message": "Alerta creada correctamente"}
     finally:
@@ -708,28 +708,28 @@ async def get_elasticsearch_stats():
 @app.post("/soar/workflows")
 async def save_workflow(workflow_data: dict):
     """Guardar un workflow SOAR"""
-    workflow_id = workflow_data.get('id', str(uuid.uuid4()))
-    soar_engine.load_workflow(workflow_id, workflow_data)
-    return {"id": workflow_id, "message": "Workflow guardado"}
+    # TODO: Implementar SOAR engine
+    return {"error": "SOAR engine not implemented yet"}, 501
 
 @app.post("/soar/workflows/{workflow_id}/activate")
 async def activate_workflow(workflow_id: str):
     """Activar un workflow SOAR"""
-    soar_engine.activate_workflow(workflow_id)
-    return {"message": f"Workflow {workflow_id} activado"}
+    # TODO: Implementar SOAR engine
+    return {"error": "SOAR engine not implemented yet"}, 501
 
 @app.post("/soar/workflows/{workflow_id}/deactivate")
 async def deactivate_workflow(workflow_id: str):
     """Desactivar un workflow SOAR"""
-    soar_engine.deactivate_workflow(workflow_id)
-    return {"message": f"Workflow {workflow_id} desactivado"}
+    # TODO: Implementar SOAR engine
+    return {"error": "SOAR engine not implemented yet"}, 501
 
 @app.get("/soar/workflows")
 async def list_workflows():
     """Listar todos los workflows"""
+    # TODO: Implementar SOAR engine
     return {
-        "workflows": list(soar_engine.workflows.keys()),
-        "active": list(soar_engine.active_workflows)
+        "workflows": [],
+        "active": []
     }
 
 @app.get("/reports/vulnerabilities/pdf")
