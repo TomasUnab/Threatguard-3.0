@@ -29,8 +29,6 @@ services:
       - DATASET_PATH=/app/data
     volumes:
       - ./data:/app/data
-      - ./models:/app/models
-      - ./logs:/app/logs
       - ./config:/app/config
       - threatguard_models:/app/models
       - threatguard_logs:/app/logs
