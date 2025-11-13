@@ -2,6 +2,7 @@
 
 ## 📋 Tabla de Contenidos
 - [Requisitos de la Instancia EC2](#requisitos-de-la-instancia-ec2)
+- [Extender Volumen EBS](#extender-volumen-ebs)
 - [Archivos Necesarios](#archivos-necesarios)
 - [Método 1: Despliegue Rápido con Script](#método-1-despliegue-rápido-con-script)
 - [Método 2: Despliegue Manual](#método-2-despliegue-manual)

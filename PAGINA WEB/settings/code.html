@@ -124,6 +124,10 @@ Cambiar Tema
 <span class="material-symbols-outlined">label</span>
 <p class="text-white text-sm font-medium leading-normal">Gestión de Activos (Tags)</p>
 </div>
+<div data-section="snort" class="menu-item flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-primary/10 transition-colors cursor-pointer">
+<span class="material-symbols-outlined">shield</span>
+<p class="text-white text-sm font-medium leading-normal">Snort IDS</p>
+</div>
 </div>
 </div>
 </aside>
@@ -536,6 +540,171 @@ class="pl-10 pr-4 py-2 bg-[#283039] text-white rounded-lg border border-[#3b4754
         </div>
     </div>
 </div>
+
+<!-- Sección de Snort IDS -->
+<div id="section-snort" class="section-content max-w-6xl mx-auto hidden">
+    <div class="flex flex-wrap justify-between gap-3 p-4 mb-8">
+        <div class="flex min-w-72 flex-col gap-3">
+            <p class="text-white text-3xl font-bold leading-tight tracking-[-0.033em]">Snort IDS</p>
+            <p class="text-[#9dabb9] text-sm">Configure reglas y monitoree el sistema de detección de intrusiones.</p>
+        </div>
+        <button id="restart-snort-btn" class="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
+            <span class="material-symbols-outlined">restart_alt</span>
+            <span>Reiniciar Snort</span>
+        </button>
+    </div>
+    
+    <!-- Estado de Snort -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div class="bg-[#111418] p-4 rounded-xl border border-[#3b4754]">
+            <div class="flex items-center gap-3 mb-2">
+                <span class="material-symbols-outlined text-green-400">check_circle</span>
+                <p class="text-[#9dabb9] text-sm">Estado</p>
+            </div>
+            <p class="text-white text-xl font-bold" id="snort-status">Activo</p>
+        </div>
+        
+        <div class="bg-[#111418] p-4 rounded-xl border border-[#3b4754]">
+            <div class="flex items-center gap-3 mb-2">
+                <span class="material-symbols-outlined text-blue-400">notifications</span>
+                <p class="text-[#9dabb9] text-sm">Alertas Hoy</p>
+            </div>
+            <p class="text-white text-xl font-bold" id="snort-alerts-today">0</p>
+        </div>
+        
+        <div class="bg-[#111418] p-4 rounded-xl border border-[#3b4754]">
+            <div class="flex items-center gap-3 mb-2">
+                <span class="material-symbols-outlined text-purple-400">rule</span>
+                <p class="text-[#9dabb9] text-sm">Reglas Activas</p>
+            </div>
+            <p class="text-white text-xl font-bold" id="snort-rules-count">0</p>
+        </div>
+        
+        <div class="bg-[#111418] p-4 rounded-xl border border-[#3b4754]">
+            <div class="flex items-center gap-3 mb-2">
+                <span class="material-symbols-outlined text-yellow-400">network_check</span>
+                <p class="text-[#9dabb9] text-sm">Interfaz</p>
+            </div>
+            <p class="text-white text-xl font-bold">eth0</p>
+        </div>
+    </div>
+    
+    <!-- Tabs -->
+    <div class="flex gap-2 mb-6 border-b border-[#3b4754]">
+        <button id="tab-snort-rules" class="snort-tab px-6 py-3 text-primary border-b-2 border-primary font-medium">
+            Reglas
+        </button>
+        <button id="tab-snort-alerts" class="snort-tab px-6 py-3 text-[#9dabb9] hover:text-white transition-colors">
+            Alertas Recientes
+        </button>
+        <button id="tab-snort-config" class="snort-tab px-6 py-3 text-[#9dabb9] hover:text-white transition-colors">
+            Configuración
+        </button>
+    </div>
+    
+    <!-- Panel de Reglas -->
+    <div id="panel-snort-rules" class="snort-panel">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-white text-xl font-bold">Reglas de Detección</h3>
+            <button id="add-rule-btn" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2">
+                <span class="material-symbols-outlined" style="font-size: 20px;">add</span>
+                <span>Agregar Regla</span>
+            </button>
+        </div>
+        
+        <div class="bg-[#111418] rounded-xl border border-[#3b4754] p-6">
+            <div class="mb-4">
+                <label class="text-white text-sm font-medium mb-2 block">Archivo de Reglas (local.rules)</label>
+                <textarea id="snort-rules-editor" rows="20" class="w-full px-4 py-3 bg-[#1c2127] text-white rounded-lg border border-[#3b4754] focus:outline-none focus:border-primary font-mono text-sm" placeholder="# Reglas de Snort\n# Ejemplo:\nalert icmp any any -> any any (msg:\"ICMP Ping Detected\"; sid:1000001; rev:1;)"></textarea>
+            </div>
+            <div class="flex gap-3">
+                <button id="save-rules-btn" class="px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-medium">
+                    Guardar Reglas
+                </button>
+                <button id="validate-rules-btn" class="px-6 py-3 bg-[#283039] text-white rounded-lg hover:bg-[#3b4754] transition-colors font-medium">
+                    Validar Sintaxis
+                </button>
+                <button id="reload-rules-btn" class="px-6 py-3 bg-[#283039] text-white rounded-lg hover:bg-[#3b4754] transition-colors font-medium">
+                    Recargar desde Servidor
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Panel de Alertas Recientes -->
+    <div id="panel-snort-alerts" class="snort-panel hidden">
+        <div class="bg-[#111418] rounded-xl border border-[#3b4754] overflow-hidden">
+            <table class="w-full">
+                <thead class="bg-[#1c2127]">
+                    <tr class="border-b border-[#3b4754]">
+                        <th class="px-4 py-3 text-left text-[#9dabb9] text-xs font-medium uppercase">Timestamp</th>
+                        <th class="px-4 py-3 text-left text-[#9dabb9] text-xs font-medium uppercase">Mensaje</th>
+                        <th class="px-4 py-3 text-left text-[#9dabb9] text-xs font-medium uppercase">IP Origen</th>
+                        <th class="px-4 py-3 text-left text-[#9dabb9] text-xs font-medium uppercase">IP Destino</th>
+                        <th class="px-4 py-3 text-left text-[#9dabb9] text-xs font-medium uppercase">Protocolo</th>
+                        <th class="px-4 py-3 text-left text-[#9dabb9] text-xs font-medium uppercase">Prioridad</th>
+                    </tr>
+                </thead>
+                <tbody id="snort-alerts-table">
+                    <tr>
+                        <td colspan="6" class="px-4 py-8 text-center text-[#9dabb9]">
+                            Cargando alertas...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Panel de Configuración -->
+    <div id="panel-snort-config" class="snort-panel hidden">
+        <div class="bg-[#111418] rounded-xl border border-[#3b4754] p-6">
+            <h3 class="text-white text-xl font-bold mb-6">Configuración de Snort</h3>
+            
+            <div class="space-y-6">
+                <div>
+                    <label class="text-white text-sm font-medium mb-2 block">Interfaz de Red</label>
+                    <input type="text" value="eth0" class="w-full px-4 py-2 bg-[#1c2127] text-white rounded-lg border border-[#3b4754] focus:outline-none focus:border-primary" readonly>
+                    <p class="text-[#9dabb9] text-xs mt-1">Interfaz que Snort está monitoreando</p>
+                </div>
+                
+                <div>
+                    <label class="text-white text-sm font-medium mb-2 block">Modo de Alerta</label>
+                    <select class="w-full px-4 py-2 bg-[#1c2127] text-white rounded-lg border border-[#3b4754] focus:outline-none focus:border-primary">
+                        <option value="fast" selected>Fast (alert_fast.txt)</option>
+                        <option value="full">Full (alert)</option>
+                        <option value="console">Console</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="text-white text-sm font-medium mb-2 block">Archivo de Log</label>
+                    <input type="text" value="/var/log/snort/alert_fast.txt" class="w-full px-4 py-2 bg-[#1c2127] text-white rounded-lg border border-[#3b4754] focus:outline-none focus:border-primary" readonly>
+                </div>
+                
+                <div class="flex items-center gap-3">
+                    <input type="checkbox" id="snort-auto-start" checked class="w-5 h-5 bg-[#1c2127] border-[#3b4754] rounded focus:ring-primary">
+                    <label for="snort-auto-start" class="text-white text-sm">Iniciar automáticamente con el sistema</label>
+                </div>
+                
+                <div class="flex items-center gap-3">
+                    <input type="checkbox" id="snort-send-api" checked class="w-5 h-5 bg-[#1c2127] border-[#3b4754] rounded focus:ring-primary">
+                    <label for="snort-send-api" class="text-white text-sm">Enviar alertas a ThreatGuard API</label>
+                </div>
+            </div>
+            
+            <div class="flex gap-3 mt-6">
+                <button class="px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-medium">
+                    Guardar Configuración
+                </button>
+                <button class="px-6 py-3 bg-[#283039] text-white rounded-lg hover:bg-[#3b4754] transition-colors font-medium">
+                    Restaurar Valores por Defecto
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 </main>
 </div>
 <button class="fixed bottom-8 right-8 flex items-center justify-center w-14 h-14 bg-primary text-white rounded-full shadow-lg hover:bg-primary/90 transition-colors z-50">
@@ -554,4 +723,5 @@ class="pl-10 pr-4 py-2 bg-[#283039] text-white rounded-lg border border-[#3b4754
 </div>
 </div>
 <script src="/settings/settings-v2.js?v=20241207"></script>
+<script src="/settings/snort-settings.js"></script>
 </body></html>

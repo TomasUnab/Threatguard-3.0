@@ -2458,6 +2458,87 @@ async def execute_sql_query(sql_query: SQLQuery):
             detail=f"Error ejecutando query: {str(e)}"
         )
 
+# ============================================================================
+# SNORT IDS ENDPOINTS
+# ============================================================================
+
+@app.get("/snort/rules")
+async def get_snort_rules():
+    """Obtener reglas de Snort desde el archivo local.rules"""
+    try:
+        rules_file = Path("config/local.rules")
+        if rules_file.exists():
+            with open(rules_file, 'r') as f:
+                rules_content = f.read()
+            
+            # Contar reglas activas (no comentadas)
+            active_rules = len([line for line in rules_content.split('\n') 
+                              if line.strip() and not line.strip().startswith('#')])
+            
+            return {
+                "rules": rules_content,
+                "count": active_rules,
+                "file": str(rules_file)
+            }
+        else:
+            return {"rules": "", "count": 0, "error": "Archivo no encontrado"}
+    except Exception as e:
+        logger.error(f"Error leyendo reglas de Snort: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/snort/rules")
+async def save_snort_rules(rules_data: dict):
+    """Guardar reglas de Snort en el archivo local.rules"""
+    try:
+        rules_content = rules_data.get("rules", "")
+        rules_file = Path("config/local.rules")
+        
+        # Crear backup
+        if rules_file.exists():
+            backup_file = Path(f"config/local.rules.backup.{datetime.now().strftime('%Y%m%d_%H%M%S')}")
+            with open(rules_file, 'r') as f:
+                with open(backup_file, 'w') as bf:
+                    bf.write(f.read())
+        
+        # Guardar nuevas reglas
+        with open(rules_file, 'w') as f:
+            f.write(rules_content)
+        
+        logger.info(f"Reglas de Snort guardadas: {len(rules_content)} caracteres")
+        
+        return {
+            "success": True,
+            "message": "Reglas guardadas correctamente",
+            "file": str(rules_file)
+        }
+    except Exception as e:
+        logger.error(f"Error guardando reglas de Snort: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/snort/restart")
+async def restart_snort():
+    """Reiniciar el contenedor de Snort"""
+    try:
+        import subprocess
+        result = subprocess.run(
+            ["docker", "restart", "threatguard-snort"],
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+        
+        if result.returncode == 0:
+            logger.info("Snort reiniciado correctamente")
+            return {"success": True, "message": "Snort reiniciado correctamente"}
+        else:
+            logger.error(f"Error reiniciando Snort: {result.stderr}")
+            raise HTTPException(status_code=500, detail=result.stderr)
+    except subprocess.TimeoutExpired:
+        raise HTTPException(status_code=500, detail="Timeout al reiniciar Snort")
+    except Exception as e:
+        logger.error(f"Error reiniciando Snort: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 # Importar rutas de assets
 try:
     from src.api.assets_api import router as assets_router
