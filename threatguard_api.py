@@ -315,10 +315,9 @@ async def get_dashboard_stats():
         benigno = db.query(Alert).filter(Alert.ai_classification == "BENIGNO", Alert.status == "open").count()
         total = alta + media + baja + benigno
         
-        # Top 5 alertas recientes de ML Model (temporalmente incluye benignas para debugging)
+        # Top 5 alertas recientes (todas las fuentes, ordenadas por timestamp)
         top_alerts = db.query(Alert)\
             .filter(Alert.status == "open")\
-            .filter(Alert.source == "ML Model")\
             .order_by(Alert.timestamp.desc())\
             .limit(5)\
             .all()
@@ -331,10 +330,10 @@ async def get_dashboard_stats():
             "total_alertas": total,
             "top_alerts": [
                 {
-                    "descripcion": alert.description[:80] if alert.description else "Sin descripción",
-                    "host": alert.raw_data.get("source_ip") if (alert.raw_data and alert.source == "Snort IDS") else alert.title,
-                    "prioridad": alert.ai_classification or alert.severity,
-                    "tipo": alert.title if alert.source == "Snort IDS" else None
+                    "descripcion": (alert.description[:80] if alert.description else alert.title)[:80] if alert.description or alert.title else "Sin descripción",
+                    "host": alert.raw_data.get("source_ip") if (alert.raw_data and "source_ip" in alert.raw_data) else (alert.title if alert.title else "Unknown"),
+                    "prioridad": alert.ai_classification or alert.severity or "BAJA",
+                    "timestamp": alert.timestamp.isoformat() if alert.timestamp else None
                 }
                 for alert in top_alerts
             ]

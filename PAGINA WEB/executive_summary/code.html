@@ -494,19 +494,25 @@ async function loadDashboard() {
         // Actualizar tabla top alertas
         const tbody = document.getElementById('alerts-table-body');
         if (data.top_alerts && data.top_alerts.length > 0) {
-            tbody.innerHTML = data.top_alerts.map(alert => `
+            tbody.innerHTML = data.top_alerts.map(alert => {
+                const prioClass = alert.prioridad === 'ALTA' ? 'bg-red-500/20 text-red-500' : 
+                                 alert.prioridad === 'MEDIA' ? 'bg-yellow-500/20 text-yellow-500' : 
+                                 alert.prioridad === 'BAJA' ? 'bg-blue-500/20 text-blue-500' : 
+                                 'bg-green-500/20 text-green-500';
+                return `
                 <tr class="border-t border-t-[#3b4754] hover:bg-[#3b4754]/50">
                     <td class="h-[60px] px-4 py-2 text-[#9dabb9] text-sm font-normal leading-normal">${alert.descripcion}</td>
                     <td class="h-[60px] px-4 py-2 text-[#9dabb9] text-sm font-normal leading-normal">${alert.host}</td>
                     <td class="h-[60px] px-4 py-2 text-sm font-normal leading-normal">
-                        <span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ${alert.prioridad === 'ALTA' ? 'bg-red-500/20 text-red-500' : 'bg-yellow-500/20 text-yellow-500'}">${alert.prioridad}</span>
+                        <span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ${prioClass}">${alert.prioridad}</span>
                     </td>
                 </tr>
-            `).join('');
+                `;
+            }).join('');
         } else {
             tbody.innerHTML = `
                 <tr class="border-t border-t-[#3b4754]">
-                    <td colspan="3" class="h-[60px] px-4 py-2 text-[#9dabb9] text-sm text-center">No hay alertas recientes de alta/media prioridad</td>
+                    <td colspan="3" class="h-[60px] px-4 py-2 text-[#9dabb9] text-sm text-center">No hay alertas recientes</td>
                 </tr>
             `;
         }
