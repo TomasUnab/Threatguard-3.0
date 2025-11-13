@@ -905,7 +905,7 @@ async function loadSnortAlerts() {
         const tbody = document.getElementById('snort-alerts-table');
         
         if (snortAlerts.length > 0) {
-            tbody.innerHTML = snortAlerts.slice(0, 10).map(alert => {
+            tbody.innerHTML = snortAlerts.map(alert => {
                 // Parsear información de la descripción
                 const description = alert.descripcion || '';
                 let protocol = 'N/A', srcIp = 'N/A', dstIp = 'N/A', ruleId = '';
