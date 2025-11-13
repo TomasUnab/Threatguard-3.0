@@ -28,12 +28,13 @@ from sqlalchemy.orm import sessionmaker
 from src.utils.database import Alert, AlertRepository
 from src.utils.elasticsearch_client import es_client
 # from soar_engine import soar_engine  # TODO: Implementar módulo soar_engine
-from report_generator import (
-    generate_vulnerability_report_pdf,
-    generate_vulnerability_report_csv,
-    generate_alert_report_pdf,
-    generate_alert_report_csv
-)
+# Reportes PDF/CSV deshabilitados temporalmente. El import de report_generator debe permanecer comentado.
+# from report_generator import (
+#     generate_vulnerability_report_pdf,
+#     generate_vulnerability_report_csv,
+#     generate_alert_report_pdf,
+#     generate_alert_report_csv
+# )
 from fastapi.responses import StreamingResponse
 
 # Configurar Redis
@@ -735,28 +736,27 @@ async def list_workflows():
 @app.get("/reports/vulnerabilities/pdf")
 async def download_vulnerability_report_pdf():
     """Descargar reporte de vulnerabilidades en PDF"""
-    # Obtener vulnerabilidades (simulado)
-    vulnerabilities = [
-        {"cve_id": "CVE-2023-1234", "cvss": 9.8, "description": "Critical vulnerability", "affected_hosts": "192.168.1.100", "affected_software": "Apache 2.4"},
-        {"cve_id": "CVE-2023-5678", "cvss": 7.5, "description": "High severity issue", "affected_hosts": "192.168.1.101", "affected_software": "MySQL 5.7"},
-    ]
-    
-    pdf_buffer = generate_vulnerability_report_pdf(vulnerabilities)
-    return StreamingResponse(
-        pdf_buffer,
-        media_type="application/pdf",
-        headers={"Content-Disposition": f"attachment; filename=vulnerability_report_{datetime.now().strftime('%Y%m%d')}.pdf"}
+    # Temporalmente deshabilitado - requiere módulo report_generator
+    raise HTTPException(
+        status_code=501,
+        detail="Generación de reportes PDF no disponible. Use /reports/vulnerabilities/csv para exportar datos."
     )
 
 @app.get("/reports/vulnerabilities/csv")
 async def download_vulnerability_report_csv():
     """Descargar reporte de vulnerabilidades en CSV"""
+    # Implementación simple sin report_generator
     vulnerabilities = [
         {"cve_id": "CVE-2023-1234", "cvss": 9.8, "description": "Critical vulnerability", "affected_hosts": "192.168.1.100", "affected_software": "Apache 2.4"},
         {"cve_id": "CVE-2023-5678", "cvss": 7.5, "description": "High severity issue", "affected_hosts": "192.168.1.101", "affected_software": "MySQL 5.7"},
     ]
     
-    csv_data = generate_vulnerability_report_csv(vulnerabilities)
+    # Generar CSV manualmente
+    csv_lines = ["CVE ID,CVSS,Description,Affected Hosts,Affected Software"]
+    for vuln in vulnerabilities:
+        csv_lines.append(f"{vuln['cve_id']},{vuln['cvss']},{vuln['description']},{vuln['affected_hosts']},{vuln['affected_software']}")
+    csv_data = "\n".join(csv_lines)
+    
     return StreamingResponse(
         iter([csv_data]),
         media_type="text/csv",
@@ -785,11 +785,10 @@ async def download_alert_report_pdf():
                 "ip_origen": alert.raw_data.get("source_ip") if alert.raw_data else None
             })
         
-        pdf_buffer = generate_alert_report_pdf(alerts)
-        return StreamingResponse(
-            pdf_buffer,
-            media_type="application/pdf",
-            headers={"Content-Disposition": f"attachment; filename=alert_report_{datetime.now().strftime('%Y%m%d')}.pdf"}
+        # Temporalmente deshabilitado - requiere módulo report_generator
+        raise HTTPException(
+            status_code=501,
+            detail="Generación de reportes PDF no disponible. Use /reports/alerts/csv para exportar datos."
         )
     finally:
         db.close()
@@ -816,7 +815,12 @@ async def download_alert_report_csv():
                 "ip_origen": alert.raw_data.get("source_ip") if alert.raw_data else None
             })
         
-        csv_data = generate_alert_report_csv(alerts)
+        # Generar CSV manualmente
+        csv_lines = ["Prioridad IA,Estado,Timestamp,Descripción,Host Afectado,IP Origen"]
+        for alert in alerts:
+            csv_lines.append(f"{alert['prioridad_ia']},{alert['estado']},{alert['timestamp']},{alert['descripcion']},{alert['host_afectado']},{alert['ip_origen']}")
+        csv_data = "\n".join(csv_lines)
+        
         return StreamingResponse(
             iter([csv_data]),
             media_type="text/csv",
