@@ -308,11 +308,24 @@ async def get_dashboard_stats():
     db = SessionLocal()
     
     try:
-        # Contar alertas por severidad
-        alta = db.query(Alert).filter(Alert.ai_classification == "ALTA", Alert.status == "open").count()
-        media = db.query(Alert).filter(Alert.ai_classification == "MEDIA", Alert.status == "open").count()
-        baja = db.query(Alert).filter(Alert.ai_classification == "BAJA", Alert.status == "open").count()
-        benigno = db.query(Alert).filter(Alert.ai_classification == "BENIGNO", Alert.status == "open").count()
+        # Contar alertas por severidad (ai_classification o severity si no tiene ai_classification)
+        from sqlalchemy import or_, and_
+        alta = db.query(Alert).filter(
+            or_(Alert.ai_classification == "ALTA", and_(Alert.ai_classification == None, Alert.severity == "ALTA")),
+            Alert.status == "open"
+        ).count()
+        media = db.query(Alert).filter(
+            or_(Alert.ai_classification == "MEDIA", and_(Alert.ai_classification == None, Alert.severity == "MEDIA")),
+            Alert.status == "open"
+        ).count()
+        baja = db.query(Alert).filter(
+            or_(Alert.ai_classification == "BAJA", and_(Alert.ai_classification == None, Alert.severity == "BAJA")),
+            Alert.status == "open"
+        ).count()
+        benigno = db.query(Alert).filter(
+            or_(Alert.ai_classification == "BENIGNO", and_(Alert.ai_classification == None, Alert.severity == "BENIGNO")),
+            Alert.status == "open"
+        ).count()
         total = alta + media + baja + benigno
         
         # Top 5 alertas recientes (todas las fuentes, ordenadas por timestamp)
