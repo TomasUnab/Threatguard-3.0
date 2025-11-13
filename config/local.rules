@@ -20,7 +20,7 @@ alert icmp any any -> any any ( msg:"ICMP Ping Sweep - Network Reconnaissance"; 
 alert icmp any any -> any any ( msg:"ICMP with Suspicious Payload Size"; dsize:>1000; sid:1000003; rev:1; priority:1; classtype:suspicious-traffic; )
 
 # ICMP fragmentado (posible evasión)
-alert icmp any any -> any any ( msg:"Fragmented ICMP Packet - Evasion Attempt"; fragbits:M; sid:1000004; rev:1; priority:2; classtype:bad-unknown; )
+# alert icmp any any -> any any ( msg:"Fragmented ICMP Packet - Evasion Attempt"; fragbits:M; sid:1000004; rev:1; priority:2; classtype:bad-unknown; )
 
 # ===========================
 # Port Scan Detection
@@ -35,7 +35,7 @@ alert tcp any any -> any any ( msg:"TCP NULL Scan Detected"; flags:0; detection_
 alert tcp any any -> any any ( msg:"TCP XMAS Scan Detected"; flags:FPU,12; detection_filter:track by_src, count 10, seconds 60; sid:1000007; rev:1; priority:2; classtype:attempted-recon; )
 
 # FIN Scan
-alert tcp any any -> any any ( msg:"TCP FIN Scan Detected"; flags:F,12; detection_filter:track by_src, count 15, seconds 60; sid:1000008; rev:1; priority:2; classtype:attempted-recon; )
+# alert tcp any any -> any any ( msg:"TCP FIN Scan Detected"; flags:F,12; detection_filter:track by_src, count 15, seconds 60; sid:1000008; rev:1; priority:2; classtype:attempted-recon; )
 
 # ===========================
 # Brute Force Attacks

@@ -1,0 +1,108 @@
+========================================
+RESUMEN DE CAMBIOS - ThreatGuard 3.0
+========================================
+
+ARCHIVOS MODIFICADOS:
+---------------------
+1. .gitignore
+   - Agregado filtros para archivos sensibles y temporales
+   - Excluye modelos grandes, logs, y configuraciones locales
+
+2. PAGINA WEB/reports/code.html
+   - Interfaz completa de reportes renovada
+   - Botones "Con Template" y "Sin Template"
+   - Estadísticas y gestión de reportes
+
+3. PAGINA WEB/settings/code.html
+   - Sidebar fijo (fixed position)
+   - Tab de Políticas agregado
+   - Modal de edición de reglas
+
+4. PAGINA WEB/settings/snort-settings.js
+   - Integración con políticas
+   - Función editRule actualizada
+
+5. config/local.rules
+   - Reglas de Snort actualizadas
+
+6. config/snort_lists.json
+   - Whitelist/Blocklist persistente
+
+7. threatguard_api.py
+   - Endpoint /reports/generate con generación real de PDFs
+   - Usa reportlab para crear PDFs con datos de BD
+   - Tablas y resúmenes incluidos
+
+ARCHIVOS NUEVOS:
+----------------
+1. CHANGELOG.md
+   - Historial completo de cambios
+   - Instrucciones para contribuidores
+
+2. GIT_PUSH.bat
+   - Script automatizado para subir cambios
+   - Simplifica el proceso de commit y push
+
+3. INSTALL.md
+   - Guía completa de instalación
+   - Requisitos, pasos, y troubleshooting
+
+4. PAGINA WEB/reports/reports-new.js
+   - Sistema completo de reportes
+   - Generación con/sin template
+   - Descarga automática de PDFs
+
+5. PAGINA WEB/settings/snort-policies.html
+   - Panel de políticas por categoría
+   - Cards con toggles y contadores
+
+6. PAGINA WEB/settings/snort-policies.js
+   - Gestión de políticas
+   - Edición de reglas
+   - Integración con backend
+
+7. transfer_to_ec2.ps1
+   - Script para transferir a AWS EC2
+
+8. COMMIT_SUMMARY.txt
+   - Este archivo
+
+FUNCIONALIDADES AGREGADAS:
+---------------------------
+✅ Sistema de reportes con generación real de PDFs
+✅ Gestión de políticas Snort por categoría
+✅ Edición completa de reglas Snort
+✅ Sidebar fijo en Settings
+✅ Documentación completa (INSTALL.md, CHANGELOG.md)
+✅ Scripts de automatización (GIT_PUSH.bat)
+
+DEPENDENCIAS:
+-------------
+- reportlab>=4.0.0 (ya incluido en requirements.txt)
+
+COMANDOS PARA SUBIR:
+--------------------
+Windows:
+  GIT_PUSH.bat
+
+Linux/Mac:
+  git add .
+  git commit -m "feat: Sistema completo de reportes, políticas Snort y mejoras UI"
+  git push origin master
+
+VERIFICACIÓN POST-PUSH:
+-----------------------
+1. Verificar en GitHub que todos los archivos se subieron
+2. Clonar en otra máquina para probar instalación limpia
+3. Ejecutar: docker-compose up -d --build
+4. Verificar funcionalidades nuevas
+
+NOTAS IMPORTANTES:
+------------------
+⚠️ NO subir archivos .ini con credenciales reales
+⚠️ NO subir modelos .pkl (son muy grandes)
+⚠️ Verificar que .gitignore esté funcionando
+
+========================================
+Listo para subir al repositorio
+========================================

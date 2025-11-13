@@ -20,80 +20,344 @@ document.querySelectorAll('.snort-tab').forEach(tab => {
     });
 });
 
+// Sample rules data
+const sampleRules = [
+    { sid: 1000001, category: 'network', message: 'ICMP Ping Detected', protocol: 'icmp', enabled: true },
+    { sid: 1000002, category: 'network', message: 'TCP SYN Flood', protocol: 'tcp', enabled: true },
+    { sid: 1000003, category: 'web', message: 'SQL Injection Attempt', protocol: 'tcp', enabled: true },
+    { sid: 1000004, category: 'web', message: 'XSS Attack Detected', protocol: 'tcp', enabled: false },
+    { sid: 1000005, category: 'malware', message: 'Malware Download Attempt', protocol: 'tcp', enabled: true },
+    { sid: 1000006, category: 'dos', message: 'UDP Flood Detected', protocol: 'udp', enabled: true },
+    { sid: 1000007, category: 'scan', message: 'Port Scan Detected', protocol: 'tcp', enabled: true },
+    { sid: 1000008, category: 'network', message: 'DNS Query Anomaly', protocol: 'udp', enabled: false },
+    { sid: 1000009, category: 'web', message: 'Directory Traversal', protocol: 'http', enabled: true },
+    { sid: 1000010, category: 'malware', message: 'Suspicious Executable', protocol: 'tcp', enabled: true }
+];
+
+let rulesData = JSON.parse(JSON.stringify(sampleRules));
+
 // Load Snort rules
 async function loadSnortRules() {
-    try {
-        const response = await fetch(`${API_URL}/snort/rules`);
-        if (response.ok) {
-            const data = await response.json();
-            document.getElementById('snort-rules-editor').value = data.rules || '';
-            document.getElementById('snort-rules-count').textContent = data.count || 0;
-        }
-    } catch (error) {
-        console.error('Error loading Snort rules:', error);
+    const tbody = document.getElementById('rules-table-body');
+    
+    if (rulesData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="px-4 py-8 text-center text-[#9dabb9]">No hay reglas configuradas</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = rulesData.map((rule, index) => `
+        <tr class="border-b border-[#3b4754] hover:bg-[#1c2127]">
+            <td class="px-4 py-3">
+                <input type="checkbox" class="rule-checkbox w-4 h-4 bg-[#283039] border-[#3b4754] rounded" data-index="${index}">
+            </td>
+            <td class="px-4 py-3 text-white text-sm font-mono">${rule.sid}</td>
+            <td class="px-4 py-3">
+                <span class="px-2 py-1 rounded text-xs ${
+                    rule.category === 'network' ? 'bg-blue-500/20 text-blue-400' :
+                    rule.category === 'web' ? 'bg-purple-500/20 text-purple-400' :
+                    rule.category === 'malware' ? 'bg-red-500/20 text-red-400' :
+                    rule.category === 'dos' ? 'bg-orange-500/20 text-orange-400' :
+                    'bg-yellow-500/20 text-yellow-400'
+                }">
+                    ${rule.category.toUpperCase()}
+                </span>
+            </td>
+            <td class="px-4 py-3 text-white text-sm">${rule.message}</td>
+            <td class="px-4 py-3 text-white text-sm">${rule.protocol.toUpperCase()}</td>
+            <td class="px-4 py-3">
+                <button onclick="toggleRule(${index})" class="px-3 py-1 rounded text-xs font-medium ${
+                    rule.enabled ? 'bg-green-500/20 text-green-400' : 'bg-gray-500/20 text-gray-400'
+                }">
+                    ${rule.enabled ? 'Activa' : 'Inactiva'}
+                </button>
+            </td>
+            <td class="px-4 py-3">
+                <div class="flex gap-2">
+                    <button onclick="editRule(${index})" class="text-blue-400 hover:text-blue-300">
+                        <span class="material-symbols-outlined" style="font-size: 18px;">edit</span>
+                    </button>
+                    <button onclick="deleteRule(${index})" class="text-red-400 hover:text-red-300">
+                        <span class="material-symbols-outlined" style="font-size: 18px;">delete</span>
+                    </button>
+                </div>
+            </td>
+        </tr>
+    `).join('');
+    
+    const countElement = document.getElementById('snort-rules-count');
+    if (countElement) {
+        countElement.textContent = rulesData.filter(r => r.enabled).length;
     }
 }
 
-// Save Snort rules
-document.getElementById('save-rules-btn')?.addEventListener('click', async () => {
-    const rules = document.getElementById('snort-rules-editor').value;
-    const btn = document.getElementById('save-rules-btn');
-    const originalText = btn.textContent;
+window.toggleRule = async (index) => {
+    if (rulesData[index]) {
+        const rule = rulesData[index];
+        try {
+            const response = await fetch(`${API_URL}/snort/rules/${rule.sid}/toggle`, {
+                method: 'PATCH'
+            });
+            
+            if (response.ok) {
+                rule.enabled = !rule.enabled;
+                loadSnortRules();
+                showNotification(`Regla ${rule.enabled ? 'activada' : 'desactivada'} en Snort`, 'success');
+            } else {
+                showNotification('Error al actualizar regla', 'error');
+            }
+        } catch (error) {
+            showNotification('Error de conexión', 'error');
+        }
+    }
+};
+
+// editRule function is now in snort-policies.js
+
+window.deleteRule = async (index) => {
+    if (confirm('¿Eliminar esta regla de Snort?')) {
+        const rule = rulesData[index];
+        try {
+            const response = await fetch(`${API_URL}/snort/rules/${rule.sid}`, {
+                method: 'DELETE'
+            });
+            
+            if (response.ok) {
+                // Remove from both arrays
+                rulesData.splice(index, 1);
+                const sampleIndex = sampleRules.findIndex(r => r.sid === rule.sid);
+                if (sampleIndex !== -1) {
+                    sampleRules.splice(sampleIndex, 1);
+                }
+                loadSnortRules();
+                showNotification('Regla eliminada de Snort', 'success');
+            } else {
+                showNotification('Error al eliminar regla', 'error');
+            }
+        } catch (error) {
+            showNotification('Error de conexión', 'error');
+        }
+    }
+};
+
+// Search and filter rules
+document.getElementById('search-rules')?.addEventListener('input', (e) => {
+    const search = e.target.value.toLowerCase();
+    const categoryFilter = document.getElementById('filter-category');
+    const category = categoryFilter ? categoryFilter.value : '';
     
+    const filtered = [...sampleRules].filter(rule => {
+        const matchSearch = rule.message.toLowerCase().includes(search) || rule.sid.toString().includes(search);
+        const matchCategory = !category || rule.category === category;
+        return matchSearch && matchCategory;
+    });
+    
+    rulesData = filtered;
+    loadSnortRules();
+});
+
+document.getElementById('filter-category')?.addEventListener('change', () => {
+    const searchInput = document.getElementById('search-rules');
+    if (searchInput) {
+        searchInput.dispatchEvent(new Event('input'));
+    }
+});
+
+// Close modal on outside click
+document.getElementById('add-rule-modal')?.addEventListener('click', (e) => {
+    if (e.target.id === 'add-rule-modal') {
+        document.getElementById('add-rule-modal').classList.add('hidden');
+    }
+});
+
+// Select all rules
+setTimeout(() => {
+    const selectAll = document.getElementById('select-all-rules');
+    if (selectAll) {
+        selectAll.addEventListener('change', (e) => {
+            document.querySelectorAll('.rule-checkbox').forEach(cb => {
+                cb.checked = e.target.checked;
+            });
+        });
+    }
+}, 500);
+
+// Bulk actions
+document.getElementById('enable-selected-btn')?.addEventListener('click', async () => {
+    const selected = Array.from(document.querySelectorAll('.rule-checkbox:checked')).map(cb => parseInt(cb.dataset.index));
+    if (selected.length === 0) {
+        showNotification('Seleccione al menos una regla', 'error');
+        return;
+    }
+    
+    let updated = 0;
+    for (const index of selected) {
+        if (rulesData[index] && !rulesData[index].enabled) {
+            try {
+                const response = await fetch(`${API_URL}/snort/rules/${rulesData[index].sid}/toggle`, { method: 'PATCH' });
+                if (response.ok) {
+                    rulesData[index].enabled = true;
+                    updated++;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+    }
+    loadSnortRules();
+    showNotification(`${updated} reglas activadas en Snort`, 'success');
+});
+
+document.getElementById('disable-selected-btn')?.addEventListener('click', async () => {
+    const selected = Array.from(document.querySelectorAll('.rule-checkbox:checked')).map(cb => parseInt(cb.dataset.index));
+    if (selected.length === 0) {
+        showNotification('Seleccione al menos una regla', 'error');
+        return;
+    }
+    
+    let updated = 0;
+    for (const index of selected) {
+        if (rulesData[index] && rulesData[index].enabled) {
+            try {
+                const response = await fetch(`${API_URL}/snort/rules/${rulesData[index].sid}/toggle`, { method: 'PATCH' });
+                if (response.ok) {
+                    rulesData[index].enabled = false;
+                    updated++;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+    }
+    loadSnortRules();
+    showNotification(`${updated} reglas desactivadas en Snort`, 'success');
+});
+
+document.getElementById('delete-selected-btn')?.addEventListener('click', async () => {
+    const selected = Array.from(document.querySelectorAll('.rule-checkbox:checked')).map(cb => parseInt(cb.dataset.index));
+    if (selected.length === 0) {
+        showNotification('Seleccione al menos una regla', 'error');
+        return;
+    }
+    if (!confirm(`¿Eliminar ${selected.length} reglas de Snort?`)) return;
+    
+    // Get SIDs to delete
+    const sidsToDelete = selected.map(index => rulesData[index].sid);
+    
+    // Delete from backend
+    let deleted = 0;
+    for (const sid of sidsToDelete) {
+        try {
+            const response = await fetch(`${API_URL}/snort/rules/${sid}`, { method: 'DELETE' });
+            if (response.ok) deleted++;
+        } catch (error) {
+            console.error(`Error deleting SID ${sid}:`, error);
+        }
+    }
+    
+    // Remove from both arrays
+    const selectedSet = new Set(selected);
+    rulesData = rulesData.filter((_, index) => !selectedSet.has(index));
+    sampleRules = sampleRules.filter(r => !sidsToDelete.includes(r.sid));
+    
+    loadSnortRules();
+    showNotification(`${deleted} reglas eliminadas de Snort`, 'success');
+});
+
+document.getElementById('export-rules-btn')?.addEventListener('click', () => {
+    if (rulesData.length === 0) {
+        showNotification('No hay reglas para exportar', 'error');
+        return;
+    }
+    const csv = [
+        'SID,Category,Message,Protocol,Enabled',
+        ...rulesData.map(r => `${r.sid},${r.category},"${r.message}",${r.protocol},${r.enabled}`)
+    ].join('\n');
+    
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `snort-rules-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showNotification('Reglas exportadas', 'success');
+});
+
+// Add rule modal
+document.getElementById('add-rule-btn')?.addEventListener('click', () => {
+    document.getElementById('add-rule-modal').classList.remove('hidden');
+    // Generate next SID
+    const maxSid = Math.max(...sampleRules.map(r => r.sid), 1000000);
+    document.getElementById('rule-sid').value = maxSid + 1;
+});
+
+document.getElementById('close-rule-modal')?.addEventListener('click', () => {
+    document.getElementById('add-rule-modal').classList.add('hidden');
+});
+
+document.getElementById('cancel-new-rule')?.addEventListener('click', () => {
+    document.getElementById('add-rule-modal').classList.add('hidden');
+});
+
+document.getElementById('save-new-rule')?.addEventListener('click', async () => {
+    const sid = parseInt(document.getElementById('rule-sid').value);
+    const category = document.getElementById('rule-category').value;
+    const message = document.getElementById('rule-message').value.trim();
+    const protocol = document.getElementById('rule-protocol').value;
+    const enabled = document.getElementById('rule-enabled').checked;
+    
+    // Validations
+    if (!sid || sid < 1000000) {
+        showNotification('SID debe ser mayor o igual a 1000000', 'error');
+        return;
+    }
+    
+    if (sampleRules.some(r => r.sid === sid)) {
+        showNotification('El SID ya existe', 'error');
+        return;
+    }
+    
+    if (!message) {
+        showNotification('El mensaje es requerido', 'error');
+        return;
+    }
+    
+    const btn = document.getElementById('save-new-rule');
+    const originalText = btn.textContent;
     btn.textContent = 'Guardando...';
     btn.disabled = true;
     
     try {
-        const response = await fetch(`${API_URL}/snort/rules`, {
+        // Guardar en backend
+        const response = await fetch(`${API_URL}/snort/rules/add`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ rules })
+            body: JSON.stringify({ sid, category, message, protocol, enabled })
         });
         
         if (response.ok) {
-            showNotification('Reglas guardadas correctamente', 'success');
-            await loadSnortRules();
+            // Add to local array
+            const newRule = { sid, category, message, protocol, enabled };
+            sampleRules.push(newRule);
+            rulesData = [...sampleRules];
+            
+            // Reset form
+            document.getElementById('rule-message').value = '';
+            document.getElementById('rule-enabled').checked = true;
+            
+            // Close modal and reload
+            document.getElementById('add-rule-modal').classList.add('hidden');
+            loadSnortRules();
+            showNotification('Regla agregada y aplicada a Snort', 'success');
         } else {
-            showNotification('Error al guardar reglas', 'error');
+            const error = await response.json();
+            showNotification(error.detail || 'Error al agregar regla', 'error');
         }
     } catch (error) {
         showNotification('Error de conexión', 'error');
     } finally {
         btn.textContent = originalText;
         btn.disabled = false;
-    }
-});
-
-// Validate rules
-document.getElementById('validate-rules-btn')?.addEventListener('click', () => {
-    const rules = document.getElementById('snort-rules-editor').value;
-    const lines = rules.split('\n');
-    let errors = [];
-    
-    lines.forEach((line, index) => {
-        line = line.trim();
-        if (line && !line.startsWith('#')) {
-            if (!line.match(/^(alert|log|pass|drop|reject|sdrop)/)) {
-                errors.push(`Línea ${index + 1}: Debe comenzar con una acción válida`);
-            }
-            if (!line.includes('sid:')) {
-                errors.push(`Línea ${index + 1}: Falta el identificador 'sid:'`);
-            }
-        }
-    });
-    
-    if (errors.length === 0) {
-        showNotification('Sintaxis válida ✓', 'success');
-    } else {
-        showNotification(`Errores encontrados:\n${errors.slice(0, 3).join('\n')}`, 'error');
-    }
-});
-
-// Reload rules from server
-document.getElementById('reload-rules-btn')?.addEventListener('click', async () => {
-    if (confirm('¿Recargar reglas desde el servidor? Los cambios no guardados se perderán.')) {
-        await loadSnortRules();
-        showNotification('Reglas recargadas', 'success');
     }
 });
 
@@ -104,6 +368,7 @@ async function loadSnortAlerts() {
         if (response.ok) {
             const data = await response.json();
             const tbody = document.getElementById('snort-alerts-table');
+            if (!tbody) return;
             
             if (data.alerts && data.alerts.length > 0) {
                 tbody.innerHTML = data.alerts.map(alert => `
@@ -142,7 +407,7 @@ async function loadSnortAlerts() {
 
 // Restart Snort
 document.getElementById('restart-snort-btn')?.addEventListener('click', async () => {
-    if (!confirm('¿Reiniciar el servicio de Snort IDS?')) return;
+    if (!confirm('¿Reiniciar Snort para aplicar cambios?')) return;
     
     const btn = document.getElementById('restart-snort-btn');
     const originalHTML = btn.innerHTML;
@@ -152,16 +417,21 @@ document.getElementById('restart-snort-btn')?.addEventListener('click', async ()
     try {
         const response = await fetch(`${API_URL}/snort/restart`, { method: 'POST' });
         if (response.ok) {
-            showNotification('Snort reiniciado correctamente', 'success');
-            setTimeout(() => loadSnortAlerts(), 2000);
+            showNotification('Snort reiniciado - reglas aplicadas', 'success');
+            setTimeout(() => {
+                loadSnortAlerts();
+                loadSnortRules();
+            }, 3000);
         } else {
             showNotification('Error al reiniciar Snort', 'error');
         }
     } catch (error) {
         showNotification('Error de conexión', 'error');
     } finally {
-        btn.innerHTML = originalHTML;
-        btn.disabled = false;
+        setTimeout(() => {
+            btn.innerHTML = originalHTML;
+            btn.disabled = false;
+        }, 3000);
     }
 });
 
@@ -169,17 +439,42 @@ document.getElementById('restart-snort-btn')?.addEventListener('click', async ()
 const snortMenuItem = document.querySelector('[data-section="snort"]');
 if (snortMenuItem) {
     snortMenuItem.addEventListener('click', () => {
-        loadSnortRules();
-        loadSnortAlerts();
+        setTimeout(() => {
+            loadSnortRules();
+            loadSnortAlerts();
+        }, 100);
     });
 }
 
+// Load rules when rules tab is clicked
+document.getElementById('tab-snort-rules')?.addEventListener('click', () => {
+    setTimeout(() => loadSnortRules(), 100);
+});
+
+// Load policies when policies tab is clicked
+document.getElementById('tab-snort-policies')?.addEventListener('click', () => {
+    setTimeout(() => {
+        if (typeof updatePolicyCounts === 'function') {
+            updatePolicyCounts();
+        }
+    }, 100);
+});
+
 // Auto-refresh alerts every 30 seconds
 setInterval(() => {
-    if (!document.getElementById('section-snort').classList.contains('hidden')) {
-        loadSnortAlerts();
+    const section = document.getElementById('section-snort');
+    if (section && !section.classList.contains('hidden')) {
+        const alertsPanel = document.getElementById('panel-snort-alerts');
+        if (alertsPanel && !alertsPanel.classList.contains('hidden')) {
+            loadSnortAlerts();
+        }
     }
 }, 30000);
+
+// Initialize when alerts tab is clicked
+document.getElementById('tab-snort-alerts')?.addEventListener('click', () => {
+    setTimeout(() => loadSnortAlerts(), 100);
+});
 
 // Whitelist/Blocklist Management
 let whitelist = [];
@@ -376,7 +671,9 @@ document.getElementById('export-lists-btn')?.addEventListener('click', () => {
 });
 
 // Load lists when tab is clicked
-document.getElementById('tab-snort-lists')?.addEventListener('click', loadLists);
+document.getElementById('tab-snort-lists')?.addEventListener('click', () => {
+    setTimeout(() => loadLists(), 100);
+});
 
 function showNotification(message, type = 'info') {
     const colors = {
@@ -386,9 +683,12 @@ function showNotification(message, type = 'info') {
     };
     
     const notification = document.createElement('div');
-    notification.className = `fixed bottom-4 right-4 ${colors[type]} text-white px-6 py-3 rounded-lg shadow-lg z-50`;
+    notification.className = `fixed bottom-4 right-4 ${colors[type]} text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-opacity`;
     notification.textContent = message;
     document.body.appendChild(notification);
     
-    setTimeout(() => notification.remove(), 3000);
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
 }

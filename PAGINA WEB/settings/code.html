@@ -63,6 +63,53 @@
         .animate-pulse {
             animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
         }
+        
+        /* Scrollbar personalizado para tablas de Snort IDS */
+        .snort-table-container {
+            max-height: 500px;
+            overflow-y: scroll;
+        }
+        
+        .snort-table-container::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .snort-table-container::-webkit-scrollbar-track {
+            background: #1c2127;
+            border-radius: 4px;
+        }
+        
+        .snort-table-container::-webkit-scrollbar-thumb {
+            background: #3b4754;
+            border-radius: 4px;
+        }
+        
+        .snort-table-container::-webkit-scrollbar-thumb:hover {
+            background: #4a5568;
+        }
+        
+        /* Scrollbar para editor de reglas */
+        #snort-rules-editor {
+            overflow-y: scroll;
+        }
+        
+        #snort-rules-editor::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        #snort-rules-editor::-webkit-scrollbar-track {
+            background: #1c2127;
+            border-radius: 4px;
+        }
+        
+        #snort-rules-editor::-webkit-scrollbar-thumb {
+            background: #3b4754;
+            border-radius: 4px;
+        }
+        
+        #snort-rules-editor::-webkit-scrollbar-thumb:hover {
+            background: #4a5568;
+        }
     </style>
 </head>
 <body class="bg-background-light dark:bg-background-dark font-display text-white">
@@ -103,8 +150,8 @@ Cambiar Tema
 </div>
 </header>
 <script src="/header-utils.js"></script>
-<div class="flex flex-1 pt-16">
-<aside class="w-64 min-h-full bg-[#111418] p-4 border-r border-solid border-r-[#283039]">
+<div class="flex flex-1">
+<aside class="fixed left-0 top-[64px] w-64 h-[calc(100vh-64px)] bg-[#111418] p-4 border-r border-solid border-r-[#283039] overflow-y-auto z-40">
 <div class="flex flex-col gap-4">
 <div class="flex flex-col gap-2">
 <div data-section="integrations" class="menu-item flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/20 text-primary cursor-pointer">
@@ -131,7 +178,7 @@ Cambiar Tema
 </div>
 </div>
 </aside>
-<main class="flex-1 p-8 overflow-y-auto">
+<main class="flex-1 ml-64 p-8 overflow-y-auto">
 <div id="section-integrations" class="section-content max-w-5xl mx-auto">
 <div class="flex flex-wrap justify-between gap-3 p-4 mb-8">
 <div class="flex min-w-72 flex-col gap-3">
@@ -594,6 +641,9 @@ class="pl-10 pr-4 py-2 bg-[#283039] text-white rounded-lg border border-[#3b4754
         <button id="tab-snort-rules" class="snort-tab px-6 py-3 text-primary border-b-2 border-primary font-medium">
             Reglas
         </button>
+        <button id="tab-snort-policies" class="snort-tab px-6 py-3 text-[#9dabb9] hover:text-white transition-colors">
+            Políticas
+        </button>
         <button id="tab-snort-alerts" class="snort-tab px-6 py-3 text-[#9dabb9] hover:text-white transition-colors">
             Alertas Recientes
         </button>
@@ -608,54 +658,193 @@ class="pl-10 pr-4 py-2 bg-[#283039] text-white rounded-lg border border-[#3b4754
     <!-- Panel de Reglas -->
     <div id="panel-snort-rules" class="snort-panel">
         <div class="flex justify-between items-center mb-6">
-            <h3 class="text-white text-xl font-bold">Reglas de Detección</h3>
+            <div class="flex items-center gap-3">
+                <input type="text" id="search-rules" placeholder="Buscar reglas..." class="px-4 py-2 bg-[#1c2127] text-white rounded-lg border border-[#3b4754] focus:outline-none focus:border-primary text-sm w-64">
+                <select id="filter-category" class="px-4 py-2 bg-[#1c2127] text-white rounded-lg border border-[#3b4754] focus:outline-none focus:border-primary text-sm">
+                    <option value="">Todas las Categorías</option>
+                    <option value="network">Network</option>
+                    <option value="web">Web</option>
+                    <option value="malware">Malware</option>
+                    <option value="dos">DoS/DDoS</option>
+                    <option value="scan">Scan</option>
+                </select>
+            </div>
             <button id="add-rule-btn" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2">
                 <span class="material-symbols-outlined" style="font-size: 20px;">add</span>
                 <span>Agregar Regla</span>
             </button>
         </div>
         
-        <div class="bg-[#111418] rounded-xl border border-[#3b4754] p-6">
-            <div class="mb-4">
-                <label class="text-white text-sm font-medium mb-2 block">Archivo de Reglas (local.rules)</label>
-                <textarea id="snort-rules-editor" rows="20" class="w-full px-4 py-3 bg-[#1c2127] text-white rounded-lg border border-[#3b4754] focus:outline-none focus:border-primary font-mono text-sm" placeholder="# Reglas de Snort\n# Ejemplo:\nalert icmp any any -> any any (msg:\"ICMP Ping Detected\"; sid:1000001; rev:1;)"></textarea>
+        <div class="bg-[#111418] rounded-xl border border-[#3b4754] overflow-hidden">
+            <div class="snort-table-container">
+                <table class="w-full">
+                    <thead class="bg-[#1c2127] sticky top-0">
+                        <tr class="border-b border-[#3b4754]">
+                            <th class="px-4 py-3 text-left text-[#9dabb9] text-xs font-medium uppercase w-12">
+                                <input type="checkbox" id="select-all-rules" class="w-4 h-4 bg-[#283039] border-[#3b4754] rounded">
+                            </th>
+                            <th class="px-4 py-3 text-left text-[#9dabb9] text-xs font-medium uppercase">SID</th>
+                            <th class="px-4 py-3 text-left text-[#9dabb9] text-xs font-medium uppercase">Categoría</th>
+                            <th class="px-4 py-3 text-left text-[#9dabb9] text-xs font-medium uppercase">Mensaje</th>
+                            <th class="px-4 py-3 text-left text-[#9dabb9] text-xs font-medium uppercase">Protocolo</th>
+                            <th class="px-4 py-3 text-left text-[#9dabb9] text-xs font-medium uppercase">Estado</th>
+                            <th class="px-4 py-3 text-left text-[#9dabb9] text-xs font-medium uppercase">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rules-table-body">
+                        <tr>
+                            <td colspan="7" class="px-4 py-8 text-center text-[#9dabb9]">
+                                Cargando reglas...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
-            <div class="flex gap-3">
-                <button id="save-rules-btn" class="px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-medium">
-                    Guardar Reglas
-                </button>
-                <button id="validate-rules-btn" class="px-6 py-3 bg-[#283039] text-white rounded-lg hover:bg-[#3b4754] transition-colors font-medium">
-                    Validar Sintaxis
-                </button>
-                <button id="reload-rules-btn" class="px-6 py-3 bg-[#283039] text-white rounded-lg hover:bg-[#3b4754] transition-colors font-medium">
-                    Recargar desde Servidor
-                </button>
+        </div>
+        
+        <div class="flex gap-3 mt-6">
+            <button id="enable-selected-btn" class="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-medium">
+                Activar Seleccionadas
+            </button>
+            <button id="disable-selected-btn" class="px-6 py-3 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors font-medium">
+                Desactivar Seleccionadas
+            </button>
+            <button id="delete-selected-btn" class="px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-medium">
+                Eliminar Seleccionadas
+            </button>
+            <button id="export-rules-btn" class="px-6 py-3 bg-[#283039] text-white rounded-lg hover:bg-[#3b4754] transition-colors font-medium">
+                Exportar
+            </button>
+        </div>
+    </div>
+    
+    <!-- Panel de Políticas -->
+    <div id="panel-snort-policies" class="snort-panel hidden">
+        <h3 class="text-white text-xl font-bold mb-6">Gestión de Políticas por Categoría</h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+            <div class="bg-[#111418] rounded-xl border border-[#3b4754] p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-3">
+                        <span class="material-symbols-outlined text-blue-400 text-3xl">router</span>
+                        <div>
+                            <h4 class="text-white font-bold">Network</h4>
+                            <p class="text-[#9dabb9] text-sm" id="network-count">0 reglas</p>
+                        </div>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" class="sr-only peer" id="policy-network" checked>
+                        <div class="w-11 h-6 bg-gray-600 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+                    </label>
+                </div>
             </div>
+            
+            <div class="bg-[#111418] rounded-xl border border-[#3b4754] p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-3">
+                        <span class="material-symbols-outlined text-purple-400 text-3xl">language</span>
+                        <div>
+                            <h4 class="text-white font-bold">Web</h4>
+                            <p class="text-[#9dabb9] text-sm" id="web-count">0 reglas</p>
+                        </div>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" class="sr-only peer" id="policy-web" checked>
+                        <div class="w-11 h-6 bg-gray-600 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-500"></div>
+                    </label>
+                </div>
+            </div>
+            
+            <div class="bg-[#111418] rounded-xl border border-[#3b4754] p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-3">
+                        <span class="material-symbols-outlined text-red-400 text-3xl">bug_report</span>
+                        <div>
+                            <h4 class="text-white font-bold">Malware</h4>
+                            <p class="text-[#9dabb9] text-sm" id="malware-count">0 reglas</p>
+                        </div>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" class="sr-only peer" id="policy-malware" checked>
+                        <div class="w-11 h-6 bg-gray-600 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500"></div>
+                    </label>
+                </div>
+            </div>
+            
+            <div class="bg-[#111418] rounded-xl border border-[#3b4754] p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-3">
+                        <span class="material-symbols-outlined text-orange-400 text-3xl">warning</span>
+                        <div>
+                            <h4 class="text-white font-bold">DoS/DDoS</h4>
+                            <p class="text-[#9dabb9] text-sm" id="dos-count">0 reglas</p>
+                        </div>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" class="sr-only peer" id="policy-dos" checked>
+                        <div class="w-11 h-6 bg-gray-600 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
+                    </label>
+                </div>
+            </div>
+            
+            <div class="bg-[#111418] rounded-xl border border-[#3b4754] p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-3">
+                        <span class="material-symbols-outlined text-yellow-400 text-3xl">search</span>
+                        <div>
+                            <h4 class="text-white font-bold">Scan</h4>
+                            <p class="text-[#9dabb9] text-sm" id="scan-count">0 reglas</p>
+                        </div>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" class="sr-only peer" id="policy-scan" checked>
+                        <div class="w-11 h-6 bg-gray-600 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-yellow-500"></div>
+                    </label>
+                </div>
+            </div>
+        </div>
+        
+        <div class="flex gap-3">
+            <button id="apply-policies-btn" class="px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-medium">
+                Aplicar Políticas
+            </button>
+            <button id="create-policy-btn" class="px-6 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors font-medium flex items-center gap-2">
+                <span class="material-symbols-outlined" style="font-size: 20px;">add</span>
+                Crear Política
+            </button>
+            <button id="enable-all-policies-btn" class="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-medium">
+                Activar Todas
+            </button>
+            <button id="disable-all-policies-btn" class="px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-medium">
+                Desactivar Todas
+            </button>
         </div>
     </div>
     
     <!-- Panel de Alertas Recientes -->
     <div id="panel-snort-alerts" class="snort-panel hidden">
         <div class="bg-[#111418] rounded-xl border border-[#3b4754] overflow-hidden">
-            <table class="w-full">
-                <thead class="bg-[#1c2127]">
-                    <tr class="border-b border-[#3b4754]">
-                        <th class="px-4 py-3 text-left text-[#9dabb9] text-xs font-medium uppercase">Timestamp</th>
-                        <th class="px-4 py-3 text-left text-[#9dabb9] text-xs font-medium uppercase">Mensaje</th>
-                        <th class="px-4 py-3 text-left text-[#9dabb9] text-xs font-medium uppercase">IP Origen</th>
-                        <th class="px-4 py-3 text-left text-[#9dabb9] text-xs font-medium uppercase">IP Destino</th>
-                        <th class="px-4 py-3 text-left text-[#9dabb9] text-xs font-medium uppercase">Protocolo</th>
-                        <th class="px-4 py-3 text-left text-[#9dabb9] text-xs font-medium uppercase">Prioridad</th>
-                    </tr>
-                </thead>
-                <tbody id="snort-alerts-table">
-                    <tr>
-                        <td colspan="6" class="px-4 py-8 text-center text-[#9dabb9]">
-                            Cargando alertas...
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+            <div class="snort-table-container">
+                <table class="w-full">
+                    <thead class="bg-[#1c2127] sticky top-0">
+                        <tr class="border-b border-[#3b4754]">
+                            <th class="px-4 py-3 text-left text-[#9dabb9] text-xs font-medium uppercase">Timestamp</th>
+                            <th class="px-4 py-3 text-left text-[#9dabb9] text-xs font-medium uppercase">Mensaje</th>
+                            <th class="px-4 py-3 text-left text-[#9dabb9] text-xs font-medium uppercase">IP Origen</th>
+                            <th class="px-4 py-3 text-left text-[#9dabb9] text-xs font-medium uppercase">IP Destino</th>
+                            <th class="px-4 py-3 text-left text-[#9dabb9] text-xs font-medium uppercase">Protocolo</th>
+                            <th class="px-4 py-3 text-left text-[#9dabb9] text-xs font-medium uppercase">Prioridad</th>
+                        </tr>
+                    </thead>
+                    <tbody id="snort-alerts-table">
+                        <tr>
+                            <td colspan="6" class="px-4 py-8 text-center text-[#9dabb9]">
+                                Cargando alertas...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
     
@@ -682,7 +871,7 @@ class="pl-10 pr-4 py-2 bg-[#283039] text-white rounded-lg border border-[#3b4754
                     </div>
                 </div>
                 
-                <div id="whitelist-items" class="space-y-2 max-h-96 overflow-y-auto">
+                <div id="whitelist-items" class="space-y-2 snort-table-container">
                     <div class="text-center text-[#9dabb9] py-8">
                         <span class="material-symbols-outlined text-4xl mb-2">shield_with_heart</span>
                         <p>No hay entradas en la whitelist</p>
@@ -710,7 +899,7 @@ class="pl-10 pr-4 py-2 bg-[#283039] text-white rounded-lg border border-[#3b4754
                     </div>
                 </div>
                 
-                <div id="blocklist-items" class="space-y-2 max-h-96 overflow-y-auto">
+                <div id="blocklist-items" class="space-y-2 snort-table-container">
                     <div class="text-center text-[#9dabb9] py-8">
                         <span class="material-symbols-outlined text-4xl mb-2">security</span>
                         <p>No hay entradas en la blocklist</p>
@@ -729,6 +918,186 @@ class="pl-10 pr-4 py-2 bg-[#283039] text-white rounded-lg border border-[#3b4754
             <button id="import-lists-btn" class="px-6 py-3 bg-[#283039] text-white rounded-lg hover:bg-[#3b4754] transition-colors font-medium">
                 Importar desde CSV
             </button>
+        </div>
+    </div>
+    
+    <!-- Modal Crear Política -->
+    <div id="create-policy-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
+        <div class="bg-[#111418] rounded-xl border border-[#3b4754] p-6 w-full max-w-2xl">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-white text-xl font-bold">Crear Nueva Política</h3>
+                <button id="close-policy-modal" class="text-[#9dabb9] hover:text-white">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="text-white text-sm font-medium mb-2 block">Nombre de la Política</label>
+                    <input id="policy-name" type="text" placeholder="Ej: Protección Web Empresarial" class="w-full px-4 py-2 bg-[#1c2127] text-white rounded-lg border border-[#3b4754] focus:outline-none focus:border-primary">
+                </div>
+                <div>
+                    <label class="text-white text-sm font-medium mb-2 block">Descripción</label>
+                    <textarea id="policy-description" rows="3" placeholder="Describe el propósito de esta política..." class="w-full px-4 py-2 bg-[#1c2127] text-white rounded-lg border border-[#3b4754] focus:outline-none focus:border-primary"></textarea>
+                </div>
+                <div>
+                    <label class="text-white text-sm font-medium mb-2 block">Categorías Incluidas</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <label class="flex items-center gap-2 p-3 bg-[#1c2127] rounded-lg border border-[#3b4754] cursor-pointer hover:border-blue-400">
+                            <input type="checkbox" id="policy-cat-network" class="w-4 h-4">
+                            <span class="text-white text-sm">Network</span>
+                        </label>
+                        <label class="flex items-center gap-2 p-3 bg-[#1c2127] rounded-lg border border-[#3b4754] cursor-pointer hover:border-purple-400">
+                            <input type="checkbox" id="policy-cat-web" class="w-4 h-4">
+                            <span class="text-white text-sm">Web</span>
+                        </label>
+                        <label class="flex items-center gap-2 p-3 bg-[#1c2127] rounded-lg border border-[#3b4754] cursor-pointer hover:border-red-400">
+                            <input type="checkbox" id="policy-cat-malware" class="w-4 h-4">
+                            <span class="text-white text-sm">Malware</span>
+                        </label>
+                        <label class="flex items-center gap-2 p-3 bg-[#1c2127] rounded-lg border border-[#3b4754] cursor-pointer hover:border-orange-400">
+                            <input type="checkbox" id="policy-cat-dos" class="w-4 h-4">
+                            <span class="text-white text-sm">DoS/DDoS</span>
+                        </label>
+                        <label class="flex items-center gap-2 p-3 bg-[#1c2127] rounded-lg border border-[#3b4754] cursor-pointer hover:border-yellow-400">
+                            <input type="checkbox" id="policy-cat-scan" class="w-4 h-4">
+                            <span class="text-white text-sm">Scan</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <input type="checkbox" id="policy-auto-apply" checked class="w-5 h-5">
+                    <label for="policy-auto-apply" class="text-white text-sm">Aplicar automáticamente al crear</label>
+                </div>
+            </div>
+            <div class="flex gap-3 mt-6">
+                <button id="save-policy" class="flex-1 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90">
+                    Crear Política
+                </button>
+                <button id="cancel-policy" class="flex-1 px-4 py-2 bg-[#283039] text-white rounded-lg hover:bg-[#3b4754]">
+                    Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal Editar Regla -->
+    <div id="edit-rule-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
+        <div class="bg-[#111418] rounded-xl border border-[#3b4754] p-6 w-full max-w-2xl">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-white text-xl font-bold">Editar Regla</h3>
+                <button id="close-edit-modal" class="text-[#9dabb9] hover:text-white">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <div class="space-y-4">
+                <input type="hidden" id="edit-rule-index">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-white text-sm font-medium mb-2 block">SID</label>
+                        <input id="edit-rule-sid" type="number" class="w-full px-4 py-2 bg-[#1c2127] text-white rounded-lg border border-[#3b4754]" readonly>
+                    </div>
+                    <div>
+                        <label class="text-white text-sm font-medium mb-2 block">Categoría</label>
+                        <select id="edit-rule-category" class="w-full px-4 py-2 bg-[#1c2127] text-white rounded-lg border border-[#3b4754]">
+                            <option value="network">Network</option>
+                            <option value="web">Web</option>
+                            <option value="malware">Malware</option>
+                            <option value="dos">DoS/DDoS</option>
+                            <option value="scan">Scan</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="text-white text-sm font-medium mb-2 block">Mensaje</label>
+                    <input id="edit-rule-message" type="text" class="w-full px-4 py-2 bg-[#1c2127] text-white rounded-lg border border-[#3b4754]">
+                </div>
+                <div>
+                    <label class="text-white text-sm font-medium mb-2 block">Protocolo</label>
+                    <select id="edit-rule-protocol" class="w-full px-4 py-2 bg-[#1c2127] text-white rounded-lg border border-[#3b4754]">
+                        <option value="tcp">TCP</option>
+                        <option value="udp">UDP</option>
+                        <option value="icmp">ICMP</option>
+                        <option value="ip">IP</option>
+                        <option value="http">HTTP</option>
+                        <option value="ftp">FTP</option>
+                        <option value="dns">DNS</option>
+                        <option value="ssh">SSH</option>
+                        <option value="smtp">SMTP</option>
+                    </select>
+                </div>
+                <div class="flex items-center gap-3">
+                    <input type="checkbox" id="edit-rule-enabled" class="w-5 h-5">
+                    <label for="edit-rule-enabled" class="text-white text-sm">Regla activa</label>
+                </div>
+            </div>
+            <div class="flex gap-3 mt-6">
+                <button id="save-edit-rule" class="flex-1 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90">
+                    Guardar Cambios
+                </button>
+                <button id="cancel-edit-rule" class="flex-1 px-4 py-2 bg-[#283039] text-white rounded-lg hover:bg-[#3b4754]">
+                    Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal Agregar Regla -->
+    <div id="add-rule-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
+        <div class="bg-[#111418] rounded-xl border border-[#3b4754] p-6 w-full max-w-2xl">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-white text-xl font-bold">Agregar Nueva Regla</h3>
+                <button id="close-rule-modal" class="text-[#9dabb9] hover:text-white">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <div class="space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-white text-sm font-medium mb-2 block">SID (Identificador)</label>
+                        <input id="rule-sid" type="number" placeholder="1000011" class="w-full px-4 py-2 bg-[#1c2127] text-white rounded-lg border border-[#3b4754] focus:outline-none focus:border-primary">
+                    </div>
+                    <div>
+                        <label class="text-white text-sm font-medium mb-2 block">Categoría</label>
+                        <select id="rule-category" class="w-full px-4 py-2 bg-[#1c2127] text-white rounded-lg border border-[#3b4754] focus:outline-none focus:border-primary">
+                            <option value="network">Network</option>
+                            <option value="web">Web</option>
+                            <option value="malware">Malware</option>
+                            <option value="dos">DoS/DDoS</option>
+                            <option value="scan">Scan</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="text-white text-sm font-medium mb-2 block">Mensaje</label>
+                    <input id="rule-message" type="text" placeholder="Descripción de la regla" class="w-full px-4 py-2 bg-[#1c2127] text-white rounded-lg border border-[#3b4754] focus:outline-none focus:border-primary">
+                </div>
+                <div>
+                    <label class="text-white text-sm font-medium mb-2 block">Protocolo</label>
+                    <select id="rule-protocol" class="w-full px-4 py-2 bg-[#1c2127] text-white rounded-lg border border-[#3b4754] focus:outline-none focus:border-primary">
+                        <option value="tcp">TCP</option>
+                        <option value="udp">UDP</option>
+                        <option value="icmp">ICMP</option>
+                        <option value="ip">IP</option>
+                        <option value="http">HTTP</option>
+                        <option value="ftp">FTP</option>
+                        <option value="dns">DNS</option>
+                        <option value="ssh">SSH</option>
+                        <option value="smtp">SMTP</option>
+                    </select>
+                </div>
+                <div class="flex items-center gap-3">
+                    <input type="checkbox" id="rule-enabled" checked class="w-5 h-5 bg-[#1c2127] border-[#3b4754] rounded focus:ring-primary">
+                    <label for="rule-enabled" class="text-white text-sm">Activar regla inmediatamente</label>
+                </div>
+            </div>
+            <div class="flex gap-3 mt-6">
+                <button id="save-new-rule" class="flex-1 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
+                    Guardar Regla
+                </button>
+                <button id="cancel-new-rule" class="flex-1 px-4 py-2 bg-[#283039] text-white rounded-lg hover:bg-[#3b4754] transition-colors">
+                    Cancelar
+                </button>
+            </div>
         </div>
     </div>
     
@@ -800,4 +1169,5 @@ class="pl-10 pr-4 py-2 bg-[#283039] text-white rounded-lg border border-[#3b4754
 </div>
 <script src="/settings/settings-v2.js?v=20241207"></script>
 <script src="/settings/snort-settings.js"></script>
+<script src="/settings/snort-policies.js"></script>
 </body></html>

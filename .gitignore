@@ -1,12 +1,11 @@
+# ThreatGuard - Git Ignore
+
 # Python
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
-env/
-venv/
-ENV/
 build/
 develop-eggs/
 dist/
@@ -22,62 +21,101 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+MANIFEST
 
-# Logs
-logs/
-*.log
+# Virtual Environment
+venv/
+ENV/
+env/
+.venv
 
-# Database
-*.db
-*.sqlite
-
-# Environment
-.env
-.env.local
-
-# Configuration with credentials
-config/config.ini
-config/master.ini
-config/agent.ini
-
-# Transfer scripts (may contain credentials)
-transfer_to_ec2.ps1
-prepare_ec2_package.sh
-
-# IDE
+# IDEs
 .vscode/
 .idea/
 *.swp
 *.swo
+*~
+.DS_Store
 
-# Models (trained models are too large for git)
+# Logs
+*.log
+logs/*.log
+logs/Alamacenamiento/*.log
+logs/features/*.log
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+threatguard.db
+
+# Models (archivos grandes)
 models/*.pkl
-models/*.h5
 models/*.joblib
-models/temp/
-models/archived/
-models/trained/*.pkl
-models/trained/*.h5
+models/*.h5
+models/*.pt
+!models/.gitkeep
 
 # Data
-data/
-TrafficLabelling/
-*.pcap
-*.csv
+data/*.csv
+data/*.pcap
+data/*.json
+!data/.gitkeep
 
-# Reports (generated reports, not the frontend folder)
-/reports/
-*.pdf
-*.docx
+# Configuración sensible
+.env
+*.ini
+config/*.ini
+!config/config.ini.example
+
+# Backups
+*.backup
+*.bak
+config/*.backup.*
 
 # Docker
 .dockerignore
 
-# Build
-build/
-dist/
-*.spec
+# Jupyter Notebooks
+.ipynb_checkpoints/
+*.ipynb
+
+# Pytest
+.pytest_cache/
+.coverage
+htmlcov/
 
 # OS
-.DS_Store
 Thumbs.db
+.DS_Store
+
+# Temporary files
+*.tmp
+*.temp
+temp/
+tmp/
+
+# Reports generados
+reports/*.pdf
+reports/*.csv
+reports/*.xlsx
+
+# Elasticsearch data
+elasticsearch_data/
+
+# Redis dumps
+dump.rdb
+
+# Snort logs
+snort_logs/
+*.alert
+
+# Certificados y claves
+*.pem
+*.key
+*.crt
+*.p12
+
+# Archivos de configuración local
+local_settings.py
+settings_local.py

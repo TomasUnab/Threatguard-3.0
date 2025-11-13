@@ -842,17 +842,110 @@ async def download_alert_report_csv():
         db.close()
 
 @app.post("/reports/generate")
-async def generate_report(report_type: str):
-    """Generar un nuevo reporte"""
-    report_id = str(uuid.uuid4())
-    timestamp = datetime.now().strftime('%Y-%m-%d')
-    
-    return {
-        "id": report_id,
-        "name": f"{report_type} - {timestamp}",
-        "date": timestamp,
-        "type": report_type
-    }
+async def generate_report(report_data: dict):
+    """Generar un nuevo reporte PDF con datos reales"""
+    try:
+        from reportlab.lib.pagesizes import letter
+        from reportlab.lib import colors
+        from reportlab.lib.styles import getSampleStyleSheet
+        from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+        from io import BytesIO
+        
+        report_type = report_data.get("type", "custom")
+        name = report_data.get("name", f"Reporte {report_type}")
+        start_date = report_data.get("start")
+        end_date = report_data.get("end")
+        format_type = report_data.get("format", "pdf")
+        
+        # Crear buffer para PDF
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=letter)
+        elements = []
+        styles = getSampleStyleSheet()
+        
+        # Título
+        title = Paragraph(f"<b>{name}</b>", styles['Title'])
+        elements.append(title)
+        elements.append(Spacer(1, 12))
+        
+        # Información del reporte
+        info = Paragraph(f"Generado: {datetime.now().strftime('%Y-%m-%d %H:%M')}<br/>Período: {start_date} - {end_date}", styles['Normal'])
+        elements.append(info)
+        elements.append(Spacer(1, 20))
+        
+        # Obtener datos según tipo
+        db_url = os.getenv("DATABASE_URL")
+        if db_url:
+            engine = create_engine(db_url)
+            SessionLocal = sessionmaker(bind=engine)
+            db = SessionLocal()
+            
+            try:
+                if report_type in ["vulnerabilities", "alerts", "template"]:
+                    # Obtener alertas
+                    alerts = db.query(Alert).filter(Alert.status == "open").limit(50).all()
+                    
+                    # Tabla de alertas
+                    data = [["Severidad", "Título", "Fecha"]]
+                    for alert in alerts:
+                        data.append([
+                            alert.ai_classification or alert.severity,
+                            alert.title[:40] if alert.title else "N/A",
+                            alert.timestamp.strftime('%Y-%m-%d') if alert.timestamp else "N/A"
+                        ])
+                    
+                    table = Table(data)
+                    table.setStyle(TableStyle([
+                        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                        ('FONTSIZE', (0, 0), (-1, 0), 10),
+                        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+                        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+                    ]))
+                    elements.append(table)
+                    
+                    # Resumen
+                    alta = db.query(Alert).filter(Alert.ai_classification == "ALTA", Alert.status == "open").count()
+                    media = db.query(Alert).filter(Alert.ai_classification == "MEDIA", Alert.status == "open").count()
+                    baja = db.query(Alert).filter(Alert.ai_classification == "BAJA", Alert.status == "open").count()
+                    
+                    elements.append(Spacer(1, 20))
+                    summary = Paragraph(f"<b>Resumen:</b><br/>Alertas Alta: {alta}<br/>Alertas Media: {media}<br/>Alertas Baja: {baja}", styles['Normal'])
+                    elements.append(summary)
+                    
+            finally:
+                db.close()
+        
+        # Construir PDF
+        doc.build(elements)
+        buffer.seek(0)
+        
+        # Guardar registro del reporte
+        report_id = str(uuid.uuid4())
+        timestamp = datetime.now().strftime('%Y-%m-%d')
+        
+        return StreamingResponse(
+            buffer,
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename={name.replace(' ', '_')}_{timestamp}.pdf"}
+        )
+    except ImportError:
+        # Si reportlab no está instalado, devolver respuesta simple
+        report_id = str(uuid.uuid4())
+        timestamp = datetime.now().strftime('%Y-%m-%d')
+        return {
+            "id": report_id,
+            "name": f"{report_data.get('name', 'Reporte')} - {timestamp}",
+            "date": timestamp,
+            "type": report_data.get('type', 'custom'),
+            "message": "Reporte generado (PDF requiere reportlab)"
+        }
+    except Exception as e:
+        logger.error(f"Error generando reporte: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/settings/integrations")
 async def get_integrations_status():
@@ -2488,7 +2581,7 @@ async def get_snort_rules():
 
 @app.post("/snort/rules")
 async def save_snort_rules(rules_data: dict):
-    """Guardar reglas de Snort en el archivo local.rules"""
+    """Guardar reglas de Snort en el archivo local.rules y aplicarlas al contenedor"""
     try:
         rules_content = rules_data.get("rules", "")
         rules_file = Path("config/local.rules")
@@ -2504,6 +2597,19 @@ async def save_snort_rules(rules_data: dict):
         with open(rules_file, 'w') as f:
             f.write(rules_content)
         
+        # Copiar al contenedor de Snort
+        import subprocess
+        try:
+            subprocess.run(
+                ["docker", "cp", str(rules_file), "threatguard-snort:/etc/snort/rules/local.rules"],
+                check=True,
+                capture_output=True,
+                timeout=10
+            )
+            logger.info("Reglas copiadas al contenedor Snort")
+        except Exception as e:
+            logger.warning(f"No se pudo copiar al contenedor: {e}")
+        
         logger.info(f"Reglas de Snort guardadas: {len(rules_content)} caracteres")
         
         return {
@@ -2513,6 +2619,210 @@ async def save_snort_rules(rules_data: dict):
         }
     except Exception as e:
         logger.error(f"Error guardando reglas de Snort: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/snort/rules/add")
+async def add_snort_rule(rule_data: dict):
+    """Agregar una nueva regla de Snort con sintaxis correcta según categoría"""
+    try:
+        sid = rule_data.get("sid")
+        category = rule_data.get("category", "network")
+        message = rule_data.get("message")
+        protocol = rule_data.get("protocol", "tcp").lower()
+        enabled = rule_data.get("enabled", True)
+        
+        if not sid or not message:
+            raise HTTPException(status_code=400, detail="SID y mensaje son requeridos")
+        
+        # Generar regla de Snort según categoría
+        action = "alert" if enabled else "# alert"
+        
+        # Opciones adicionales según categoría
+        options = [f'msg:"{message}"']
+        
+        if category == 'web':
+            options.append('flow:to_server,established')
+            if 'sql' in message.lower():
+                options.append('content:"SELECT"; nocase')
+            elif 'xss' in message.lower():
+                options.append('content:"<script"; nocase')
+            elif 'traversal' in message.lower():
+                options.append('content:"../"; nocase')
+        elif category == 'dos':
+            options.append('threshold:type threshold, track by_src, count 100, seconds 10')
+        elif category == 'scan':
+            options.append('flags:S; threshold:type threshold, track by_src, count 20, seconds 60')
+        elif category == 'malware':
+            options.append('flow:to_client,established')
+            if 'executable' in message.lower():
+                options.append('content:"MZ"; offset:0; depth:2')
+        
+        # Agregar classtype según categoría
+        classtype_map = {
+            'web': 'web-application-attack',
+            'dos': 'attempted-dos',
+            'scan': 'attempted-recon',
+            'malware': 'trojan-activity',
+            'network': 'misc-activity'
+        }
+        options.append(f'classtype:{classtype_map.get(category, "misc-activity")}')
+        
+        # Agregar SID y rev
+        options.append(f'sid:{sid}')
+        options.append('rev:1')
+        
+        # Construir regla completa
+        options_str = '; '.join(options) + ';'
+        rule_line = f"{action} {protocol} any any -> any any ({options_str})\n"
+        
+        # Leer reglas existentes
+        rules_file = Path("config/local.rules")
+        existing_rules = ""
+        if rules_file.exists():
+            with open(rules_file, 'r') as f:
+                existing_rules = f.read()
+        
+        # Verificar si el SID ya existe
+        if f"sid:{sid}" in existing_rules:
+            raise HTTPException(status_code=400, detail=f"El SID {sid} ya existe")
+        
+        # Agregar comentario de categoría y nueva regla
+        category_comment = f"\n# {category.upper()} - {message}\n"
+        new_rules = existing_rules + category_comment + rule_line
+        
+        # Guardar
+        with open(rules_file, 'w') as f:
+            f.write(new_rules)
+        
+        # Copiar al contenedor
+        import subprocess
+        try:
+            subprocess.run(
+                ["docker", "cp", str(rules_file), "threatguard-snort:/etc/snort/rules/local.rules"],
+                check=True,
+                capture_output=True,
+                timeout=10
+            )
+            logger.info(f"Regla copiada al contenedor Snort")
+        except Exception as e:
+            logger.warning(f"No se pudo copiar al contenedor: {e}")
+        
+        logger.info(f"Regla agregada: SID {sid} - {category}")
+        
+        return {
+            "success": True,
+            "message": "Regla agregada correctamente",
+            "rule": rule_line.strip(),
+            "category": category
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error agregando regla: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/snort/rules/{sid}")
+async def delete_snort_rule(sid: int):
+    """Eliminar una regla de Snort por SID"""
+    try:
+        rules_file = Path("config/local.rules")
+        if not rules_file.exists():
+            raise HTTPException(status_code=404, detail="Archivo de reglas no encontrado")
+        
+        # Leer reglas
+        with open(rules_file, 'r') as f:
+            lines = f.readlines()
+        
+        # Filtrar la regla con el SID especificado
+        new_lines = [line for line in lines if f"sid:{sid}" not in line]
+        
+        if len(new_lines) == len(lines):
+            raise HTTPException(status_code=404, detail=f"Regla con SID {sid} no encontrada")
+        
+        # Guardar
+        with open(rules_file, 'w') as f:
+            f.writelines(new_lines)
+        
+        # Copiar al contenedor
+        import subprocess
+        try:
+            subprocess.run(
+                ["docker", "cp", str(rules_file), "threatguard-snort:/etc/snort/rules/local.rules"],
+                check=True,
+                capture_output=True,
+                timeout=10
+            )
+        except Exception as e:
+            logger.warning(f"No se pudo copiar al contenedor: {e}")
+        
+        logger.info(f"Regla eliminada: SID {sid}")
+        
+        return {
+            "success": True,
+            "message": f"Regla SID {sid} eliminada correctamente"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error eliminando regla: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.patch("/snort/rules/{sid}/toggle")
+async def toggle_snort_rule(sid: int):
+    """Activar/desactivar una regla de Snort"""
+    try:
+        rules_file = Path("config/local.rules")
+        if not rules_file.exists():
+            raise HTTPException(status_code=404, detail="Archivo de reglas no encontrado")
+        
+        # Leer reglas
+        with open(rules_file, 'r') as f:
+            lines = f.readlines()
+        
+        # Buscar y toggle la regla
+        modified = False
+        new_lines = []
+        for line in lines:
+            if f"sid:{sid}" in line:
+                if line.strip().startswith("#"):
+                    # Activar (quitar comentario)
+                    new_lines.append(line.lstrip("# "))
+                else:
+                    # Desactivar (agregar comentario)
+                    new_lines.append("# " + line)
+                modified = True
+            else:
+                new_lines.append(line)
+        
+        if not modified:
+            raise HTTPException(status_code=404, detail=f"Regla con SID {sid} no encontrada")
+        
+        # Guardar
+        with open(rules_file, 'w') as f:
+            f.writelines(new_lines)
+        
+        # Copiar al contenedor
+        import subprocess
+        try:
+            subprocess.run(
+                ["docker", "cp", str(rules_file), "threatguard-snort:/etc/snort/rules/local.rules"],
+                check=True,
+                capture_output=True,
+                timeout=10
+            )
+        except Exception as e:
+            logger.warning(f"No se pudo copiar al contenedor: {e}")
+        
+        logger.info(f"Regla toggled: SID {sid}")
+        
+        return {
+            "success": True,
+            "message": f"Regla SID {sid} actualizada"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error actualizando regla: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/snort/restart")
