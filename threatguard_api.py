@@ -2539,6 +2539,49 @@ async def restart_snort():
         logger.error(f"Error reiniciando Snort: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/snort/lists")
+async def get_snort_lists():
+    """Obtener whitelist y blocklist"""
+    try:
+        # Intentar obtener de Redis primero
+        cached = redis_client.get("snort:lists")
+        if cached:
+            return json.loads(cached)
+        
+        # Si no hay caché, devolver listas vacías
+        default_lists = {"whitelist": [], "blocklist": []}
+        return default_lists
+    except Exception as e:
+        logger.error(f"Error obteniendo listas: {e}")
+        return {"whitelist": [], "blocklist": []}
+
+@app.post("/snort/lists")
+async def save_snort_lists(lists_data: dict):
+    """Guardar whitelist y blocklist"""
+    try:
+        whitelist = lists_data.get("whitelist", [])
+        blocklist = lists_data.get("blocklist", [])
+        
+        # Guardar en Redis
+        redis_client.set("snort:lists", json.dumps({"whitelist": whitelist, "blocklist": blocklist}))
+        
+        # Opcional: Guardar en archivo para persistencia
+        lists_file = Path("config/snort_lists.json")
+        with open(lists_file, 'w') as f:
+            json.dump({"whitelist": whitelist, "blocklist": blocklist}, f, indent=2)
+        
+        logger.info(f"Listas guardadas: {len(whitelist)} whitelist, {len(blocklist)} blocklist")
+        
+        return {
+            "success": True,
+            "message": "Listas guardadas correctamente",
+            "whitelist_count": len(whitelist),
+            "blocklist_count": len(blocklist)
+        }
+    except Exception as e:
+        logger.error(f"Error guardando listas: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 # Importar rutas de assets
 try:
     from src.api.assets_api import router as assets_router

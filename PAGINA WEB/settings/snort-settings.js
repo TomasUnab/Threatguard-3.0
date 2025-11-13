@@ -181,6 +181,203 @@ setInterval(() => {
     }
 }, 30000);
 
+// Whitelist/Blocklist Management
+let whitelist = [];
+let blocklist = [];
+
+async function loadLists() {
+    try {
+        const response = await fetch(`${API_URL}/snort/lists`);
+        if (response.ok) {
+            const data = await response.json();
+            whitelist = data.whitelist || [];
+            blocklist = data.blocklist || [];
+            renderLists();
+        }
+    } catch (error) {
+        console.error('Error loading lists:', error);
+    }
+}
+
+function renderLists() {
+    // Render whitelist
+    const whitelistContainer = document.getElementById('whitelist-items');
+    document.getElementById('whitelist-count').textContent = whitelist.length;
+    
+    if (whitelist.length === 0) {
+        whitelistContainer.innerHTML = `
+            <div class="text-center text-[#9dabb9] py-8">
+                <span class="material-symbols-outlined text-4xl mb-2">shield_with_heart</span>
+                <p>No hay entradas en la whitelist</p>
+            </div>
+        `;
+    } else {
+        whitelistContainer.innerHTML = whitelist.map((item, index) => `
+            <div class="flex items-center justify-between p-3 bg-[#1c2127] rounded-lg border border-[#3b4754] hover:border-green-400 transition-colors">
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined text-green-400" style="font-size: 20px;">check_circle</span>
+                    <span class="text-white text-sm font-mono">${item}</span>
+                </div>
+                <button onclick="removeFromWhitelist(${index})" class="text-[#9dabb9] hover:text-red-400 transition-colors">
+                    <span class="material-symbols-outlined" style="font-size: 20px;">delete</span>
+                </button>
+            </div>
+        `).join('');
+    }
+    
+    // Render blocklist
+    const blocklistContainer = document.getElementById('blocklist-items');
+    document.getElementById('blocklist-count').textContent = blocklist.length;
+    
+    if (blocklist.length === 0) {
+        blocklistContainer.innerHTML = `
+            <div class="text-center text-[#9dabb9] py-8">
+                <span class="material-symbols-outlined text-4xl mb-2">security</span>
+                <p>No hay entradas en la blocklist</p>
+            </div>
+        `;
+    } else {
+        blocklistContainer.innerHTML = blocklist.map((item, index) => `
+            <div class="flex items-center justify-between p-3 bg-[#1c2127] rounded-lg border border-[#3b4754] hover:border-red-400 transition-colors">
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined text-red-400" style="font-size: 20px;">block</span>
+                    <span class="text-white text-sm font-mono">${item}</span>
+                </div>
+                <button onclick="removeFromBlocklist(${index})" class="text-[#9dabb9] hover:text-red-400 transition-colors">
+                    <span class="material-symbols-outlined" style="font-size: 20px;">delete</span>
+                </button>
+            </div>
+        `).join('');
+    }
+}
+
+function validateIPOrDomain(value) {
+    // Validate IP (IPv4 or IPv6) or domain
+    const ipv4Regex = /^(\d{1,3}\.){3}\d{1,3}$/;
+    const ipv6Regex = /^([0-9a-fA-F]{0,4}:){2,7}[0-9a-fA-F]{0,4}$/;
+    const domainRegex = /^[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9]?(\.[a-zA-Z]{2,})+$/;
+    
+    return ipv4Regex.test(value) || ipv6Regex.test(value) || domainRegex.test(value);
+}
+
+document.getElementById('add-whitelist-btn')?.addEventListener('click', () => {
+    const input = document.getElementById('whitelist-input');
+    const value = input.value.trim();
+    
+    if (!value) {
+        showNotification('Ingrese una IP o dominio', 'error');
+        return;
+    }
+    
+    if (!validateIPOrDomain(value)) {
+        showNotification('IP o dominio inválido', 'error');
+        return;
+    }
+    
+    if (whitelist.includes(value)) {
+        showNotification('Ya existe en la whitelist', 'error');
+        return;
+    }
+    
+    if (blocklist.includes(value)) {
+        showNotification('Esta entrada está en la blocklist', 'error');
+        return;
+    }
+    
+    whitelist.push(value);
+    renderLists();
+    input.value = '';
+    showNotification('Agregado a whitelist', 'success');
+});
+
+document.getElementById('add-blocklist-btn')?.addEventListener('click', () => {
+    const input = document.getElementById('blocklist-input');
+    const value = input.value.trim();
+    
+    if (!value) {
+        showNotification('Ingrese una IP o dominio', 'error');
+        return;
+    }
+    
+    if (!validateIPOrDomain(value)) {
+        showNotification('IP o dominio inválido', 'error');
+        return;
+    }
+    
+    if (blocklist.includes(value)) {
+        showNotification('Ya existe en la blocklist', 'error');
+        return;
+    }
+    
+    if (whitelist.includes(value)) {
+        showNotification('Esta entrada está en la whitelist', 'error');
+        return;
+    }
+    
+    blocklist.push(value);
+    renderLists();
+    input.value = '';
+    showNotification('Agregado a blocklist', 'success');
+});
+
+window.removeFromWhitelist = (index) => {
+    whitelist.splice(index, 1);
+    renderLists();
+    showNotification('Eliminado de whitelist', 'success');
+};
+
+window.removeFromBlocklist = (index) => {
+    blocklist.splice(index, 1);
+    renderLists();
+    showNotification('Eliminado de blocklist', 'success');
+};
+
+document.getElementById('save-lists-btn')?.addEventListener('click', async () => {
+    const btn = document.getElementById('save-lists-btn');
+    const originalText = btn.textContent;
+    btn.textContent = 'Guardando...';
+    btn.disabled = true;
+    
+    try {
+        const response = await fetch(`${API_URL}/snort/lists`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ whitelist, blocklist })
+        });
+        
+        if (response.ok) {
+            showNotification('Listas guardadas correctamente', 'success');
+        } else {
+            showNotification('Error al guardar listas', 'error');
+        }
+    } catch (error) {
+        showNotification('Error de conexión', 'error');
+    } finally {
+        btn.textContent = originalText;
+        btn.disabled = false;
+    }
+});
+
+document.getElementById('export-lists-btn')?.addEventListener('click', () => {
+    const csv = [
+        'Type,Value',
+        ...whitelist.map(ip => `whitelist,${ip}`),
+        ...blocklist.map(ip => `blocklist,${ip}`)
+    ].join('\n');
+    
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `snort-lists-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showNotification('Listas exportadas', 'success');
+});
+
+// Load lists when tab is clicked
+document.getElementById('tab-snort-lists')?.addEventListener('click', loadLists);
+
 function showNotification(message, type = 'info') {
     const colors = {
         success: 'bg-green-500',

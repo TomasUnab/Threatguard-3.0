@@ -600,6 +600,9 @@ class="pl-10 pr-4 py-2 bg-[#283039] text-white rounded-lg border border-[#3b4754
         <button id="tab-snort-config" class="snort-tab px-6 py-3 text-[#9dabb9] hover:text-white transition-colors">
             Configuración
         </button>
+        <button id="tab-snort-lists" class="snort-tab px-6 py-3 text-[#9dabb9] hover:text-white transition-colors">
+            Whitelist / Blocklist
+        </button>
     </div>
     
     <!-- Panel de Reglas -->
@@ -653,6 +656,79 @@ class="pl-10 pr-4 py-2 bg-[#283039] text-white rounded-lg border border-[#3b4754
                     </tr>
                 </tbody>
             </table>
+        </div>
+    </div>
+    
+    <!-- Panel de Whitelist/Blocklist -->
+    <div id="panel-snort-lists" class="snort-panel hidden">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Whitelist -->
+            <div class="bg-[#111418] rounded-xl border border-[#3b4754] p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-white text-xl font-bold flex items-center gap-2">
+                        <span class="material-symbols-outlined text-green-400">check_circle</span>
+                        Whitelist (IPs/Dominios Permitidos)
+                    </h3>
+                    <span class="px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-sm" id="whitelist-count">0</span>
+                </div>
+                <p class="text-[#9dabb9] text-sm mb-4">IPs o dominios que nunca serán bloqueados</p>
+                
+                <div class="space-y-3 mb-4">
+                    <div class="flex gap-2">
+                        <input type="text" id="whitelist-input" placeholder="192.168.1.1 o example.com" class="flex-1 px-4 py-2 bg-[#1c2127] text-white rounded-lg border border-[#3b4754] focus:outline-none focus:border-green-400 text-sm">
+                        <button id="add-whitelist-btn" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors">
+                            <span class="material-symbols-outlined" style="font-size: 20px;">add</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="whitelist-items" class="space-y-2 max-h-96 overflow-y-auto">
+                    <div class="text-center text-[#9dabb9] py-8">
+                        <span class="material-symbols-outlined text-4xl mb-2">shield_with_heart</span>
+                        <p>No hay entradas en la whitelist</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Blocklist -->
+            <div class="bg-[#111418] rounded-xl border border-[#3b4754] p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-white text-xl font-bold flex items-center gap-2">
+                        <span class="material-symbols-outlined text-red-400">block</span>
+                        Blocklist (IPs/Dominios Bloqueados)
+                    </h3>
+                    <span class="px-3 py-1 bg-red-500/20 text-red-400 rounded-full text-sm" id="blocklist-count">0</span>
+                </div>
+                <p class="text-[#9dabb9] text-sm mb-4">IPs o dominios que serán bloqueados automáticamente</p>
+                
+                <div class="space-y-3 mb-4">
+                    <div class="flex gap-2">
+                        <input type="text" id="blocklist-input" placeholder="10.0.0.1 o malicious.com" class="flex-1 px-4 py-2 bg-[#1c2127] text-white rounded-lg border border-[#3b4754] focus:outline-none focus:border-red-400 text-sm">
+                        <button id="add-blocklist-btn" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">
+                            <span class="material-symbols-outlined" style="font-size: 20px;">add</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="blocklist-items" class="space-y-2 max-h-96 overflow-y-auto">
+                    <div class="text-center text-[#9dabb9] py-8">
+                        <span class="material-symbols-outlined text-4xl mb-2">security</span>
+                        <p>No hay entradas en la blocklist</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="flex gap-3 mt-6">
+            <button id="save-lists-btn" class="px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-medium">
+                Guardar Listas
+            </button>
+            <button id="export-lists-btn" class="px-6 py-3 bg-[#283039] text-white rounded-lg hover:bg-[#3b4754] transition-colors font-medium">
+                Exportar a CSV
+            </button>
+            <button id="import-lists-btn" class="px-6 py-3 bg-[#283039] text-white rounded-lg hover:bg-[#3b4754] transition-colors font-medium">
+                Importar desde CSV
+            </button>
         </div>
     </div>
     
