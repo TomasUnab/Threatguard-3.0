@@ -519,7 +519,18 @@ async def create_alert(alert: AlertCreate):
             "host_afectado": alert.title,
             "descripcion": alert.description
         }
-        # await soar_engine.process_event("alert", event_data)  # TODO: Implementar SOAR
+        
+        # Ejecutar workflows activos
+        try:
+            db_url_soar = os.getenv("DATABASE_URL")
+            if db_url_soar:
+                engine_soar = create_engine(db_url_soar)
+                with engine_soar.connect() as conn_soar:
+                    result = conn_soar.execute(text("SELECT id FROM soar_workflows WHERE is_active = true"))
+                    for row in result:
+                        await execute_soar_workflow(row[0], event_data)
+        except Exception as e:
+            logger.error(f"Error ejecutando workflows SOAR: {e}")
         
         return {"id": str(new_alert.id), "message": "Alerta creada correctamente"}
     finally:
@@ -721,29 +732,248 @@ async def get_elasticsearch_stats():
 @app.post("/soar/workflows")
 async def save_workflow(workflow_data: dict):
     """Guardar un workflow SOAR"""
-    # TODO: Implementar SOAR engine
-    return {"error": "SOAR engine not implemented yet"}, 501
+    db_url = os.getenv("DATABASE_URL")
+    if not db_url:
+        raise HTTPException(status_code=503, detail="Database no disponible")
+    
+    try:
+        workflow_id = workflow_data.get("id", str(uuid.uuid4()))
+        nodes = workflow_data.get("nodes", [])
+        connections = workflow_data.get("connections", [])
+        
+        engine = create_engine(db_url)
+        with engine.connect() as conn:
+            # Verificar si existe
+            result = conn.execute(text("""
+                SELECT id FROM soar_workflows WHERE id = :id
+            """), {"id": workflow_id})
+            
+            if result.fetchone():
+                # Actualizar
+                conn.execute(text("""
+                    UPDATE soar_workflows 
+                    SET nodes = :nodes, connections = :connections, updated_at = NOW()
+                    WHERE id = :id
+                """), {
+                    "id": workflow_id,
+                    "nodes": json.dumps(nodes),
+                    "connections": json.dumps(connections)
+                })
+            else:
+                # Crear
+                conn.execute(text("""
+                    INSERT INTO soar_workflows (id, name, nodes, connections, is_active, created_at, updated_at)
+                    VALUES (:id, :name, :nodes, :connections, false, NOW(), NOW())
+                """), {
+                    "id": workflow_id,
+                    "name": f"Workflow {workflow_id[:8]}",
+                    "nodes": json.dumps(nodes),
+                    "connections": json.dumps(connections)
+                })
+            
+            conn.commit()
+        
+        logger.info(f"Workflow guardado: {workflow_id}")
+        return {"success": True, "id": workflow_id, "message": "Workflow guardado"}
+    except Exception as e:
+        logger.error(f"Error guardando workflow: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/soar/workflows/{workflow_id}/activate")
 async def activate_workflow(workflow_id: str):
     """Activar un workflow SOAR"""
-    # TODO: Implementar SOAR engine
-    return {"error": "SOAR engine not implemented yet"}, 501
+    db_url = os.getenv("DATABASE_URL")
+    if not db_url:
+        raise HTTPException(status_code=503, detail="Database no disponible")
+    
+    try:
+        engine = create_engine(db_url)
+        with engine.connect() as conn:
+            conn.execute(text("""
+                UPDATE soar_workflows SET is_active = true, updated_at = NOW() WHERE id = :id
+            """), {"id": workflow_id})
+            conn.commit()
+        
+        logger.info(f"Workflow activado: {workflow_id}")
+        return {"success": True, "message": "Workflow activado"}
+    except Exception as e:
+        logger.error(f"Error activando workflow: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/soar/workflows/{workflow_id}/deactivate")
 async def deactivate_workflow(workflow_id: str):
     """Desactivar un workflow SOAR"""
-    # TODO: Implementar SOAR engine
-    return {"error": "SOAR engine not implemented yet"}, 501
+    db_url = os.getenv("DATABASE_URL")
+    if not db_url:
+        raise HTTPException(status_code=503, detail="Database no disponible")
+    
+    try:
+        engine = create_engine(db_url)
+        with engine.connect() as conn:
+            conn.execute(text("""
+                UPDATE soar_workflows SET is_active = false, updated_at = NOW() WHERE id = :id
+            """), {"id": workflow_id})
+            conn.commit()
+        
+        logger.info(f"Workflow desactivado: {workflow_id}")
+        return {"success": True, "message": "Workflow desactivado"}
+    except Exception as e:
+        logger.error(f"Error desactivando workflow: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/soar/workflows")
 async def list_workflows():
     """Listar todos los workflows"""
-    # TODO: Implementar SOAR engine
-    return {
-        "workflows": [],
-        "active": []
-    }
+    db_url = os.getenv("DATABASE_URL")
+    if not db_url:
+        return {"workflows": [], "active": []}
+    
+    try:
+        engine = create_engine(db_url)
+        with engine.connect() as conn:
+            result = conn.execute(text("""
+                SELECT id, name, is_active, created_at, updated_at, execution_count
+                FROM soar_workflows ORDER BY updated_at DESC
+            """))
+            
+            workflows = []
+            active = []
+            for row in result:
+                wf = {
+                    "id": row[0],
+                    "name": row[1],
+                    "is_active": row[2],
+                    "created_at": str(row[3]) if row[3] else None,
+                    "updated_at": str(row[4]) if row[4] else None,
+                    "execution_count": row[5] or 0
+                }
+                workflows.append(wf)
+                if row[2]:
+                    active.append(row[0])
+            
+            return {"workflows": workflows, "active": active}
+    except Exception as e:
+        logger.error(f"Error listando workflows: {e}")
+        return {"workflows": [], "active": []}
+
+@app.delete("/soar/workflows/{workflow_id}")
+async def delete_workflow(workflow_id: str):
+    """Eliminar un workflow"""
+    db_url = os.getenv("DATABASE_URL")
+    if not db_url:
+        raise HTTPException(status_code=503, detail="Database no disponible")
+    
+    try:
+        engine = create_engine(db_url)
+        with engine.connect() as conn:
+            conn.execute(text("DELETE FROM soar_workflows WHERE id = :id"), {"id": workflow_id})
+            conn.commit()
+        
+        logger.info(f"Workflow eliminado: {workflow_id}")
+        return {"success": True, "message": "Workflow eliminado"}
+    except Exception as e:
+        logger.error(f"Error eliminando workflow: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+async def execute_soar_workflow(workflow_id: str, event_data: dict):
+    """Ejecutar un workflow SOAR con datos de evento"""
+    db_url = os.getenv("DATABASE_URL")
+    if not db_url:
+        return
+    
+    try:
+        engine = create_engine(db_url)
+        with engine.connect() as conn:
+            # Obtener workflow
+            result = conn.execute(text("""
+                SELECT nodes, connections FROM soar_workflows WHERE id = :id AND is_active = true
+            """), {"id": workflow_id})
+            
+            row = result.fetchone()
+            if not row:
+                return
+            
+            nodes = json.loads(row[0])
+            connections = json.loads(row[1])
+            
+            # Encontrar nodo trigger
+            trigger_nodes = [n for n in nodes if n["type"] == "trigger"]
+            if not trigger_nodes:
+                return
+            
+            # Ejecutar workflow desde trigger
+            for trigger in trigger_nodes:
+                await execute_node(trigger, nodes, connections, event_data, conn)
+            
+            # Incrementar contador
+            conn.execute(text("""
+                UPDATE soar_workflows SET execution_count = execution_count + 1 WHERE id = :id
+            """), {"id": workflow_id})
+            conn.commit()
+            
+            logger.info(f"Workflow ejecutado: {workflow_id}")
+    except Exception as e:
+        logger.error(f"Error ejecutando workflow: {e}")
+
+async def execute_node(node: dict, all_nodes: list, connections: list, event_data: dict, conn):
+    """Ejecutar un nodo del workflow"""
+    node_type = node["type"]
+    config = node.get("config", {})
+    
+    try:
+        if node_type == "trigger":
+            # Verificar condición del trigger
+            condition = config.get("condition", "")
+            if condition and not eval_condition(condition, event_data):
+                return
+        
+        elif node_type == "condition":
+            condition = config.get("if", "")
+            if not eval_condition(condition, event_data):
+                return
+        
+        elif node_type == "action":
+            action = config.get("action")
+            if action == "block_ip":
+                ip = event_data.get("ip_origen")
+                logger.info(f"SOAR: Bloqueando IP {ip}")
+            elif action == "isolate_host":
+                host = event_data.get("host_afectado")
+                logger.info(f"SOAR: Aislando host {host}")
+        
+        elif node_type == "notification":
+            channel = config.get("channel")
+            message = config.get("message", "")
+            logger.info(f"SOAR: Notificación {channel}: {message}")
+        
+        elif node_type == "delay":
+            import asyncio
+            delay = int(config.get("delay", 0))
+            await asyncio.sleep(delay)
+        
+        # Ejecutar nodos conectados
+        next_connections = [c for c in connections if c["from"] == node["id"]]
+        for conn_data in next_connections:
+            next_node = next((n for n in all_nodes if n["id"] == conn_data["to"]), None)
+            if next_node:
+                await execute_node(next_node, all_nodes, connections, event_data, conn)
+    
+    except Exception as e:
+        logger.error(f"Error ejecutando nodo {node_type}: {e}")
+
+def eval_condition(condition: str, event_data: dict) -> bool:
+    """Evaluar condición de forma segura"""
+    try:
+        # Reemplazar variables
+        for key, value in event_data.items():
+            if isinstance(value, str):
+                condition = condition.replace(key, f"'{value}'")
+            else:
+                condition = condition.replace(key, str(value))
+        
+        return eval(condition)
+    except:
+        return False
 
 @app.get("/reports/vulnerabilities/pdf")
 async def download_vulnerability_report_pdf():
