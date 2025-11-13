@@ -228,11 +228,7 @@ window.generateTemplateReport = async () => {
         return;
     }
     
-    const btn = document.getElementById('save-policy');
-    if (btn) {
-        btn.textContent = 'Generando...';
-        btn.disabled = true;
-    }
+    showNotification('Generando reporte...', 'info');
     
     try {
         const response = await fetch(`${API_URL}/reports/generate`, {
@@ -242,14 +238,25 @@ window.generateTemplateReport = async () => {
         });
         
         if (response.ok) {
-            if (format === 'pdf') {
+            const contentType = response.headers.get('content-type');
+            
+            if (contentType && contentType.includes('application/pdf')) {
+                // Es un PDF, descargarlo
                 const blob = await response.blob();
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
                 a.download = `${name.replace(/ /g, '_')}_${start}.pdf`;
+                document.body.appendChild(a);
                 a.click();
+                document.body.removeChild(a);
                 window.URL.revokeObjectURL(url);
+                
+                showNotification(`Reporte "${name}" descargado`, 'success');
+            } else {
+                // Es JSON (fallback)
+                const data = await response.json();
+                showNotification(data.message || 'Reporte generado', 'success');
             }
             
             const newReport = {
@@ -261,20 +268,17 @@ window.generateTemplateReport = async () => {
             };
             
             reports.push(newReport);
+            document.getElementById('total-reports').textContent = reports.length;
             renderReports();
             closeModal('template-modal');
-            showNotification(`Reporte "${name}" generado y descargado`, 'success');
         } else {
+            const error = await response.text();
+            console.error('Error response:', error);
             showNotification('Error generando reporte', 'error');
         }
     } catch (error) {
-        console.error('Error:', error);
-        showNotification('Error de conexión', 'error');
-    } finally {
-        if (btn) {
-            btn.textContent = 'Generar Reporte';
-            btn.disabled = false;
-        }
+        console.error('Error completo:', error);
+        showNotification(`Error: ${error.message}`, 'error');
     }
 };
 

@@ -843,7 +843,7 @@ async def download_alert_report_csv():
 
 @app.post("/reports/generate")
 async def generate_report(report_data: dict):
-    """Generar un nuevo reporte PDF con datos reales"""
+    """Generar reporte PDF con datos específicos según tipo"""
     try:
         from reportlab.lib.pagesizes import letter
         from reportlab.lib import colors
@@ -855,94 +855,195 @@ async def generate_report(report_data: dict):
         name = report_data.get("name", f"Reporte {report_type}")
         start_date = report_data.get("start")
         end_date = report_data.get("end")
-        format_type = report_data.get("format", "pdf")
         
-        # Crear buffer para PDF
         buffer = BytesIO()
         doc = SimpleDocTemplate(buffer, pagesize=letter)
         elements = []
         styles = getSampleStyleSheet()
         
         # Título
-        title = Paragraph(f"<b>{name}</b>", styles['Title'])
-        elements.append(title)
+        elements.append(Paragraph(f"<b>{name}</b>", styles['Title']))
         elements.append(Spacer(1, 12))
-        
-        # Información del reporte
-        info = Paragraph(f"Generado: {datetime.now().strftime('%Y-%m-%d %H:%M')}<br/>Período: {start_date} - {end_date}", styles['Normal'])
-        elements.append(info)
+        elements.append(Paragraph(f"Generado: {datetime.now().strftime('%Y-%m-%d %H:%M')}<br/>Período: {start_date} - {end_date}", styles['Normal']))
         elements.append(Spacer(1, 20))
         
-        # Obtener datos según tipo
         db_url = os.getenv("DATABASE_URL")
-        if db_url:
-            engine = create_engine(db_url)
-            SessionLocal = sessionmaker(bind=engine)
-            db = SessionLocal()
-            
-            try:
-                if report_type in ["vulnerabilities", "alerts", "template"]:
-                    # Obtener alertas
-                    alerts = db.query(Alert).filter(Alert.status == "open").limit(50).all()
-                    
-                    # Tabla de alertas
-                    data = [["Severidad", "Título", "Fecha"]]
-                    for alert in alerts:
-                        data.append([
-                            alert.ai_classification or alert.severity,
-                            alert.title[:40] if alert.title else "N/A",
-                            alert.timestamp.strftime('%Y-%m-%d') if alert.timestamp else "N/A"
-                        ])
-                    
-                    table = Table(data)
-                    table.setStyle(TableStyle([
-                        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-                        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-                        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                        ('FONTSIZE', (0, 0), (-1, 0), 10),
-                        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
-                        ('GRID', (0, 0), (-1, -1), 1, colors.black)
-                    ]))
-                    elements.append(table)
-                    
-                    # Resumen
-                    alta = db.query(Alert).filter(Alert.ai_classification == "ALTA", Alert.status == "open").count()
-                    media = db.query(Alert).filter(Alert.ai_classification == "MEDIA", Alert.status == "open").count()
-                    baja = db.query(Alert).filter(Alert.ai_classification == "BAJA", Alert.status == "open").count()
-                    
-                    elements.append(Spacer(1, 20))
-                    summary = Paragraph(f"<b>Resumen:</b><br/>Alertas Alta: {alta}<br/>Alertas Media: {media}<br/>Alertas Baja: {baja}", styles['Normal'])
-                    elements.append(summary)
-                    
-            finally:
-                db.close()
+        engine = create_engine(db_url)
+        SessionLocal = sessionmaker(bind=engine)
+        db = SessionLocal()
         
-        # Construir PDF
+        try:
+            if report_type == "vulnerabilities":
+                # VULNERABILIDADES - Solo OpenVAS
+                elements.append(Paragraph("<b>Vulnerabilidades Detectadas (OpenVAS)</b>", styles['Heading2']))
+                elements.append(Spacer(1, 12))
+                
+                # Obtener alertas de OpenVAS
+                vulns = db.query(Alert).filter(Alert.source == "OpenVAS", Alert.status == "open").limit(50).all()
+                
+                data = [["Severidad", "Host", "Vulnerabilidad", "Fecha"]]
+                for v in vulns:
+                    data.append([
+                        v.severity or "N/A",
+                        v.raw_data.get("host", "N/A") if v.raw_data else "N/A",
+                        v.title[:50] if v.title else "N/A",
+                        v.timestamp.strftime('%Y-%m-%d') if v.timestamp else "N/A"
+                    ])
+                
+                table = Table(data, colWidths=[80, 100, 250, 80])
+                table.setStyle(TableStyle([
+                    ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                    ('FONTSIZE', (0, 0), (-1, -1), 8),
+                    ('GRID', (0, 0), (-1, -1), 1, colors.black)
+                ]))
+                elements.append(table)
+                elements.append(Spacer(1, 12))
+                elements.append(Paragraph(f"<b>Total vulnerabilidades: {len(vulns)}</b>", styles['Normal']))
+                
+            elif report_type == "alerts":
+                # ALERTAS - Snort + Clasificación IA
+                elements.append(Paragraph("<b>Alertas de Snort IDS con Clasificación IA</b>", styles['Heading2']))
+                elements.append(Spacer(1, 12))
+                
+                alerts = db.query(Alert).filter(Alert.source == "Snort IDS", Alert.status == "open").limit(50).all()
+                
+                data = [["Clasificación IA", "IP Origen", "Mensaje", "Fecha"]]
+                for a in alerts:
+                    data.append([
+                        a.ai_classification or a.severity or "BAJA",
+                        a.raw_data.get("source_ip", "N/A") if a.raw_data else "N/A",
+                        a.title[:50] if a.title else "N/A",
+                        a.timestamp.strftime('%Y-%m-%d') if a.timestamp else "N/A"
+                    ])
+                
+                table = Table(data, colWidths=[100, 100, 250, 80])
+                table.setStyle(TableStyle([
+                    ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                    ('FONTSIZE', (0, 0), (-1, -1), 8),
+                    ('GRID', (0, 0), (-1, -1), 1, colors.black)
+                ]))
+                elements.append(table)
+                
+                # Resumen por clasificación IA
+                alta = db.query(Alert).filter(Alert.source == "Snort IDS", Alert.ai_classification == "ALTA").count()
+                media = db.query(Alert).filter(Alert.source == "Snort IDS", Alert.ai_classification == "MEDIA").count()
+                baja = db.query(Alert).filter(Alert.source == "Snort IDS", Alert.ai_classification == "BAJA").count()
+                elements.append(Spacer(1, 12))
+                elements.append(Paragraph(f"<b>Resumen:</b> Alta: {alta} | Media: {media} | Baja: {baja}", styles['Normal']))
+                
+            elif report_type == "assets":
+                # ACTIVOS - Inventario de activos monitoreados
+                elements.append(Paragraph("<b>Inventario de Activos Monitoreados</b>", styles['Heading2']))
+                elements.append(Spacer(1, 12))
+                
+                with engine.connect() as conn:
+                    result = conn.execute(text("SELECT hostname, ip_address, os_type, status, last_seen FROM assets ORDER BY last_seen DESC LIMIT 50"))
+                    assets = result.fetchall()
+                
+                data = [["Hostname", "IP", "OS", "Estado", "Última Conexión"]]
+                for asset in assets:
+                    data.append([
+                        asset[0] or "N/A",
+                        asset[1] or "N/A",
+                        asset[2] or "N/A",
+                        asset[3] or "N/A",
+                        str(asset[4])[:10] if asset[4] else "N/A"
+                    ])
+                
+                table = Table(data, colWidths=[120, 100, 80, 80, 100])
+                table.setStyle(TableStyle([
+                    ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                    ('FONTSIZE', (0, 0), (-1, -1), 8),
+                    ('GRID', (0, 0), (-1, -1), 1, colors.black)
+                ]))
+                elements.append(table)
+                elements.append(Spacer(1, 12))
+                elements.append(Paragraph(f"<b>Total activos: {len(assets)}</b>", styles['Normal']))
+                
+            elif report_type == "compliance":
+                # CUMPLIMIENTO - Estado de parches y cumplimiento normativo
+                elements.append(Paragraph("<b>Estado de Cumplimiento y Parches</b>", styles['Heading2']))
+                elements.append(Spacer(1, 12))
+                
+                with engine.connect() as conn:
+                    result = conn.execute(text("""
+                        SELECT hostname, os_type, antivirus_active, telemetry_enabled, 
+                               compliance_status, compliance_message 
+                        FROM assets 
+                        ORDER BY compliance_status DESC 
+                        LIMIT 50
+                    """))
+                    compliance = result.fetchall()
+                
+                data = [["Hostname", "OS", "Antivirus", "Telemetría", "Estado"]]
+                for c in compliance:
+                    data.append([
+                        c[0] or "N/A",
+                        c[1] or "N/A",
+                        "Sí" if c[2] else "No",
+                        "Sí" if c[3] else "No",
+                        c[4] or "N/A"
+                    ])
+                
+                table = Table(data, colWidths=[120, 80, 80, 80, 120])
+                table.setStyle(TableStyle([
+                    ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                    ('FONTSIZE', (0, 0), (-1, -1), 8),
+                    ('GRID', (0, 0), (-1, -1), 1, colors.black)
+                ]))
+                elements.append(table)
+                
+                # Resumen de cumplimiento
+                compliant = sum(1 for c in compliance if c[4] == "compliant")
+                non_compliant = len(compliance) - compliant
+                elements.append(Spacer(1, 12))
+                elements.append(Paragraph(f"<b>Resumen:</b> Cumple: {compliant} | No cumple: {non_compliant}", styles['Normal']))
+                
+            elif report_type == "executive":
+                # EJECUTIVO - Resumen general para dirección
+                elements.append(Paragraph("<b>Resumen Ejecutivo de Seguridad</b>", styles['Heading2']))
+                elements.append(Spacer(1, 12))
+                
+                # Estadísticas generales
+                total_alerts = db.query(Alert).filter(Alert.status == "open").count()
+                total_vulns = db.query(Alert).filter(Alert.source == "OpenVAS").count()
+                
+                with engine.connect() as conn:
+                    result = conn.execute(text("SELECT COUNT(*) FROM assets"))
+                    total_assets = result.fetchone()[0]
+                
+                elements.append(Paragraph(f"<b>Total Alertas Abiertas:</b> {total_alerts}", styles['Normal']))
+                elements.append(Paragraph(f"<b>Total Vulnerabilidades:</b> {total_vulns}", styles['Normal']))
+                elements.append(Paragraph(f"<b>Total Activos:</b> {total_assets}", styles['Normal']))
+                elements.append(Spacer(1, 12))
+                
+                # Top 5 alertas críticas
+                elements.append(Paragraph("<b>Top 5 Alertas Críticas</b>", styles['Heading3']))
+                critical = db.query(Alert).filter(Alert.ai_classification == "ALTA").limit(5).all()
+                for alert in critical:
+                    elements.append(Paragraph(f"• {alert.title}", styles['Normal']))
+                    
+        finally:
+            db.close()
+        
         doc.build(elements)
         buffer.seek(0)
-        
-        # Guardar registro del reporte
-        report_id = str(uuid.uuid4())
-        timestamp = datetime.now().strftime('%Y-%m-%d')
         
         return StreamingResponse(
             buffer,
             media_type="application/pdf",
-            headers={"Content-Disposition": f"attachment; filename={name.replace(' ', '_')}_{timestamp}.pdf"}
+            headers={"Content-Disposition": f"attachment; filename={name.replace(' ', '_')}_{datetime.now().strftime('%Y%m%d')}.pdf"}
         )
     except ImportError:
-        # Si reportlab no está instalado, devolver respuesta simple
-        report_id = str(uuid.uuid4())
-        timestamp = datetime.now().strftime('%Y-%m-%d')
-        return {
-            "id": report_id,
-            "name": f"{report_data.get('name', 'Reporte')} - {timestamp}",
-            "date": timestamp,
-            "type": report_data.get('type', 'custom'),
-            "message": "Reporte generado (PDF requiere reportlab)"
-        }
+        return {"id": str(uuid.uuid4()), "message": "Reporte generado (PDF requiere reportlab)"}
     except Exception as e:
         logger.error(f"Error generando reporte: {e}")
         raise HTTPException(status_code=500, detail=str(e))
