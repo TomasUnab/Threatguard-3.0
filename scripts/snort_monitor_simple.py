@@ -71,8 +71,7 @@ while True:
                 "title": title,
                 "description": "Alerta detectada por Snort",
                 "status": "open",
-                "raw_data": {"raw_alert": line},
-                "timestamp": datetime.utcnow().isoformat()
+                "raw_data": {"raw_alert": line}
             }
             
             # Enviar a API

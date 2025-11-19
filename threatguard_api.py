@@ -58,21 +58,21 @@ class AlertCreate(BaseModel):
     source: str
     severity: str
     title: str
-    description: str = None
+    description: Optional[str] = None
     status: str = "open"
-    ai_classification: str = None
-    ai_confidence: float = None
-    raw_data: dict = None
-    timestamp: str = None
-    ai_processed_at: str = None
-    assigned_to: str = None
-    resolved_at: str = None
-    resolution_notes: str = None
-    detection_time: str = None
-    response_time: str = None
-    resolution_time: str = None
-    created_at: str = None
-    updated_at: str = None
+    ai_classification: Optional[str] = None
+    ai_confidence: Optional[float] = None
+    raw_data: Optional[dict] = None
+    timestamp: Optional[str] = None
+    ai_processed_at: Optional[str] = None
+    assigned_to: Optional[str] = None
+    resolved_at: Optional[str] = None
+    resolution_notes: Optional[str] = None
+    detection_time: Optional[str] = None
+    response_time: Optional[str] = None
+    resolution_time: Optional[str] = None
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
 
 class NetworkFlow(BaseModel):
     source_ip: str
@@ -557,7 +557,7 @@ async def create_snort_alert(alert: AlertCreate):
             ai_classification=alert.ai_classification,
             ai_confidence=alert.ai_confidence,
             raw_data=alert.raw_data,
-            timestamp=alert.timestamp,
+            timestamp=datetime.now(),
             ai_processed_at=alert.ai_processed_at
         )
         db.add(new_alert)
