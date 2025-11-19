@@ -13,8 +13,13 @@ pass icmp any any <> any any ( msg:"Normal ICMP Echo"; itype:0; sid:1000121; rev
 # ICMP Flood - múltiples pings en poco tiempo (AMENAZA REAL)
 alert icmp any any -> any any ( msg:"ICMP Flood Attack Detected"; itype:8; detection_filter:track by_src, count 50, seconds 5; sid:1000001; rev:2; priority:1; classtype:attempted-dos; )
 
+<<<<<<< HEAD
 # ICMP Ping Sweep - escaneo de red (RECONOCIMIENTO) - ALTA si es masivo
 alert icmp any any -> any any ( msg:"ICMP Ping Sweep - Network Reconnaissance"; itype:8; detection_filter:track by_src, count 10, seconds 10; sid:1000002; rev:3; priority:1; classtype:network-scan; )
+=======
+# ICMP Ping Sweep - escaneo de red (RECONOCIMIENTO)
+alert icmp any any -> any any ( msg:"ICMP Ping Sweep - Network Reconnaissance"; itype:8; detection_filter:track by_src, count 10, seconds 10; sid:1000002; rev:2; priority:2; classtype:network-scan; )
+>>>>>>> 6a64b2790de04e02b448e7b2a0c7f8f87caaa688
 
 # ICMP con payload sospechoso (posible exfiltración de datos)
 alert icmp any any -> any any ( msg:"ICMP with Suspicious Payload Size"; dsize:>1000; sid:1000003; rev:1; priority:1; classtype:suspicious-traffic; )
@@ -25,6 +30,7 @@ alert icmp any any -> any any ( msg:"ICMP with Suspicious Payload Size"; dsize:>
 # ===========================
 # Port Scan Detection
 # ===========================
+<<<<<<< HEAD
 # SYN Scan (escaneo sigiloso) - ALTA prioridad si es intensivo
 alert tcp any any -> any any ( msg:"TCP SYN Port Scan Detected - HIGH INTENSITY"; flags:S,12; detection_filter:track by_src, count 20, seconds 60; sid:1000005; rev:3; priority:1; classtype:attempted-recon; )
 
@@ -33,6 +39,16 @@ alert tcp any any -> any any ( msg:"TCP NULL Scan Detected"; flags:0; detection_
 
 # XMAS Scan (flags FPU activos) - ALTA prioridad
 alert tcp any any -> any any ( msg:"TCP XMAS Scan Detected"; flags:FPU,12; detection_filter:track by_src, count 10, seconds 60; sid:1000007; rev:2; priority:1; classtype:attempted-recon; )
+=======
+# SYN Scan (escaneo sigiloso)
+alert tcp any any -> any any ( msg:"TCP SYN Port Scan Detected"; flags:S,12; detection_filter:track by_src, count 20, seconds 60; sid:1000005; rev:2; priority:2; classtype:attempted-recon; )
+
+# NULL Scan (todos los flags en 0)
+alert tcp any any -> any any ( msg:"TCP NULL Scan Detected"; flags:0; detection_filter:track by_src, count 10, seconds 60; sid:1000006; rev:1; priority:2; classtype:attempted-recon; )
+
+# XMAS Scan (flags FPU activos)
+alert tcp any any -> any any ( msg:"TCP XMAS Scan Detected"; flags:FPU,12; detection_filter:track by_src, count 10, seconds 60; sid:1000007; rev:1; priority:2; classtype:attempted-recon; )
+>>>>>>> 6a64b2790de04e02b448e7b2a0c7f8f87caaa688
 
 # FIN Scan
 # alert tcp any any -> any any ( msg:"TCP FIN Scan Detected"; flags:F,12; detection_filter:track by_src, count 15, seconds 60; sid:1000008; rev:1; priority:2; classtype:attempted-recon; )
@@ -129,8 +145,13 @@ alert tcp any any -> any [4444,31337,8080] ( msg:"Metasploit/Meterpreter Connect
 # NetBus/BackOrifice (troyanos clásicos)
 alert tcp any any -> any [12345,12346,31337,31338] ( msg:"NetBus/BackOrifice Trojan Activity"; sid:1000052; rev:1; priority:1; classtype:trojan-activity; )
 
+<<<<<<< HEAD
 # Beacon Activity (C2 communication) - Reducir falsos positivos
 alert tcp any any -> any any ( msg:"Possible C2 Beacon - Regular Outbound Traffic"; detection_filter:track by_src, count 50, seconds 60; sid:1000053; rev:2; priority:2; classtype:trojan-activity; )
+=======
+# Beacon Activity (C2 communication)
+alert tcp any any -> any any ( msg:"Possible C2 Beacon - Regular Outbound Traffic"; detection_filter:track by_src, count 10, seconds 60; sid:1000053; rev:1; priority:2; classtype:trojan-activity; )
+>>>>>>> 6a64b2790de04e02b448e7b2a0c7f8f87caaa688
 
 # ===========================
 # Ransomware Detection
@@ -162,8 +183,13 @@ alert tcp any any -> any [3333,4444,8333,9999,14444] ( msg:"Cryptocurrency Minin
 # ===========================
 # Network Anomalies
 # ===========================
+<<<<<<< HEAD
 # Conexiones a IPs privadas desde internet (spoofing) - BAJA prioridad (tráfico interno normal)
 alert ip any any -> [10.0.0.0/8,172.16.0.0/12,192.168.0.0/16] any ( msg:"Internet Traffic to Private IP - Possible Spoofing"; sid:1000090; rev:2; priority:3; classtype:bad-unknown; )
+=======
+# Conexiones a IPs privadas desde internet (spoofing)
+alert ip any any -> [10.0.0.0/8,172.16.0.0/12,192.168.0.0/16] any ( msg:"Internet Traffic to Private IP - Possible Spoofing"; sid:1000090; rev:1; priority:2; classtype:bad-unknown; )
+>>>>>>> 6a64b2790de04e02b448e7b2a0c7f8f87caaa688
 
 # TTL muy bajo (posible proxy/VPN/routing anómalo)
 alert ip any any -> any any ( msg:"Abnormally Low TTL - Possible Evasion"; ttl:<5; sid:1000091; rev:1; priority:3; classtype:suspicious-traffic; )
@@ -184,6 +210,7 @@ alert icmp any any -> any any ( msg:"ICMP Tunneling - Large Payload Data Exfiltr
 # Protocolo TOR Detection
 # ===========================
 alert tcp any any -> any [9001,9030,9150] ( msg:"TOR Network Connection Detected"; sid:1000110; rev:1; priority:3; classtype:policy-violation; )
+<<<<<<< HEAD
 
 # ===========================
 # TEST RULES - ALTA PRIORIDAD
@@ -193,3 +220,5 @@ alert tcp any any -> any 8080 ( msg:"TEST - High Priority Alert - Port 8080 Acce
 
 # Regla de prueba - cualquier conexión al puerto 8000 (ALTA)
 alert tcp any any -> any 8000 ( msg:"TEST - High Priority Alert - Port 8000 Access"; detection_filter:track by_src, count 3, seconds 10; sid:1000201; rev:1; priority:1; classtype:web-application-attack; )
+=======
+>>>>>>> 6a64b2790de04e02b448e7b2a0c7f8f87caaa688
