@@ -193,7 +193,7 @@ class SnortIntegration:
                 "title": alert_data.get("title", "Snort Alert"),
                 "description": description,
                 "status": "open",
-                "ai_classification": None,  # Snort no usa clasificación ML, solo severity
+                "ai_classification": severity,
                 "ai_confidence": None,
                 "raw_data": alert_data,
                 "timestamp": alert_data.get("timestamp")
