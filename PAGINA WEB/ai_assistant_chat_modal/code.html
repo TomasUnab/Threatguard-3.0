@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AI Assistant Chat Modal</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#137fec",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101922",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .material-symbols-outlined {
+          font-variation-settings:
+          'FILL' 0,
+          'wght' 400,
+          'GRAD' 0,
+          'opsz' 24
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display">
+<div class="relative flex h-auto min-h-screen w-full flex-col">
+<header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#283039] px-10 py-3 fixed top-0 left-0 right-0 bg-background-dark z-50">
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-4 text-white">
+<div class="size-6">
+<span class="material-symbols-outlined text-primary text-3xl">security</span>
+</div>
+<h2 class="text-white text-lg font-bold leading-tight tracking-[-0.015em]">ThreatGuard</h2>
+</div>
+<div class="flex items-center gap-9">
+<a class="text-white text-sm font-medium leading-normal" href="../alerts_(triage_center)/code.html">Alerts</a>
+<a class="text-white text-sm font-medium leading-normal" href="../assets_(asset_&_asrm_mgmt.)/code.html">Assets</a>
+<a class="text-white text-sm font-medium leading-normal" href="../vulnerability_management/code.html">Vulnerability Management</a>
+<a class="text-white text-sm font-medium leading-normal" href="../soar_(automation_&_orchestration)/code.html">SOAR</a>
+<a class="text-white text-sm font-medium leading-normal" href="../reports/code.html">Reports</a>
+</div>
+</div>
+<div class="flex flex-1 justify-end gap-4">
+<label class="relative flex min-w-40 !h-10 max-w-64">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#9dabb9]">search</span>
+<input class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-white focus:outline-0 focus:ring-0 border-none bg-[#283039] focus:border-none h-full placeholder:text-[#9dabb9] pl-10 pr-4 text-sm font-normal leading-normal" placeholder="Search" value=""/>
+</label>
+<button class="flex items-center justify-center rounded-lg h-10 w-10 bg-[#283039] text-white">
+<span class="material-symbols-outlined text-xl">notifications</span>
+</button>
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" data-alt="User avatar" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAed5F4fNuz4Hao__TimMafGVsVOl3H453u3Xfv50WWnbws64cTfFcvQo_n2R_sgK7inMu24J3e3yOCyOkvXv2x9_bA-LLzE0U8A336lUm2Al3nKqISkXC9KokSnc09zBDLLQMN_kenVsSx0EiXZJxrgZV593rMVIGM2MCxIlEmjmbGci_jWzR0py9DnRAklISF1LsBsINd76VRSHHVdG_zm8LkYqXT9PCcb5EAHQUdLR9IXLL9PzTCaU6La3ooZ8gfWkqDC5D4xQ");'></div>
+</div>
+</header>
+<div class="flex-1 overflow-y-auto p-6 space-y-6">
+<div class="flex items-end gap-3">
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full w-10 h-10 shrink-0 border-2 border-primary" data-alt="AI Assistant avatar with a blue circuit pattern" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAORPeLH6HYh7snY_oHDIAsc95u78LpRO2K6Gz-WsdrU5MdiMtHDRvdr0vfkI7sA3izWqJ9J1QmW6v-wEJRA7jlilKG-TiMxphVmXLHNDhwejv7TSwOAvJcE8xzmYegaXvBHu-AbmZi7ZsLUYbIUs6KywfoZ6wfCDcq-x1-cZ7sgS8J0dS46qA00bwmSBikzlkH7WEQddp6yJ9U_dq9mwOpHlRD4BYuIB6OknwB6q4tRyxFd3_xKV1TFEPgK6rwnzIxHsRAyhgHPw");'></div>
+<div class="flex flex-1 flex-col gap-1 items-start">
+<p class="text-gray-400 text-sm font-medium">AI Assistant</p>
+<p class="text-base font-normal leading-relaxed flex max-w-md rounded-lg px-4 py-3 bg-[#283039] text-white">
+                                Hello! I am your AI Security Assistant. How can I help you analyze your data today?
+                            </p>
+</div>
+</div>
+<div class="flex items-end gap-3 justify-end">
+<div class="flex flex-1 flex-col gap-1 items-end">
+<p class="text-gray-400 text-sm font-medium">You</p>
+<p class="text-base font-normal leading-relaxed flex max-w-md rounded-lg px-4 py-3 bg-primary text-white">Muéstrame el tráfico inusual</p>
+</div>
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full w-10 h-10 shrink-0" data-alt="User avatar with an abstract gradient" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDf7rqSwu2sGSMca3vzdEFLwDYGgcjT_rYxDnNxbq_-hGVOAX-dtMJnXRmCgnQ5iRmPr8WL0BMzNpWXr3EyWjYNBtoBBUoruo60TGIEB16LRqQmpe-igIWaQSWLCrzgr7XXE8YonIGeX8UhuvxrIFvK_NFdDMwSFSuWKokm9ULoxFehiIxwO-JObFnq-zKjeNfIWgicxwdJZB49hEiKPw5_uozK2VqSxIFe0BUFliOQ_XE23ho_P45MsGJ3YxtMIi9TasY13Mgymg");'></div>
+</div>
+<div class="flex items-center justify-start gap-3">
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full w-10 h-10 shrink-0 border-2 border-primary" data-alt="AI Assistant avatar with a blue circuit pattern" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAf_7ZNXoyt-NL5HaLwiC5LIQhKAC6hT8ga16I7tBqoyjQHhlA8jFHiuDvHsP3_Ou7S037JshIy82_6GwyFXhQ6HAN7Bk92fWndGfiDfTkOZsiBnpg2Ay6gV5BC4t6NLXEMG2dY2fTKMBBOv69V6fGFHrVmBKHKOejS3LIuyVDFb2AqCNjJKywVsNuCPRjhbeYJsJYDQHlOp8aUWna8Zx2bKjTOmOzFO3FKQ2YmwVL2ASyS71hmIQV-7w_sAiArOasICIjOI_C8fw");'></div>
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+<div class="w-2 h-2 bg-primary rounded-full animate-pulse [animation-delay:0.2s]"></div>
+<div class="w-2 h-2 bg-primary rounded-full animate-pulse [animation-delay:0.4s]"></div>
+</div>
+</div>
+</div>
+<div class="px-6 py-4 border-t border-gray-700/50">
+<div class="flex flex-wrap gap-2 mb-4">
+<button class="text-sm font-medium text-primary bg-primary/20 hover:bg-primary/30 px-3 py-1.5 rounded-lg transition-colors">¿Hosts más atacados hoy?</button>
+<button class="text-sm font-medium text-primary bg-primary/20 hover:bg-primary/30 px-3 py-1.5 rounded-lg transition-colors">Resumen de alertas críticas</button>
+<button class="text-sm font-medium text-primary bg-primary/20 hover:bg-primary/30 px-3 py-1.5 rounded-lg transition-colors">Genera un reporte de vulnerabilidades</button>
+</div>
+<div class="relative">
+<input class="w-full bg-gray-900 text-white placeholder-gray-500 border border-gray-700 rounded-lg py-3 pl-4 pr-12 focus:ring-primary focus:border-primary transition" placeholder="Ask me anything about your security data..." type="text"/>
+<button class="absolute inset-y-0 right-0 flex items-center justify-center px-4 text-gray-400 hover:text-primary transition-colors">
+<span class="material-symbols-outlined">send</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<div class="absolute bottom-8 right-8">
+<button class="flex items-center justify-center w-16 h-16 rounded-full bg-primary text-white shadow-lg hover:bg-blue-500 transition-all duration-300 transform hover:scale-110">
+<span class="material-symbols-outlined text-3xl">smart_toy</span>
+</button>
+</div>
+</div>
+</body></html>

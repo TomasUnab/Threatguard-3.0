@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ThreatGuard Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#137fec",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101922",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings:
+            'FILL' 0,
+            'wght' 400,
+            'GRAD' 0,
+            'opsz' 24
+        }
+    </style>
+</head>
+<body class="bg-background-dark text-white font-display">
+<script>
+    window.location.href = "/executive_summary/code.html";
+</script>
+<div class="relative flex min-h-screen w-full flex-col">
+<header class="sticky top-0 z-50 flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#283039] bg-background-dark px-10 py-3">
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-4 text-white">
+<div class="size-6 text-primary">
+<span class="material-symbols-outlined !text-3xl">security</span>
+</div>
+<h2 class="text-white text-xl font-bold leading-tight tracking-[-0.015em]">ThreatGuard</h2>
+</div>
+<div class="flex items-center gap-9">
+<a class="text-white text-sm font-medium leading-normal" href="/executive_summary/code.html">Dashboard</a>
+<a class="text-white text-sm font-medium leading-normal" href="/alerts/code.html">Alerts</a>
+<a class="text-white text-sm font-medium leading-normal" href="/assets/code.html">Assets</a>
+<a class="text-white text-sm font-medium leading-normal" href="/vulnerability_management/code.html">Vulnerability Management</a>
+<a class="text-white text-sm font-medium leading-normal" href="/soar/code.html">SOAR</a>
+<a class="text-white text-sm font-medium leading-normal" href="/reports/code.html">Reports</a>
+<a class="text-white text-sm font-medium leading-normal" href="/settings/code.html">Settings</a>
+</div>
+</div>
+<div class="flex flex-1 justify-end gap-4">
+<label class="flex flex-col min-w-40 !h-10 max-w-64">
+<div class="flex w-full flex-1 items-stretch rounded-lg h-full">
+<div class="text-[#9dabb9] flex border-none bg-[#283039] items-center justify-center pl-3 rounded-l-lg border-r-0">
+<span class="material-symbols-outlined">search</span>
+</div>
+<input class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-white focus:outline-0 focus:ring-0 border-none bg-[#283039] focus:border-none h-full placeholder:text-[#9dabb9] px-4 rounded-l-none border-l-0 pl-2 text-base font-normal leading-normal" placeholder="Search" value=""/>
+</div>
+</label>
+<div class="flex gap-2">
+<button class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 bg-[#283039] text-white gap-2 text-sm font-bold leading-normal tracking-[0.015em] min-w-0 px-3">
+<span class="material-symbols-outlined">add</span>
+</button>
+<button class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 bg-[#283039] text-white gap-2 text-sm font-bold leading-normal tracking-[0.015em] min-w-0 px-3">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 bg-[#283039] text-white gap-2 text-sm font-bold leading-normal tracking-[0.015em] min-w-0 px-3">
+<span class="material-symbols-outlined">settings</span>
+</button>
+</div>
+</div>
+</header>
+<main class="flex-1 p-8">
+<div class="grid grid-cols-4 gap-6 mb-6">
+<div class="flex flex-col gap-2 rounded-lg p-6 bg-[#283039] border border-high-priority/50">
+<p class="text-white text-base font-medium leading-normal">Alertas de Prioridad ALTA (IA)</p>
+<p class="text-high-priority tracking-light text-4xl font-bold leading-tight">8</p>
+</div>
+<div class="flex flex-col gap-2 rounded-lg p-6 bg-[#283039] border border-high-priority/50">
+<p class="text-white text-base font-medium leading-normal">Activos Críticos Vulnerables</p>
+<p class="text-high-priority tracking-light text-4xl font-bold leading-tight">12</p>
+</div>
+<div class="flex flex-col gap-2 rounded-lg p-6 bg-[#283039]">
+<p class="text-white text-base font-medium leading-normal">Average MTTD</p>
+<p class="text-white tracking-light text-4xl font-bold leading-tight">4.5 hrs</p>
+</div>
+<div class="flex flex-col gap-2 rounded-lg p-6 bg-[#283039]">
+<p class="text-white text-base font-medium leading-normal">Average MTTR</p>
+<p class="text-white tracking-light text-4xl font-bold leading-tight">18 hrs</p>
+</div>
+</div>
+<div class="grid grid-cols-12 gap-6 mb-6">
+<div class="col-span-4 flex flex-col gap-4 rounded-lg border border-[#3b4754] bg-[#283039] p-6">
+<p class="text-white text-base font-medium leading-normal">Gráfico de Dona Priorización de Alertas (IA) - 24h</p>
+<div class="flex items-center justify-center flex-1 relative">
+<svg class="transform -rotate-90" height="200" viewbox="0 0 36 36" width="200">
+<circle cx="18" cy="18" fill="transparent" r="15.9154943092" stroke="#4A90E2" stroke-dasharray="25 75" stroke-width="3"></circle>
+<circle cx="18" cy="18" fill="transparent" r="15.9154943092" stroke="#FFA500" stroke-dasharray="35 65" stroke-dashoffset="-25" stroke-width="3"></circle>
+<circle cx="18" cy="18" fill="transparent" r="15.9154943092" stroke="#FF4D4D" stroke-dasharray="15 85" stroke-dashoffset="-60" stroke-width="3"></circle>
+</svg>
+<div class="absolute flex flex-col items-center">
+<span class="text-3xl font-bold">25</span>
+<span class="text-sm text-[#9dabb9]">Total Alerts</span>
+</div>
+</div>
+<div class="flex justify-around">
+<div class="text-center">
+<p class="text-sm font-medium text-high-priority">Alta</p>
+<p class="text-lg font-bold">8</p>
+</div>
+<div class="text-center">
+<p class="text-sm font-medium text-medium-priority">Media</p>
+<p class="text-lg font-bold">12</p>
+</div>
+<div class="text-center">
+<p class="text-sm font-medium text-low-priority">Baja</p>
+<p class="text-lg font-bold">5</p>
+</div>
+</div>
+</div>
+<div class="col-span-8 flex flex-col gap-2 rounded-lg border border-[#3b4754] bg-[#283039] p-6">
+<div class="flex justify-between items-start">
+<div>
+<p class="text-white text-base font-medium leading-normal">Gráfico de Área Volumen de Eventos (Wazuh) - 48h</p>
+<p class="text-white tracking-light text-[32px] font-bold leading-tight truncate">1.2M</p>
+<div class="flex gap-1">
+<p class="text-[#9dabb9] text-base font-normal leading-normal">Last 48h</p>
+<p class="text-[#0bda5b] text-base font-medium leading-normal">+5.2%</p>
+</div>
+</div>
+</div>
+<div class="flex flex-1 flex-col justify-end">
+<svg fill="none" height="100%" preserveaspectratio="none" viewbox="-3 0 478 150" width="100%" xmlns="http://www.w3.org/2000/svg">
+<path d="M0 109C18.1538 109 18.1538 21 36.3077 21C54.4615 21 54.4615 41 72.6154 41C90.7692 41 90.7692 93 108.923 93C127.077 93 127.077 33 145.231 33C163.385 33 163.385 101 181.538 101C199.692 101 199.692 61 217.846 61C236 61 236 45 254.154 45C272.308 45 272.308 121 290.462 121C308.615 121 308.615 149 326.769 149C344.923 149 344.923 1 363.077 1C381.231 1 381.231 81 399.385 81C417.538 81 417.538 129 435.692 129C453.846 129 453.846 25 472 25V149H0V109Z" fill="url(#paint0_linear_area)"></path>
+<path d="M0 109C18.1538 109 18.1538 21 36.3077 21C54.4615 21 54.4615 41 72.6154 41C90.7692 41 90.7692 93 108.923 93C127.077 93 127.077 33 145.231 33C163.385 33 163.385 101 181.538 101C199.692 101 199.692 61 217.846 61C236 61 236 45 254.154 45C272.308 45 272.308 121 290.462 121C308.615 121 308.615 149 326.769 149C344.923 149 344.923 1 363.077 1C381.231 1 381.231 81 399.385 81C417.538 81 417.538 129 435.692 129C453.846 129 453.846 25 472 25" stroke="url(#paint1_linear_area)" stroke-linecap="round" stroke-width="3"></path>
+<defs>
+<lineargradient gradientunits="userSpaceOnUse" id="paint0_linear_area" x1="236" x2="236" y1="1" y2="149">
+<stop stop-color="#4A90E2" stop-opacity="0.3"></stop>
+<stop offset="1" stop-color="#1A1A1A" stop-opacity="0"></stop>
+</lineargradient>
+<lineargradient gradientunits="userSpaceOnUse" id="paint1_linear_area" x1="0" x2="472" y1="75" y2="75">
+<stop stop-color="#4A90E2"></stop>
+<stop offset="1" stop-color="#8A2BE2"></stop>
+</lineargradient>
+</defs>
+</svg>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-6">
+<div class="flex flex-col gap-4 rounded-lg border border-[#3b4754] bg-[#283039] p-4">
+<p class="text-white text-base font-medium leading-normal px-2">Tabla Top 5 Hosts Vulnerables (OpenVAS)</p>
+<div class="overflow-hidden rounded-lg">
+<table class="w-full">
+<thead>
+<tr class="bg-[#1c2127]">
+<th class="px-4 py-3 text-left text-white text-sm font-medium leading-normal">Host</th>
+<th class="px-4 py-3 text-left text-white text-sm font-medium leading-normal"># Críticas</th>
+<th class="px-4 py-3 text-left text-white text-sm font-medium leading-normal"># Altas</th>
+<th class="px-4 py-3 text-left text-white text-sm font-medium leading-normal">Total</th>
+</tr>
+</thead>
+<tbody>
+<tr class="border-t border-t-[#3b4754] hover:bg-[#3b4754]/50">
+<td class="h-[60px] px-4 py-2 text-[#9dabb9] text-sm font-normal leading-normal">srv-db01.prod.local</td>
+<td class="h-[60px] px-4 py-2 text-high-priority text-sm font-bold leading-normal">5</td>
+<td class="h-[60px] px-4 py-2 text-medium-priority text-sm font-bold leading-normal">12</td>
+<td class="h-[60px] px-4 py-2 text-[#9dabb9] text-sm font-normal leading-normal">17</td>
+</tr>
+<tr class="border-t border-t-[#3b4754] hover:bg-[#3b4754]/50">
+<td class="h-[60px] px-4 py-2 text-[#9dabb9] text-sm font-normal leading-normal">web-ext03.prod.local</td>
+<td class="h-[60px] px-4 py-2 text-high-priority text-sm font-bold leading-normal">3</td>
+<td class="h-[60px] px-4 py-2 text-medium-priority text-sm font-bold leading-normal">8</td>
+<td class="h-[60px] px-4 py-2 text-[#9dabb9] text-sm font-normal leading-normal">11</td>
+</tr>
+<tr class="border-t border-t-[#3b4754] hover:bg-[#3b4754]/50">
+<td class="h-[60px] px-4 py-2 text-[#9dabb9] text-sm font-normal leading-normal">dev-win10-05.dev.local</td>
+<td class="h-[60px] px-4 py-2 text-high-priority text-sm font-bold leading-normal">2</td>
+<td class="h-[60px] px-4 py-2 text-medium-priority text-sm font-bold leading-normal">5</td>
+<td class="h-[60px] px-4 py-2 text-[#9dabb9] text-sm font-normal leading-normal">7</td>
+</tr>
+<tr class="border-t border-t-[#3b4754] hover:bg-[#3b4754]/50">
+<td class="h-[60px] px-4 py-2 text-[#9dabb9] text-sm font-normal leading-normal">api-gw.prod.local</td>
+<td class="h-[60px] px-4 py-2 text-high-priority text-sm font-bold leading-normal">1</td>
+<td class="h-[60px] px-4 py-2 text-medium-priority text-sm font-bold leading-normal">10</td>
+<td class="h-[60px] px-4 py-2 text-[#9dabb9] text-sm font-normal leading-normal">11</td>
+</tr>
+<tr class="border-t border-t-[#3b4754] hover:bg-[#3b4754]/50">
+<td class="h-[60px] px-4 py-2 text-[#9dabb9] text-sm font-normal leading-normal">kube-master.prod.local</td>
+<td class="h-[60px] px-4 py-2 text-high-priority text-sm font-bold leading-normal">1</td>
+<td class="h-[60px] px-4 py-2 text-medium-priority text-sm font-bold leading-normal">4</td>
+<td class="h-[60px] px-4 py-2 text-[#9dabb9] text-sm font-normal leading-normal">5</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="flex flex-col gap-4 rounded-lg border border-[#3b4754] bg-[#283039] p-4">
+<p class="text-white text-base font-medium leading-normal px-2">Tabla Top 5 Alertas (Wazuh/IA)</p>
+<div class="overflow-hidden rounded-lg">
+<table class="w-full">
+<thead>
+<tr class="bg-[#1c2127]">
+<th class="px-4 py-3 text-left text-white text-sm font-medium leading-normal w-2/5">Descripción</th>
+<th class="px-4 py-3 text-left text-white text-sm font-medium leading-normal w-2/5">Host</th>
+<th class="px-4 py-3 text-left text-white text-sm font-medium leading-normal w-1/5">Prioridad IA</th>
+</tr>
+</thead>
+<tbody>
+<tr class="border-t border-t-[#3b4754] hover:bg-[#3b4754]/50">
+<td class="h-[60px] px-4 py-2 text-[#9dabb9] text-sm font-normal leading-normal">Potential SQL Injection attempt</td>
+<td class="h-[60px] px-4 py-2 text-[#9dabb9] text-sm font-normal leading-normal">web-ext03.prod.local</td>
+<td class="h-[60px] px-4 py-2 text-sm font-normal leading-normal">
+<span class="inline-flex items-center rounded-md bg-high-priority/20 px-2 py-1 text-xs font-medium text-high-priority ring-1 ring-inset ring-high-priority/20">Alta</span>
+</td>
+</tr>
+<tr class="border-t border-t-[#3b4754] hover:bg-[#3b4754]/50">
+<td class="h-[60px] px-4 py-2 text-[#9dabb9] text-sm font-normal leading-normal">Multiple failed login attempts</td>
+<td class="h-[60px] px-4 py-2 text-[#9dabb9] text-sm font-normal leading-normal">srv-db01.prod.local</td>
+<td class="h-[60px] px-4 py-2 text-sm font-normal leading-normal">
+<span class="inline-flex items-center rounded-md bg-high-priority/20 px-2 py-1 text-xs font-medium text-high-priority ring-1 ring-inset ring-high-priority/20">Alta</span>
+</td>
+</tr>
+<tr class="border-t border-t-[#3b4754] hover:bg-[#3b4754]/50">
+<td class="h-[60px] px-4 py-2 text-[#9dabb9] text-sm font-normal leading-normal">Anomalous outbound traffic detected</td>
+<td class="h-[60px] px-4 py-2 text-[#9dabb9] text-sm font-normal leading-normal">dev-win10-05.dev.local</td>
+<td class="h-[60px] px-4 py-2 text-sm font-normal leading-normal">
+<span class="inline-flex items-center rounded-md bg-medium-priority/20 px-2 py-1 text-xs font-medium text-medium-priority ring-1 ring-inset ring-medium-priority/20">Media</span>
+</td>
+</tr>
+<tr class="border-t border-t-[#3b4754] hover:bg-[#3b4754]/50">
+<td class="h-[60px] px-4 py-2 text-[#9dabb9] text-sm font-normal leading-normal">Malware signature detected</td>
+<td class="h-[60px] px-4 py-2 text-[#9dabb9] text-sm font-normal leading-normal">web-ext03.prod.local</td>
+<td class="h-[60px] px-4 py-2 text-sm font-normal leading-normal">
+<span class="inline-flex items-center rounded-md bg-high-priority/20 px-2 py-1 text-xs font-medium text-high-priority ring-1 ring-inset ring-high-priority/20">Alta</span>
+</td>
+</tr>
+<tr class="border-t border-t-[#3b4754] hover:bg-[#3b4754]/50">
+<td class="h-[60px] px-4 py-2 text-[#9dabb9] text-sm font-normal leading-normal">SSH brute-force attempt</td>
+<td class="h-[60px] px-4 py-2 text-[#9dabb9] text-sm font-normal leading-normal">kube-master.prod.local</td>
+<td class="h-[60px] px-4 py-2 text-sm font-normal leading-normal">
+<span class="inline-flex items-center rounded-md bg-medium-priority/20 px-2 py-1 text-xs font-medium text-medium-priority ring-1 ring-inset ring-medium-priority/20">Media</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>
