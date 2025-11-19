@@ -71,6 +71,7 @@ while True:
                 "title": title,
                 "description": "Alerta detectada por Snort",
                 "status": "open",
+                "ai_classification": severity,
                 "raw_data": {"raw_alert": line}
             }
             
