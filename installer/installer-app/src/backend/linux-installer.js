@@ -36,7 +36,7 @@ class LinuxInstaller extends InstallerCommon {
                 value: `${await this.checkDiskSpace('/')} GB available`,
                 required: '50 GB minimum'
             },
-            sudo: {
+            permissions: {
                 valid: this.isAdmin(),
                 value: this.isAdmin() ? 'Yes' : 'No',
                 required: 'Root/sudo access required'

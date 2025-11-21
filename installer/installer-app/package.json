@@ -42,12 +42,12 @@
                 "to": "app/src"
             },
             {
-                "from": "../../main.py",
-                "to": "app/"
+                "from": "resources_to_package/threatguard_api.py",
+                "to": "app/threatguard_api.py"
             },
             {
-                "from": "../../requirements.txt",
-                "to": "app/"
+                "from": "resources_to_package/requirements.txt",
+                "to": "app/requirements.txt"
             },
             {
                 "from": "../../PAGINA WEB",
@@ -58,24 +58,16 @@
                 "to": "app/config"
             },
             {
-                "from": "../services",
-                "to": "services"
-            },
-            {
-                "from": "../config",
-                "to": "config"
-            },
-            {
-                "from": "../scripts",
-                "to": "scripts"
-            },
-            {
-                "from": "../binaries",
+                "from": "binaries",
                 "to": "binaries"
             },
             {
-                "from": "../README.md",
-                "to": "."
+                "from": "services",
+                "to": "services"
+            },
+            {
+                "from": "../../assets",
+                "to": "assets"
             }
         ],
         "linux": {
@@ -88,19 +80,14 @@
         },
         "win": {
             "target": [
-                "nsis"
+                "portable"
             ],
-            "icon": "assets/icon.ico"
+            "icon": "assets/icon.ico",
+            "forceCodeSigning": false,
+            "requestedExecutionLevel": "requireAdministrator"
         },
-        "nsis": {
-            "oneClick": false,
-            "allowToChangeInstallationDirectory": true,
-            "createDesktopShortcut": true,
-            "createStartMenuShortcut": true,
-            "shortcutName": "ThreatGuard Installer",
-            "artifactName": "ThreatGuard-Setup-${version}.${ext}",
-            "runAfterFinish": true,
-            "deleteAppDataOnUninstall": false
+        "portable": {
+            "artifactName": "ThreatGuard-Installer-${version}.exe"
         }
     }
 }

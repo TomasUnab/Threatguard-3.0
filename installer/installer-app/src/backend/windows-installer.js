@@ -34,7 +34,7 @@ class WindowsInstaller extends InstallerCommon {
                 value: `${await this.checkDiskSpace('C:\\')} GB available`,
                 required: '50 GB minimum'
             },
-            admin: {
+            permissions: {
                 valid: this.isAdmin(),
                 value: this.isAdmin() ? 'Yes' : 'No',
                 required: 'Administrator access required'
@@ -349,20 +349,42 @@ class WindowsInstaller extends InstallerCommon {
     async copyApplicationFiles() {
         this.log('Copying application files...');
 
-        const appPath = this.getResourcePath('../../..');
+        let appPath;
+        if (process.env.NODE_ENV === 'development') {
+            appPath = path.resolve(__dirname, '../../../../');
+        } else {
+            appPath = path.join(process.resourcesPath, 'app');
+        }
 
-        // Copy backend
-        await this.execCommand(`xcopy /E /I /Y "${appPath}\\src" "${this.installPath}\\src"`);
-        await this.execCommand(`copy /Y "${appPath}\\main.py" "${this.installPath}\\"`);
-        await this.execCommand(`copy /Y "${appPath}\\requirements.txt" "${this.installPath}\\"`);
+        this.log(`Source path: ${appPath}`);
 
-        // Copy frontend
-        await this.execCommand(`xcopy /E /I /Y "${appPath}\\PAGINA WEB" "${this.installPath}\\PAGINA WEB"`);
+        try {
+            // Copy backend
+            await fs.copy(path.join(appPath, 'src'), path.join(this.installPath, 'src'));
+            
+            // Copy main file
+            if (await fs.pathExists(path.join(appPath, 'threatguard_api.py'))) {
+                await fs.copy(path.join(appPath, 'threatguard_api.py'), path.join(this.installPath, 'main.py'));
+            } else if (await fs.pathExists(path.join(appPath, 'main.py'))) {
+                await fs.copy(path.join(appPath, 'main.py'), path.join(this.installPath, 'main.py'));
+            }
 
-        // Copy config
-        await this.execCommand(`xcopy /E /I /Y "${appPath}\\config" "${this.installPath}\\config"`);
+            // Copy requirements
+            if (await fs.pathExists(path.join(appPath, 'requirements.txt'))) {
+                await fs.copy(path.join(appPath, 'requirements.txt'), path.join(this.installPath, 'requirements.txt'));
+            }
 
-        this.log('Application files copied');
+            // Copy frontend
+            await fs.copy(path.join(appPath, 'PAGINA WEB'), path.join(this.installPath, 'PAGINA WEB'));
+
+            // Copy config
+            await fs.copy(path.join(appPath, 'config'), path.join(this.installPath, 'config'));
+
+            this.log('Application files copied');
+        } catch (error) {
+            this.log(`Error copying files: ${error.message}`, 'error');
+            throw error;
+        }
     }
 
     /**
@@ -376,10 +398,10 @@ class WindowsInstaller extends InstallerCommon {
 
         // Install dependencies
         await this.execCommand(
-            `"${this.installPath}\\venv\\Scripts\\pip.exe" install --upgrade pip setuptools wheel`
+            `"${this.installPath}\\venv\\Scripts\\python.exe" -m pip install --upgrade pip setuptools wheel`
         );
         await this.execCommand(
-            `"${this.installPath}\\venv\\Scripts\\pip.exe" install -r "${this.installPath}\\requirements.txt"`
+            `"${this.installPath}\\venv\\Scripts\\python.exe" -m pip install -r "${this.installPath}\\requirements.txt"`
         );
 
         this.log('Python dependencies installed');
@@ -391,16 +413,41 @@ class WindowsInstaller extends InstallerCommon {
     async installSnort() {
         this.log('Installing Snort 3...');
 
-        const snortBinary = this.getResourcePath('binaries/windows/snort-3.1.78.0-win64.zip');
+        // Check for bundled installer (EXE)
+        const snortInstaller = this.getResourcePath('binaries/windows/Snort-3.1.74.0.exe');
 
-        if (await fs.pathExists(snortBinary)) {
-            // Extract precompiled binary
-            await this.execCommand(
-                `powershell "Expand-Archive -Path '${snortBinary}' -DestinationPath '${this.snortPath}' -Force"`
-            );
+        if (await fs.pathExists(snortInstaller)) {
+            this.log('Found bundled Snort installer. Installing...');
+            try {
+                await this.execCommand(`"${snortInstaller}" /S`);
+                this.log('Snort installed successfully from bundle.');
+            } catch (error) {
+                this.log(`Failed to install bundled Snort: ${error.message}`, 'warn');
+            }
         } else {
-            this.log('Precompiled Snort binary not found!', 'error');
-            throw new Error('Snort binary not found. Please download Snort 3 for Windows.');
+            this.log('Bundled Snort installer not found. Attempting to download...', 'warn');
+            
+            // Fallback to downloading the installer
+            const downloadUrl = 'https://www.snort.org/downloads/snort/Snort-3.1.74.0.exe';
+            const installerPath = path.join(os.tmpdir(), 'Snort-Installer.exe');
+
+            try {
+                this.log(`Downloading Snort from ${downloadUrl}...`);
+                await this.execCommand(`powershell -Command "Invoke-WebRequest -Uri '${downloadUrl}' -OutFile '${installerPath}'"`);
+                
+                this.log('Running Snort installer...');
+                // Run installer silently
+                await this.execCommand(`"${installerPath}" /S`);
+                
+                // Cleanup
+                try { await fs.remove(installerPath); } catch (e) {}
+                
+            } catch (error) {
+                this.log(`Failed to download/install Snort: ${error.message}`, 'warn');
+                this.log('WARNING: Snort 3 could not be installed automatically. Please install it manually from https://www.snort.org/downloads', 'warn');
+                // Continue without throwing error
+                return;
+            }
         }
 
         // Verify installation
@@ -408,7 +455,7 @@ class WindowsInstaller extends InstallerCommon {
             const { stdout } = await this.execCommand(`"${this.snortPath}\\bin\\snort.exe" --version`);
             this.log(`Snort installed: ${stdout.split('\n')[0]}`);
         } catch (error) {
-            this.log('Snort verification failed', 'warn');
+            this.log('Snort verification failed (it might not be installed or not in path)', 'warn');
         }
     }
 
@@ -420,9 +467,36 @@ class WindowsInstaller extends InstallerCommon {
 
         const dbPassword = this.generatePassword(16);
 
+        // Try to find the correct service name
+        let serviceName = 'postgresql-x64-15';
+        try {
+            const { stdout } = await this.execCommand('powershell "Get-Service -Name postgresql* | Select-Object -ExpandProperty Name"');
+            const foundName = stdout.trim().split(/\r?\n/)[0];
+            if (foundName) {
+                serviceName = foundName;
+                this.log(`Detected PostgreSQL service: ${serviceName}`);
+                
+                // Update postgres path based on service name if possible
+                // e.g. postgresql-x64-16 -> C:\Program Files\PostgreSQL\16
+                const versionMatch = serviceName.match(/x64-(\d+)/);
+                if (versionMatch && versionMatch[1]) {
+                    this.postgresPath = `C:\\Program Files\\PostgreSQL\\${versionMatch[1]}`;
+                }
+            }
+        } catch (e) {
+            this.log('Could not detect PostgreSQL service name dynamically, using default.', 'warn');
+        }
+
         // Start PostgreSQL service
-        await this.execCommand('sc start postgresql-x64-15');
-        await this.sleep(3000);
+        try {
+            await this.execCommand(`sc start ${serviceName}`);
+            this.log(`Service ${serviceName} start command issued.`);
+        } catch (error) {
+            // Ignore error if service is already running or other non-critical errors
+            this.log(`Warning: Could not start ${serviceName} (it might be running already). Details: ${error.message}`, 'warn');
+        }
+        
+        await this.sleep(5000); // Wait a bit longer for startup
 
         // Create database and user
         const sqlScript = `
@@ -433,22 +507,76 @@ class WindowsInstaller extends InstallerCommon {
     `;
 
         await fs.writeFile('C:\\temp_setup_db.sql', sqlScript);
-        await this.execCommand(
-            `"${this.postgresPath}\\bin\\psql.exe" -U postgres -f C:\\temp_setup_db.sql`
-        );
-        await fs.remove('C:\\temp_setup_db.sql');
+        
+        try {
+            // Try to find psql executable
+            let psqlPath = `${this.postgresPath}\\bin\\psql.exe`;
+            if (!await fs.pathExists(psqlPath)) {
+                // Try to find it in PATH
+                if (await this.commandExists('psql')) {
+                    psqlPath = 'psql';
+                } else {
+                    // Try common locations
+                    const commonPaths = [
+                        'C:\\Program Files\\PostgreSQL\\16\\bin\\psql.exe',
+                        'C:\\Program Files\\PostgreSQL\\15\\bin\\psql.exe',
+                        'C:\\Program Files\\PostgreSQL\\14\\bin\\psql.exe'
+                    ];
+                    for (const p of commonPaths) {
+                        if (await fs.pathExists(p)) {
+                            psqlPath = p;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // Try to execute with a timeout and default password to avoid hanging
+            // We set a timeout because psql might hang waiting for a password
+            await this.execCommand(
+                `"${psqlPath}" -U postgres -f C:\\temp_setup_db.sql`,
+                { 
+                    timeout: 15000, // 15 seconds timeout
+                    env: { ...process.env, PGPASSWORD: 'postgres' }
+                }
+            );
+        } catch (error) {
+             this.log(`Warning: Failed to configure database users automatically (likely due to password auth). Continuing anyway. You may need to configure the DB manually. Error: ${error.message}`, 'warn');
+        } finally {
+            try { await fs.remove('C:\\temp_setup_db.sql'); } catch (e) {}
+        }
 
         // Update .env file
         const envPath = `${this.installPath}\\.env`;
-        const envTemplate = this.getResourcePath('config/.env.template');
+        
+        // Look for template in app resources
+        let envTemplate;
+        if (process.env.NODE_ENV === 'development') {
+             envTemplate = path.resolve(__dirname, '../../../../config/.env.template');
+        } else {
+             envTemplate = path.join(process.resourcesPath, 'app/config/.env.template');
+        }
 
-        await this.processTemplate(envTemplate, envPath, {
-            DATABASE_PASSWORD: dbPassword,
-            API_PORT: config.apiPort || 8000,
-            FRONTEND_PORT: config.frontendPort || 3000,
-            SECRET_KEY: this.generateSecretKey(),
-            JWT_SECRET: this.generateSecretKey()
-        });
+        if (await fs.pathExists(envTemplate)) {
+            await this.processTemplate(envTemplate, envPath, {
+                DATABASE_PASSWORD: dbPassword,
+                API_PORT: config.apiPort || 8000,
+                FRONTEND_PORT: config.frontendPort || 3000,
+                SECRET_KEY: this.generateSecretKey(),
+                JWT_SECRET: this.generateSecretKey(),
+                INTERFACE: config.networkInterface ? (config.networkInterface.index || '1') : '1'
+            });
+            this.log('Configuration file .env created.');
+        } else {
+            this.log(`Warning: .env.template not found at ${envTemplate}. Creating default .env file.`, 'warn');
+            // Create a basic .env file if template is missing
+            const basicEnv = `DATABASE_URL=postgresql://threatguard_user:${dbPassword}@localhost:5432/threatguard_db
+API_PORT=${config.apiPort || 8000}
+SECRET_KEY=${this.generateSecretKey()}
+JWT_SECRET=${this.generateSecretKey()}
+`;
+            await fs.writeFile(envPath, basicEnv);
+        }
 
         this.log('PostgreSQL configured');
         return dbPassword;
@@ -460,10 +588,31 @@ class WindowsInstaller extends InstallerCommon {
     async setupRedis() {
         this.log('Setting up Redis...');
 
-        // Start Redis service
-        await this.execCommand('sc start Redis');
+        try {
+            // Try to find the correct service name
+            let serviceName = 'Redis';
+            try {
+                const { stdout } = await this.execCommand('powershell "Get-Service -Name Redis* | Select-Object -ExpandProperty Name"');
+                const foundName = stdout.trim().split(/\r?\n/)[0];
+                if (foundName) {
+                    serviceName = foundName;
+                    this.log(`Detected Redis service: ${serviceName}`);
+                }
+            } catch (e) {
+                this.log('Could not detect Redis service name dynamically, using default.', 'warn');
+            }
 
-        this.log('Redis configured');
+            // Start Redis service
+            await this.execCommand(`sc start ${serviceName}`);
+            this.log('Redis configured');
+        } catch (error) {
+             // Check if service is already running (Exit code 1056 or similar message)
+             if (error.message.includes('1056') || error.message.includes('instance is already running')) {
+                 this.log('Redis service is already running.');
+             } else {
+                 this.log(`Warning: Failed to start Redis service: ${error.message}. You may need to start it manually.`, 'warn');
+             }
+        }
     }
 
     /**
@@ -474,11 +623,18 @@ class WindowsInstaller extends InstallerCommon {
 
         const servicesScript = this.getResourcePath('services/windows/install-services.ps1');
 
-        await this.execCommand(
-            `powershell -ExecutionPolicy Bypass -File "${servicesScript}" -InstallPath "${this.installPath}"`
-        );
-
-        this.log('Services configured');
+        if (await fs.pathExists(servicesScript)) {
+            try {
+                await this.execCommand(
+                    `powershell -ExecutionPolicy Bypass -File "${servicesScript}" -InstallPath "${this.installPath}"`
+                );
+                this.log('Services configured');
+            } catch (error) {
+                this.log(`Failed to configure services: ${error.message}`, 'warn');
+            }
+        } else {
+            this.log(`Services script not found at ${servicesScript}. Skipping service configuration.`, 'warn');
+        }
     }
 
     /**
@@ -490,13 +646,29 @@ class WindowsInstaller extends InstallerCommon {
         const snortTemplate = this.getResourcePath('config/snort.lua.template');
         const snortConfig = `${this.snortPath}\\etc\\snort.lua`;
 
-        await this.processTemplate(snortTemplate, snortConfig, {
-            INTERFACE: config.networkInterface.index || '1'
-        });
+        if (await fs.pathExists(snortTemplate)) {
+            await this.processTemplate(snortTemplate, snortConfig, {
+                INTERFACE: config.networkInterface ? (config.networkInterface.index || '1') : '1'
+            });
+        } else {
+            this.log(`Warning: snort.lua.template not found at ${snortTemplate}. Checking for snort.lua...`, 'warn');
+            // Fallback to snort.lua if template is missing
+            const snortLuaSource = this.getResourcePath('config/snort.lua');
+            if (await fs.pathExists(snortLuaSource)) {
+                 await fs.copy(snortLuaSource, snortConfig);
+                 this.log('Copied snort.lua directly (no template processing).');
+            } else {
+                 this.log('Warning: Could not find snort.lua configuration to install.', 'warn');
+            }
+        }
 
         // Copy rules
         const rulesPath = this.getResourcePath('config/local.rules');
-        await this.copyFile(rulesPath, `${this.snortPath}\\rules\\local.rules`);
+        if (await fs.pathExists(rulesPath)) {
+            await this.copyFile(rulesPath, `${this.snortPath}\\rules\\local.rules`);
+        } else {
+             this.log(`Warning: local.rules not found at ${rulesPath}.`, 'warn');
+        }
 
         this.log('Snort configured');
     }
@@ -508,14 +680,23 @@ class WindowsInstaller extends InstallerCommon {
         this.log('Building frontend...');
 
         const frontendPath = `${this.installPath}\\PAGINA WEB`;
+        const packageJsonPath = `${frontendPath}\\package.json`;
 
-        // Install dependencies
-        await this.execCommand(`cd /d "${frontendPath}" && npm install`);
+        if (await fs.pathExists(packageJsonPath)) {
+            try {
+                // Install dependencies
+                await this.execCommand(`cd /d "${frontendPath}" && npm install`);
 
-        // Build
-        await this.execCommand(`cd /d "${frontendPath}" && npm run build`);
+                // Build
+                await this.execCommand(`cd /d "${frontendPath}" && npm run build`);
 
-        this.log('Frontend built');
+                this.log('Frontend built');
+            } catch (error) {
+                this.log(`Warning: Frontend build failed: ${error.message}. Continuing as this might be a static site.`, 'warn');
+            }
+        } else {
+            this.log('No package.json found in frontend directory. Skipping build (assuming static files).');
+        }
     }
 
     /**
@@ -526,42 +707,116 @@ class WindowsInstaller extends InstallerCommon {
 
         const password = this.generatePassword(12);
         const email = 'admin@threatguard.local';
+        const username = 'admin';
+
+        // Read .env to get DATABASE_URL
+        let dbUrl = '';
+        try {
+            const envContent = await fs.readFile(`${this.installPath}\\.env`, 'utf8');
+            const match = envContent.match(/DATABASE_URL=(.*)/);
+            if (match) {
+                dbUrl = match[1].trim();
+            }
+        } catch (e) {
+            this.log('Could not read .env file for DB URL', 'warn');
+        }
 
         // Create Python script to add user
         const script = `
 import sys
+import os
 sys.path.append('${this.installPath.replace(/\\/g, '\\\\')}')
 
-from src.database import SessionLocal, engine
-from src.models import User, Base
-import bcrypt
+# Set env var for DB connection
+if '${dbUrl}':
+    os.environ['DATABASE_URL'] = '${dbUrl}'
 
-# Create tables
-Base.metadata.create_all(bind=engine)
+try:
+    from src.utils.database import db_manager, User, Base
+    import bcrypt
 
-# Create admin user
-db = SessionLocal()
-hashed = bcrypt.hashpw("${password}".encode(), bcrypt.gensalt())
-admin = User(
-    email="${email}",
-    password=hashed.decode(),
-    is_admin=True,
-    is_active=True
-)
-db.add(admin)
-db.commit()
-db.close()
+    # Create tables
+    print("Creating tables...")
+    db_manager.create_tables()
 
-print("Admin user created successfully")
+    # Create admin user
+    print("Creating admin user...")
+    db = db_manager.SessionLocal()
+    
+    # Check if user exists
+    existing = db.query(User).filter(User.username == "${username}").first()
+    if not existing:
+        hashed = bcrypt.hashpw("${password}".encode(), bcrypt.gensalt())
+        admin = User(
+            username="${username}",
+            email="${email}",
+            hashed_password=hashed.decode(),
+            is_admin=True,
+            is_active=True
+        )
+        db.add(admin)
+        db.commit()
+        print("Admin user created successfully")
+    else:
+        print("Admin user already exists")
+    
+    db.close()
+
+except Exception as e:
+    print(f"Error creating admin user: {e}")
+    sys.exit(1)
 `;
 
-        await fs.writeFile('C:\\temp_create_admin.py', script);
-        await this.execCommand(`"${this.installPath}\\venv\\Scripts\\python.exe" C:\\temp_create_admin.py`);
-        await fs.remove('C:\\temp_create_admin.py');
+        const scriptPath = 'C:\\temp_create_admin.py';
+        await fs.writeFile(scriptPath, script);
+        
+        try {
+            await this.execCommand(`"${this.installPath}\\venv\\Scripts\\python.exe" "${scriptPath}"`);
+        } catch (error) {
+            this.log(`Failed to create admin user: ${error.message}`, 'error');
+            // Don't fail installation for this
+        } finally {
+            try { await fs.remove(scriptPath); } catch (e) {}
+        }
 
-        this.log('Admin user created');
+        this.log('Admin user creation step completed');
+
+        // Create desktop shortcut
+        await this.createDesktopShortcut();
 
         return { email, password };
+    }
+
+    /**
+     * Create Desktop Shortcut
+     */
+    async createDesktopShortcut() {
+        this.log('Creating desktop shortcut...');
+        try {
+            const desktopPath = path.join(os.homedir(), 'Desktop');
+            const shortcutPath = path.join(desktopPath, 'ThreatGuard Dashboard.url');
+            const iconPath = `${this.installPath}\\assets\\icon.ico`;
+            
+            // Ensure assets folder exists in install path
+            const assetsDest = `${this.installPath}\\assets`;
+            await this.createDirectory(assetsDest);
+            
+            // Copy icon from resources
+            const iconSource = this.getResourcePath('assets/icon.ico');
+            if (await fs.pathExists(iconSource)) {
+                await fs.copy(iconSource, iconPath);
+            }
+
+            const content = `[InternetShortcut]
+URL=http://localhost:3000
+IconIndex=0
+IconFile=${iconPath}
+`;
+            await fs.writeFile(shortcutPath, content);
+            this.log('Desktop shortcut created');
+        } catch (error) {
+            this.log(`Failed to create desktop shortcut: ${error.message}`, 'warn');
+        }
     }
 
     /**

@@ -160,6 +160,85 @@ class SnortIntegration:
         }
         return priority_map.get(str(priority), "MEDIA")
     
+    def is_private_ip(self, ip: str) -> bool:
+        """Verificar si una IP es privada/local"""
+        if not ip:
+            return False
+        
+        # Rangos privados IPv4
+        private_ranges = [
+            '10.',
+            '192.168.',
+            '172.16.', '172.17.', '172.18.', '172.19.',
+            '172.20.', '172.21.', '172.22.', '172.23.',
+            '172.24.', '172.25.', '172.26.', '172.27.',
+            '172.28.', '172.29.', '172.30.', '172.31.',
+            '127.',  # Localhost
+            '169.254.',  # Link-local
+        ]
+        
+        for prefix in private_ranges:
+            if ip.startswith(prefix):
+                return True
+        
+        # IPv6 privadas/locales
+        if '::1' in ip or ip.startswith('fe80:') or ip.startswith('fc00:') or ip.startswith('fd00:'):
+            return True
+        
+        return False
+    
+    def is_isp_traffic(self, alert_data: Dict) -> bool:
+        """
+        Detectar si el tráfico es del ISP o legítimo.
+        Reduce alertas medias de tráfico normal de proveedor de internet.
+        """
+        title = alert_data.get("title", "").lower()
+        source_ip = alert_data.get("source_ip", "")
+        dest_ip = alert_data.get("destination_ip", "")
+        protocol = alert_data.get("protocol", "")
+        
+        # Patrones de tráfico legítimo del ISP
+        isp_patterns = [
+            'icmp',  # Ping normal del ISP
+            'router advertisement',
+            'neighbor solicitation',
+            'neighbor advertisement',
+            'multicast listener',
+            'igmp',
+        ]
+        
+        # Si es ICMP de monitoreo normal
+        if protocol == "ICMP" and any(pattern in title for pattern in ['ping', 'echo']):
+            # Si es entre IPs privadas o locales, puede ser legítimo
+            if self.is_private_ip(source_ip) and self.is_private_ip(dest_ip):
+                return False  # Mantener alertas entre IPs privadas
+        
+        # Detectar tráfico IPv6 del ISP (multicast, neighbor discovery)
+        if any(pattern in title for pattern in isp_patterns):
+            # Si involucra IPs IPv6 de link-local o multicast
+            if ('ff02::' in source_ip or 'ff02::' in dest_ip or 
+                'fe80:' in source_ip or 'fe80:' in dest_ip):
+                return True
+        
+        return False
+    
+    def should_filter_alert(self, alert_data: Dict) -> bool:
+        """
+        Determinar si una alerta debe ser filtrada (no enviada).
+        Retorna True si debe ser ignorada.
+        """
+        severity = alert_data.get("severity", "MEDIA")
+        
+        # Nunca filtrar alertas de alta prioridad
+        if severity == "ALTA":
+            return False
+        
+        # Filtrar tráfico del ISP en alertas medias/bajas
+        if self.is_isp_traffic(alert_data):
+            return True
+        
+        return False
+    
     def send_to_threatguard(self, alert_data: Dict):
         """Enviar alerta a ThreatGuard API con información detallada"""
         # Verificar si la API está disponible
@@ -169,6 +248,14 @@ class SnortIntegration:
         
         try:
             severity = self.map_severity(alert_data.get("priority", "2"))
+            alert_data["severity"] = severity
+            
+            # Aplicar filtros - NO enviar si debe ser filtrada
+            if self.should_filter_alert(alert_data):
+                # Solo log en debug para tráfico filtrado
+                if logger.level <= logging.DEBUG:
+                    logger.debug(f"🚫 Filtrado (ISP): {alert_data.get('title')} - {alert_data.get('source_ip', 'N/A')}")
+                return
             
             description_parts = []
             if alert_data.get("protocol"):

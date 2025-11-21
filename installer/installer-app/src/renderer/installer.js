@@ -144,11 +144,13 @@ function updateNavigation() {
 
     // Next button
     if (currentScreen === 0) {
+        btnNext.style.display = 'block';
         btnNext.textContent = 'Comenzar →';
         btnNext.disabled = false;
     } else if (currentScreen === screens.length - 2) {
         btnNext.style.display = 'none'; // Hide during installation
     } else if (currentScreen === screens.length - 1) {
+        btnNext.style.display = 'block'; // Show again for finish
         btnNext.textContent = 'Finalizar';
         btnNext.disabled = false;
         btnNext.onclick = () => {
@@ -160,6 +162,7 @@ function updateNavigation() {
             window.close();
         };
     } else {
+        btnNext.style.display = 'block';
         btnNext.textContent = 'Siguiente →';
         btnNext.disabled = false;
     }
@@ -239,7 +242,7 @@ async function checkRequirements() {
  * Validate requirements
  */
 function validateRequirements() {
-    const requirements = ['os', 'ram', 'disk', 'sudo', 'python', 'node'];
+    const requirements = ['os', 'ram', 'disk', 'permissions', 'python', 'node'];
 
     for (const req of requirements) {
         const element = document.getElementById(`req-${req}`);
