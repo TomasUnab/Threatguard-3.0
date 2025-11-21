@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ThreatGuard Installer</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="installer-container">
+        <!-- Header -->
+        <header class="installer-header">
+            <div class="logo">
+                <h1>🛡️ ThreatGuard</h1>
+                <p class="version">Installer v1.0</p>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="installer-content">
+            <!-- Screen 1: Welcome -->
+            <div id="screen-welcome" class="screen active">
+                <h2>Bienvenido a ThreatGuard</h2>
+                <div class="welcome-content">
+                    <div class="feature-list">
+                        <div class="feature">
+                            <span class="icon">🔍</span>
+                            <div>
+                                <h3>Detección de Amenazas</h3>
+                                <p>Sistema IDS con Snort 3 para detección en tiempo real</p>
+                            </div>
+                        </div>
+                        <div class="feature">
+                            <span class="icon">🤖</span>
+                            <div>
+                                <h3>Machine Learning</h3>
+                                <p>Análisis inteligente de patrones de ataque</p>
+                            </div>
+                        </div>
+                        <div class="feature">
+                            <span class="icon">📊</span>
+                            <div>
+                                <h3>Dashboard Interactivo</h3>
+                                <p>Visualización en tiempo real de alertas y métricas</p>
+                            </div>
+                        </div>
+                        <div class="feature">
+                            <span class="icon">🔐</span>
+                            <div>
+                                <h3>Escaneo de Vulnerabilidades</h3>
+                                <p>Integración con OpenVAS para análisis completo</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Screen 2: Requirements Check -->
+            <div id="screen-requirements" class="screen">
+                <h2>Verificación de Requisitos</h2>
+                <div class="requirements-content">
+                    <div class="requirement-item" id="req-os">
+                        <span class="status">⏳</span>
+                        <span class="label">Sistema Operativo</span>
+                        <span class="value">Verificando...</span>
+                    </div>
+                    <div class="requirement-item" id="req-ram">
+                        <span class="status">⏳</span>
+                        <span class="label">Memoria RAM</span>
+                        <span class="value">Verificando...</span>
+                    </div>
+                    <div class="requirement-item" id="req-disk">
+                        <span class="status">⏳</span>
+                        <span class="label">Espacio en Disco</span>
+                        <span class="value">Verificando...</span>
+                    </div>
+                    <div class="requirement-item" id="req-permissions">
+                        <span class="status">⏳</span>
+                        <span class="label">Permisos de Administrador</span>
+                        <span class="value">Verificando...</span>
+                    </div>
+                    <div class="requirement-item" id="req-python">
+                        <span class="status">⏳</span>
+                        <span class="label">Python 3.10+</span>
+                        <span class="value">Verificando...</span>
+                    </div>
+                    <div class="requirement-item" id="req-node">
+                        <span class="status">⏳</span>
+                        <span class="label">Node.js 18+</span>
+                        <span class="value">Verificando...</span>
+                    </div>
+                </div>
+                <div class="info-box">
+                    <p>ℹ️ Los componentes faltantes serán instalados automáticamente</p>
+                </div>
+            </div>
+
+            <!-- Screen 3: Network Interface Selection -->
+            <div id="screen-network" class="screen">
+                <h2>Selección de Interfaz de Red</h2>
+                <p class="subtitle">Snort monitoreará el tráfico en la interfaz seleccionada</p>
+                <div class="network-interfaces" id="network-interfaces">
+                    <!-- Interfaces will be populated dynamically -->
+                </div>
+            </div>
+
+            <!-- Screen 4: Port Configuration -->
+            <div id="screen-ports" class="screen">
+                <h2>Configuración de Puertos</h2>
+                <div class="port-config">
+                    <div class="config-item">
+                        <label for="port-api">Puerto API Backend:</label>
+                        <input type="number" id="port-api" value="8000" min="1024" max="65535">
+                    </div>
+                    <div class="config-item">
+                        <label for="port-frontend">Puerto Frontend Web:</label>
+                        <input type="number" id="port-frontend" value="3000" min="1024" max="65535">
+                    </div>
+                    <div class="config-item">
+                        <label for="port-postgres">Puerto PostgreSQL:</label>
+                        <input type="number" id="port-postgres" value="5432" min="1024" max="65535">
+                    </div>
+                    <div class="config-item">
+                        <label for="port-redis">Puerto Redis:</label>
+                        <input type="number" id="port-redis" value="6379" min="1024" max="65535">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Screen 5: Component Selection -->
+            <div id="screen-components" class="screen">
+                <h2>Seleccione Componentes</h2>
+                <div class="components-list">
+                    <div class="component-item">
+                        <input type="checkbox" id="comp-api" checked disabled>
+                        <label for="comp-api">
+                            <strong>ThreatGuard API</strong>
+                            <span class="required">(Requerido)</span>
+                            <p>Backend con Machine Learning</p>
+                        </label>
+                    </div>
+                    <div class="component-item">
+                        <input type="checkbox" id="comp-frontend" checked disabled>
+                        <label for="comp-frontend">
+                            <strong>ThreatGuard Frontend</strong>
+                            <span class="required">(Requerido)</span>
+                            <p>Interfaz web de usuario</p>
+                        </label>
+                    </div>
+                    <div class="component-item">
+                        <input type="checkbox" id="comp-snort" checked disabled>
+                        <label for="comp-snort">
+                            <strong>Snort 3 IDS</strong>
+                            <span class="required">(Requerido)</span>
+                            <p>Sistema de detección de intrusiones</p>
+                        </label>
+                    </div>
+                    <div class="component-item">
+                        <input type="checkbox" id="comp-postgres" checked>
+                        <label for="comp-postgres">
+                            <strong>PostgreSQL Database</strong>
+                            <p>Base de datos para alertas y configuración</p>
+                        </label>
+                    </div>
+                    <div class="component-item">
+                        <input type="checkbox" id="comp-redis" checked>
+                        <label for="comp-redis">
+                            <strong>Redis Cache</strong>
+                            <p>Cache y cola de mensajes</p>
+                        </label>
+                    </div>
+                    <div class="component-item">
+                        <input type="checkbox" id="comp-openvas" checked>
+                        <label for="comp-openvas">
+                            <strong>OpenVAS Scanner</strong>
+                            <p>Escáner de vulnerabilidades</p>
+                        </label>
+                    </div>
+                    <div class="component-item">
+                        <input type="checkbox" id="comp-elasticsearch">
+                        <label for="comp-elasticsearch">
+                            <strong>Elasticsearch</strong>
+                            <span class="optional">(Opcional)</span>
+                            <p>Gestión avanzada de logs</p>
+                        </label>
+                    </div>
+                </div>
+                <div class="space-info">
+                    <p>Espacio requerido: <strong id="space-required">8.5 GB</strong></p>
+                </div>
+            </div>
+
+            <!-- Screen 6: Installation Progress -->
+            <div id="screen-installation" class="screen">
+                <h2>Instalando ThreatGuard...</h2>
+                <div class="installation-progress">
+                    <div class="progress-steps" id="progress-steps">
+                        <!-- Steps will be populated dynamically -->
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" id="progress-bar"></div>
+                    </div>
+                    <div class="progress-info">
+                        <p id="current-step">Iniciando instalación...</p>
+                        <p id="time-remaining">Tiempo estimado: calculando...</p>
+                    </div>
+                    <div class="log-container">
+                        <button id="toggle-logs" class="btn-secondary">Ver Detalles</button>
+                        <div id="installation-logs" class="logs hidden"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Screen 7: Completion -->
+            <div id="screen-complete" class="screen">
+                <h2>✅ Instalación Completada</h2>
+                <div class="completion-content">
+                    <div class="success-checks">
+                        <div class="check-item">✓ Base de datos inicializada</div>
+                        <div class="check-item">✓ Servicios configurados</div>
+                        <div class="check-item">✓ Snort configurado</div>
+                        <div class="check-item">✓ Usuario administrador creado</div>
+                    </div>
+                    <div class="credentials-box">
+                        <h3>Credenciales de Acceso</h3>
+                        <div class="credential-item">
+                            <label>URL:</label>
+                            <span id="url-value">http://localhost:3000</span>
+                        </div>
+                        <div class="credential-item">
+                            <label>Email:</label>
+                            <span id="email-value">admin@threatguard.local</span>
+                        </div>
+                        <div class="credential-item">
+                            <label>Contraseña:</label>
+                            <span id="password-value">TG-2024-XXXXXXXX</span>
+                            <button id="copy-password" class="btn-icon">📋</button>
+                        </div>
+                    </div>
+                    <div class="start-option">
+                        <input type="checkbox" id="start-on-complete" checked>
+                        <label for="start-on-complete">Iniciar ThreatGuard al completar</label>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer with Navigation -->
+        <footer class="installer-footer">
+            <button id="btn-back" class="btn-secondary">← Atrás</button>
+            <div class="page-indicator" id="page-indicator">1 / 7</div>
+            <button id="btn-next" class="btn-primary">Siguiente →</button>
+        </footer>
+    </div>
+
+    <script src="installer.js"></script>
+</body>
+</html>

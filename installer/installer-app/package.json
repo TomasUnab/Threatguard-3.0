@@ -1,0 +1,106 @@
+{
+    "name": "threatguard-installer",
+    "version": "1.0.0",
+    "description": "ThreatGuard Native Installer with GUI",
+    "main": "src/main.js",
+    "scripts": {
+        "start": "electron .",
+        "build": "electron-builder",
+        "build:linux": "electron-builder --linux",
+        "build:windows": "electron-builder --windows",
+        "build:all": "electron-builder --linux --windows"
+    },
+    "keywords": [
+        "threatguard",
+        "installer",
+        "security",
+        "ids",
+        "snort"
+    ],
+    "author": "ThreatGuard Team",
+    "license": "MIT",
+    "devDependencies": {
+        "electron": "^28.0.0",
+        "electron-builder": "^24.9.1"
+    },
+    "dependencies": {
+        "fs-extra": "^11.2.0"
+    },
+    "build": {
+        "appId": "com.threatguard.installer",
+        "productName": "ThreatGuard Installer",
+        "directories": {
+            "output": "dist"
+        },
+        "files": [
+            "src/**/*",
+            "package.json"
+        ],
+        "extraResources": [
+            {
+                "from": "../../src",
+                "to": "app/src"
+            },
+            {
+                "from": "../../main.py",
+                "to": "app/"
+            },
+            {
+                "from": "../../requirements.txt",
+                "to": "app/"
+            },
+            {
+                "from": "../../PAGINA WEB",
+                "to": "app/PAGINA WEB"
+            },
+            {
+                "from": "../../config",
+                "to": "app/config"
+            },
+            {
+                "from": "../services",
+                "to": "services"
+            },
+            {
+                "from": "../config",
+                "to": "config"
+            },
+            {
+                "from": "../scripts",
+                "to": "scripts"
+            },
+            {
+                "from": "../binaries",
+                "to": "binaries"
+            },
+            {
+                "from": "../README.md",
+                "to": "."
+            }
+        ],
+        "linux": {
+            "target": [
+                "AppImage",
+                "deb"
+            ],
+            "category": "Utility",
+            "icon": "assets/icon.png"
+        },
+        "win": {
+            "target": [
+                "nsis"
+            ],
+            "icon": "assets/icon.ico"
+        },
+        "nsis": {
+            "oneClick": false,
+            "allowToChangeInstallationDirectory": true,
+            "createDesktopShortcut": true,
+            "createStartMenuShortcut": true,
+            "shortcutName": "ThreatGuard Installer",
+            "artifactName": "ThreatGuard-Setup-${version}.${ext}",
+            "runAfterFinish": true,
+            "deleteAppDataOnUninstall": false
+        }
+    }
+}
