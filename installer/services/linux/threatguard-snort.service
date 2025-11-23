@@ -1,0 +1,15 @@
+[Unit]
+Description=ThreatGuard Snort IDS
+After=network.target
+
+[Service]
+Type=simple
+User=root
+ExecStart=/usr/local/bin/snort -c /usr/local/etc/snort/snort.lua -i eth0 -A alert_fast -l /var/log/snort -q
+Restart=always
+RestartSec=10
+CapabilityBoundingSet=CAP_NET_RAW CAP_NET_ADMIN
+AmbientCapabilities=CAP_NET_RAW CAP_NET_ADMIN
+
+[Install]
+WantedBy=multi-user.target

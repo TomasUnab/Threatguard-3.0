@@ -1,0 +1,7 @@
+# Windows Snort Binaries
+
+Place the Windows Snort 3 binary here:
+
+**Required file**: `snort-3.1.78.0-win64.zip`
+
+See [../DOWNLOAD_GUIDE.md](../DOWNLOAD_GUIDE.md) for download instructions.

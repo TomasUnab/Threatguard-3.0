@@ -1,0 +1,7 @@
+# Linux Snort Binaries
+
+Place the Linux Snort 3 binary here:
+
+**Required file**: `snort-3.1.78.0-x64.tar.gz`
+
+See [../DOWNLOAD_GUIDE.md](../DOWNLOAD_GUIDE.md) for download instructions.

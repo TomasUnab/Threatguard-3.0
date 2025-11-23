@@ -95,7 +95,41 @@
                 </div>
             </div>
 
-            <!-- Screen 3: Network Interface Selection -->
+            <!-- Screen 3: Database Setup -->
+            <div id="screen-database" class="screen">
+                <h2>Configuración de la Base de Datos</h2>
+                <form id="db-setup-form">
+                    <label>
+                        <input type="radio" name="db-option" value="install" checked>
+                        Instalar PostgreSQL automáticamente
+                    </label>
+                    <br>
+                    <label>
+                        <input type="radio" name="db-option" value="existing">
+                        Usar base de datos existente
+                    </label>
+                    <div id="db-credentials" style="display: none;">
+                        <label>Host: <input type="text" id="db-host"></label><br>
+                        <label>Usuario: <input type="text" id="db-user"></label><br>
+                        <label>Contraseña: <input type="password" id="db-password"></label><br>
+                        <label>Base de datos: <input type="text" id="db-name"></label><br>
+                    </div>
+                    <button type="submit">Continuar</button>
+                </form>
+            </div>
+
+            <!-- Screen 4: Installation Directory -->
+            <div id="screen-installation-directory" class="screen">
+                <h2>Seleccionar Directorio de Instalación</h2>
+                <form id="directory-form">
+                    <label for="install-directory">Directorio de Instalación:</label>
+                    <input type="text" id="install-directory" readonly>
+                    <button type="button" id="browse-button">Examinar...</button>
+                    <button type="submit">Continuar</button>
+                </form>
+            </div>
+
+            <!-- Screen 5: Network Interface Selection -->
             <div id="screen-network" class="screen">
                 <h2>Selección de Interfaz de Red</h2>
                 <p class="subtitle">Snort monitoreará el tráfico en la interfaz seleccionada</p>
@@ -104,7 +138,7 @@
                 </div>
             </div>
 
-            <!-- Screen 4: Port Configuration -->
+            <!-- Screen 6: Port Configuration -->
             <div id="screen-ports" class="screen">
                 <h2>Configuración de Puertos</h2>
                 <div class="port-config">
@@ -127,7 +161,7 @@
                 </div>
             </div>
 
-            <!-- Screen 5: Component Selection -->
+            <!-- Screen 7: Component Selection -->
             <div id="screen-components" class="screen">
                 <h2>Seleccione Componentes</h2>
                 <div class="components-list">
@@ -190,7 +224,7 @@
                 </div>
             </div>
 
-            <!-- Screen 6: Installation Progress -->
+            <!-- Screen 8: Installation Progress -->
             <div id="screen-installation" class="screen">
                 <h2>Instalando ThreatGuard...</h2>
                 <div class="installation-progress">
@@ -211,7 +245,7 @@
                 </div>
             </div>
 
-            <!-- Screen 7: Completion -->
+            <!-- Screen 9: Completion -->
             <div id="screen-complete" class="screen">
                 <h2>✅ Instalación Completada</h2>
                 <div class="completion-content">
@@ -248,7 +282,7 @@
         <!-- Footer with Navigation -->
         <footer class="installer-footer">
             <button id="btn-back" class="btn-secondary">← Atrás</button>
-            <div class="page-indicator" id="page-indicator">1 / 7</div>
+            <div class="page-indicator" id="page-indicator">1 / 9</div>
             <button id="btn-next" class="btn-primary">Siguiente →</button>
         </footer>
     </div>
