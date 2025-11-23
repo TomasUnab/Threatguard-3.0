@@ -49,9 +49,9 @@ function createWindow() {
 // IPC Handlers
 
 // Check system requirements
-ipcMain.handle('check-requirements', async () => {
+ipcMain.handle('check-requirements', async (event, config) => {
   try {
-    const requirements = await installer.checkRequirements();
+    const requirements = await installer.checkRequirements(config);
     return { success: true, requirements };
   } catch (error) {
     return { success: false, error: error.message };
@@ -99,6 +99,25 @@ ipcMain.handle('get-logs', async () => {
   } catch (error) {
     return { success: false, error: error.message };
   }
+});
+
+// Get install path
+ipcMain.handle('get-install-path', async () => {
+  try {
+    const path = installer.getInstallPath();
+    return { success: true, path };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+// Finish installation
+ipcMain.on('finish-installation', async (event, url) => {
+  if (url) {
+    const { shell } = require('electron');
+    await shell.openExternal(url);
+  }
+  app.quit();
 });
 
 // App lifecycle

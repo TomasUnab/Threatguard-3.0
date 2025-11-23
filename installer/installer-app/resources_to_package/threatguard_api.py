@@ -14,6 +14,11 @@ import redis
 from pathlib import Path
 from datetime import datetime
 from typing import Dict, List, Optional
+from dotenv import load_dotenv
+
+# Cargar variables de entorno
+load_dotenv()
+load_dotenv(Path(__file__).parent / "config" / ".env")  # Intentar cargar desde config/.env también
 
 # Importaciones de terceros
 import numpy as np
@@ -25,7 +30,7 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
 # Importaciones locales
-from src.utils.database import Alert, AlertRepository
+from src.utils.database import Alert, AlertRepository, get_database_url
 from src.utils.elasticsearch_client import es_client
 # from soar_engine import soar_engine  # TODO: Implementar módulo soar_engine
 # Reportes PDF/CSV deshabilitados temporalmente. El import de report_generator debe permanecer comentado.
@@ -657,7 +662,7 @@ async def receive_system_info(info: dict):
                                     :id, :hostname, :ip, :mac,
                                     :os_type, :os_version, true,
                                     :status, NOW(), 0,
-                                    true, '[]'::jsonb,
+                                    true, '[]',
                                     'pending', 'Pendiente de evaluación'
                                 )
                             """), {
@@ -1369,9 +1374,19 @@ async def generate_report(report_data: dict):
 async def get_integrations_status():
     """Obtener estado de integraciones"""
     try:
-        # Verificar PostgreSQL
-        db_url = os.getenv("DATABASE_URL")
-        pg_status = "connected" if db_url else "disconnected"
+        # Verificar Base de Datos (PostgreSQL o MySQL)
+        db_url = get_database_url()
+        pg_status = "disconnected"
+        
+        try:
+            # Intentar conexión real
+            engine = create_engine(db_url)
+            with engine.connect() as conn:
+                conn.execute(text("SELECT 1"))
+            pg_status = "connected"
+        except Exception as e:
+            logger.warning(f"Database connection check failed: {e}")
+            pg_status = "disconnected"
         
         # Verificar Redis
         redis_status = "disconnected"
@@ -1428,13 +1443,37 @@ async def add_integration(connector: dict):
 async def test_integration(integration: str):
     """Probar conexión de una integración"""
     try:
-        if integration == "postgresql":
-            db_url = os.getenv("DATABASE_URL")
+        if integration == "postgresql" or integration == "mysql" or integration == "database":
+            db_url = get_database_url()
+            
+            # Parse URL to check port connectivity first
+            try:
+                from sqlalchemy.engine.url import make_url
+                import socket
+                u = make_url(db_url)
+                host = u.host or 'localhost'
+                port = u.port or (3306 if 'mysql' in str(u) else 5432)
+                
+                # Check if port is open
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock.settimeout(2)
+                result = sock.connect_ex((host, port))
+                sock.close()
+                
+                if result != 0:
+                    return {
+                        "status": "error", 
+                        "message": f"El servicio de base de datos no está accesible en {host}:{port}. Verifique que el servicio esté iniciado."
+                    }
+            except Exception as e:
+                logger.warning(f"Could not perform port check: {e}")
+
+            # Try actual connection
             engine = create_engine(db_url)
             with engine.connect() as conn:
                 from sqlalchemy import text
                 conn.execute(text("SELECT 1"))
-            return {"status": "success", "message": "Conexión PostgreSQL exitosa"}
+            return {"status": "success", "message": "Conexión a Base de Datos exitosa"}
         elif integration == "redis":
             redis_client.ping()
             return {"status": "success", "message": "Conexión Redis exitosa"}
@@ -3321,9 +3360,9 @@ except Exception as e:
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(
-        "threatguard_api:app", 
-        host="0.0.0.0", 
-        port=8000, 
-        reload=True,
+        "main:app", 
+        host=os.getenv("API_HOST", "127.0.0.1"), 
+        port=int(os.getenv("API_PORT", "9000")), 
+        reload=False,
         log_level="info"
     )

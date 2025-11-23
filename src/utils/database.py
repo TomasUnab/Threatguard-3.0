@@ -14,12 +14,44 @@ import os
 from typing import Optional, Generator, Dict, Any, List
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, Text, Boolean, Float, ForeignKey
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, Text, Boolean, Float, ForeignKey, JSON
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session, relationship
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy.types import TypeDecorator, CHAR
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.sql import func
 import uuid
+
+# Custom Types for Cross-Database Compatibility
+class GUID(TypeDecorator):
+    """Platform-independent GUID type.
+    Uses PostgreSQL's UUID type, otherwise uses CHAR(36), storing as stringified hex values.
+    """
+    impl = CHAR
+    cache_ok = True
+
+    def load_dialect_impl(self, dialect):
+        if dialect.name == 'postgresql':
+            return dialect.type_descriptor(PG_UUID(as_uuid=True))
+        else:
+            return dialect.type_descriptor(CHAR(36))
+
+    def process_bind_param(self, value, dialect):
+        if value is None:
+            return value
+        if dialect.name == 'postgresql':
+            return str(value)
+        else:
+            if not isinstance(value, uuid.UUID):
+                return str(uuid.UUID(value))
+            return str(value)
+
+    def process_result_value(self, value, dialect):
+        if value is None:
+            return value
+        if not isinstance(value, uuid.UUID):
+            return uuid.UUID(value)
+        return value
 
 # Base para modelos
 Base = declarative_base()
@@ -29,13 +61,14 @@ class Alert(Base):
     
     __tablename__ = "alerts"
     
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
     timestamp = Column(DateTime, default=datetime.utcnow, nullable=False)
     source = Column(String(100), nullable=False)  # wazuh, openvas, manual
     severity = Column(String(20), nullable=False)  # high, medium, low
     title = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
-    raw_data = Column(JSONB, nullable=True)  # Datos originales
+    raw_data = Column(JSON, nullable=True)  # Datos originales
+
     
     # Clasificación por IA
     ai_classification = Column(String(100), nullable=True)
@@ -61,7 +94,7 @@ class Vulnerability(Base):
     
     __tablename__ = "vulnerabilities"
     
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
     scan_id = Column(String(100), nullable=False)
     target_host = Column(String(255), nullable=False)
     target_port = Column(Integer, nullable=True)
@@ -96,12 +129,12 @@ class ScanJob(Base):
     
     __tablename__ = "scan_jobs"
     
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
     scan_type = Column(String(50), nullable=False)  # vulnerability, port, service
-    targets = Column(JSONB, nullable=False)  # Lista de targets
+    targets = Column(JSON, nullable=False)  # Lista de targets
     
     # Configuración del escaneo
-    config = Column(JSONB, nullable=True)
+    config = Column(JSON, nullable=True)
     scan_profile = Column(String(100), nullable=True)
     
     # Estado y progreso
@@ -128,7 +161,7 @@ class User(Base):
     
     __tablename__ = "users"
     
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
     username = Column(String(100), unique=True, nullable=False)
     email = Column(String(255), unique=True, nullable=False)
     full_name = Column(String(255), nullable=True)
@@ -141,7 +174,7 @@ class User(Base):
     # Configuración de notificaciones
     email_notifications = Column(Boolean, default=True)
     slack_notifications = Column(Boolean, default=False)
-    notification_preferences = Column(JSONB, nullable=True)
+    notification_preferences = Column(JSON, nullable=True)
     
     # Sesiones
     last_login = Column(DateTime, nullable=True)
@@ -155,14 +188,14 @@ class SystemMetric(Base):
     
     __tablename__ = "system_metrics"
     
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
     metric_name = Column(String(100), nullable=False)
     metric_value = Column(Float, nullable=False)
     metric_unit = Column(String(50), nullable=True)
     
     # Contexto adicional
-    tags = Column(JSONB, nullable=True)
-    metric_metadata = Column(JSONB, nullable=True)
+    tags = Column(JSON, nullable=True)
+    metric_metadata = Column(JSON, nullable=True)
     
     timestamp = Column(DateTime, default=datetime.utcnow)
 
@@ -171,7 +204,7 @@ class ConfigurationItem(Base):
     
     __tablename__ = "configurations"
     
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
     key = Column(String(255), unique=True, nullable=False)
     value = Column(Text, nullable=False)
     description = Column(Text, nullable=True)
