@@ -245,7 +245,7 @@ class WindowsInstaller extends InstallerCommon {
                 progress: 25,
                 message: 'Creating directories...'
             });
-            await this.createDirectories();
+            await this.createDirectories(config.installPath);
 
             // Step 4: Copy application files (35%)
             progressCallback({
@@ -253,7 +253,7 @@ class WindowsInstaller extends InstallerCommon {
                 progress: 35,
                 message: 'Copying application files...'
             });
-            await this.copyApplicationFiles();
+            await this.copyApplicationFiles(config.installPath);
 
             // Step 5: Install Python dependencies (45%)
             progressCallback({
@@ -424,69 +424,41 @@ class WindowsInstaller extends InstallerCommon {
     }
 
     /**
-     * Create necessary directories
+     * Create directories based on the selected installation path
      */
-    async createDirectories() {
-        this.log('Creating directories...');
+    async createDirectories(installPath) {
+        this.log(`Creating directories in ${installPath}...`);
 
-        const dirs = [
-            this.installPath,
-            `${this.installPath}\\logs`,
-            `${this.installPath}\\data`,
-            `${this.installPath}\\config`,
-            `${this.installPath}\\models`,
-            `${this.snortPath}\\log`,
-            `${this.snortPath}\\etc`,
-            `${this.snortPath}\\rules`
-        ];
-
-        for (const dir of dirs) {
-            await this.createDirectory(dir);
+        // Ensure the base directory exists
+        if (!fs.existsSync(installPath)) {
+            fs.mkdirSync(installPath, { recursive: true });
         }
+
+        // Create subdirectories
+        const subdirs = ['logs', 'config', 'data'];
+        for (const subdir of subdirs) {
+            const fullPath = path.join(installPath, subdir);
+            if (!fs.existsSync(fullPath)) {
+                fs.mkdirSync(fullPath);
+            }
+        }
+
+        this.log('Directories created successfully.');
     }
 
     /**
-     * Copy application files
+     * Copy application files to the selected installation path
      */
-    async copyApplicationFiles() {
-        this.log('Copying application files...');
+    async copyApplicationFiles(installPath) {
+        this.log(`Copying application files to ${installPath}...`);
 
-        let appPath;
-        if (process.env.NODE_ENV === 'development') {
-            appPath = path.resolve(__dirname, '../../../../');
-        } else {
-            appPath = path.join(process.resourcesPath, 'app');
-        }
+        const sourcePath = path.join(__dirname, '../../assets');
+        const destinationPath = path.join(installPath, 'app');
 
-        this.log(`Source path: ${appPath}`);
+        // Copy files
+        fs.copySync(sourcePath, destinationPath);
 
-        try {
-            // Copy backend
-            await fs.copy(path.join(appPath, 'src'), path.join(this.installPath, 'src'));
-            
-            // Copy main file
-            if (await fs.pathExists(path.join(appPath, 'threatguard_api.py'))) {
-                await fs.copy(path.join(appPath, 'threatguard_api.py'), path.join(this.installPath, 'main.py'));
-            } else if (await fs.pathExists(path.join(appPath, 'main.py'))) {
-                await fs.copy(path.join(appPath, 'main.py'), path.join(this.installPath, 'main.py'));
-            }
-
-            // Copy requirements
-            if (await fs.pathExists(path.join(appPath, 'requirements.txt'))) {
-                await fs.copy(path.join(appPath, 'requirements.txt'), path.join(this.installPath, 'requirements.txt'));
-            }
-
-            // Copy frontend
-            await fs.copy(path.join(appPath, 'PAGINA WEB'), path.join(this.installPath, 'PAGINA WEB'));
-
-            // Copy config
-            await fs.copy(path.join(appPath, 'config'), path.join(this.installPath, 'config'));
-
-            this.log('Application files copied');
-        } catch (error) {
-            this.log(`Error copying files: ${error.message}`, 'error');
-            throw error;
-        }
+        this.log('Application files copied successfully.');
     }
 
     /**

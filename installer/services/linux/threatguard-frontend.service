@@ -1,0 +1,17 @@
+[Unit]
+Description=ThreatGuard Frontend Service
+After=network.target threatguard-api.service
+Requires=threatguard-api.service
+
+[Service]
+Type=simple
+User=threatguard
+WorkingDirectory=/opt/threatguard/PAGINA WEB
+Environment="NODE_ENV=production"
+Environment="NEXT_PUBLIC_API_URL=http://localhost:8000"
+ExecStart=/usr/bin/npm run start
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

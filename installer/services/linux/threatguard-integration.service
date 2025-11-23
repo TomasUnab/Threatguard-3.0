@@ -1,0 +1,17 @@
+[Unit]
+Description=ThreatGuard Snort Integration Service
+After=network.target threatguard-api.service threatguard-snort.service
+Requires=threatguard-api.service threatguard-snort.service
+
+[Service]
+Type=simple
+User=threatguard
+WorkingDirectory=/opt/threatguard
+Environment="THREATGUARD_API_URL=http://localhost:8000"
+Environment="SNORT_ALERT_FILE=/var/log/snort/alert"
+ExecStart=/opt/threatguard/venv/bin/python -m src.data_collection.snort_integration
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

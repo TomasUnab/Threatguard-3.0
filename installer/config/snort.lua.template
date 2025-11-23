@@ -1,0 +1,67 @@
+# Snort configuration template for ThreatGuard
+# This file will be customized during installation
+
+-- Snort 3 Configuration
+HOME_NET = '192.168.0.0/16'
+EXTERNAL_NET = '!$HOME_NET'
+
+-- Paths
+RULE_PATH = '/usr/local/etc/snort/rules'
+BUILTIN_RULE_PATH = '/usr/local/etc/snort/builtin_rules'
+PLUGIN_RULE_PATH = '/usr/local/etc/snort/so_rules'
+
+-- Network interface (will be replaced during installation)
+INTERFACE = 'eth0'
+
+-- Include base configuration
+include 'snort_defaults.lua'
+
+-- Configure IPS mode
+ips = {
+    enable_builtin_rules = false,
+    variables = default_variables
+}
+
+-- Configure output
+alert_fast = {
+    file = true,
+    packet = false,
+    limit = 100
+}
+
+-- Configure DAQ
+daq = {
+    inputs = { INTERFACE },
+    snaplen = 1518,
+    module_dirs = { '/usr/local/lib/daq' }
+}
+
+-- Include local rules
+ips = {
+    include = RULE_PATH .. '/local.rules'
+}
+
+-- Stream configuration
+stream = { }
+stream_ip = { }
+stream_icmp = { }
+stream_tcp = { }
+stream_udp = { }
+
+-- Port scan detection
+port_scan = {
+    proto = 'all',
+    scan_type = 'all'
+}
+
+-- Performance statistics
+perf_monitor = {
+    flow = true,
+    flow_ip = true,
+    packets = 10000
+}
+
+-- Logging
+output = {
+    logdir = '/var/log/snort'
+}

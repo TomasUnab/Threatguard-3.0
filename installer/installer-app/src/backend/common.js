@@ -280,9 +280,18 @@ class InstallerCommon {
         if (process.env.NODE_ENV === 'development') {
             return path.join(__dirname, '../../..', relativePath);
         } else {
-            // In production, resources are in the app.asar or extraResources
+            // In production, check both app.asar and extraResources
             const { app } = require('electron');
-            return path.join(process.resourcesPath, relativePath);
+            const asarPath = path.join(process.resourcesPath, relativePath);
+            const extraResourcesPath = path.join(process.resourcesPath, 'app', relativePath);
+
+            if (fs.existsSync(asarPath)) {
+                return asarPath;
+            } else if (fs.existsSync(extraResourcesPath)) {
+                return extraResourcesPath;
+            } else {
+                throw new Error(`Resource not found: ${relativePath}`);
+            }
         }
     }
 
