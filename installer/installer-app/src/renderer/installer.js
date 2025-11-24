@@ -289,7 +289,8 @@ async function checkRequirements() {
                 const statusEl = el.querySelector('.status');
                 const valueEl = el.querySelector('.value');
                 
-                statusEl.textContent = result.valid ? '✅' : '❌';
+                statusEl.textContent = result.valid ? '●' : '●';
+                statusEl.style.color = result.valid ? '#10b981' : '#ef4444';
                 statusEl.className = `status ${result.valid ? 'valid' : 'error'}`;
                 valueEl.textContent = result.value;
                 
@@ -314,7 +315,7 @@ function validateRequirements() {
         if (!element) continue; // Skip if element doesn't exist (e.g. ports might be optional in UI)
         const status = element.querySelector('.status');
 
-        if (status.textContent === '❌') {
+        if (status.textContent === '●' && status.style.color === 'rgb(239, 68, 68)') {
             // Allow to continue even if some requirements fail
             // They will be installed during installation
             const confirmed = confirm(
@@ -503,7 +504,8 @@ function updateProgress(progress) {
     const stepElement = document.getElementById(`step-${progress.step}`);
     if (stepElement) {
         stepElement.className = 'progress-step active';
-        stepElement.querySelector('.step-status').textContent = '⏳';
+        stepElement.querySelector('.step-status').textContent = '●';
+        stepElement.querySelector('.step-status').style.color = '#fbbf24';
     }
 
     // Mark previous steps as complete
@@ -511,7 +513,8 @@ function updateProgress(progress) {
     allSteps.forEach(step => {
         if (step.id !== `step-${progress.step}` && step.classList.contains('active')) {
             step.className = 'progress-step complete';
-            step.querySelector('.step-status').textContent = '✅';
+            step.querySelector('.step-status').textContent = '●';
+            step.querySelector('.step-status').style.color = '#10b981';
         }
     });
 
