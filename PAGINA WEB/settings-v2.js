@@ -1,5 +1,5 @@
 // Settings v2 - JavaScript para gestión de configuración
-const API_URL = 'http://localhost:8000';
+const API_URL = 'http://localhost:9000';
 
 // Navegación entre secciones
 document.querySelectorAll('.menu-item').forEach(item => {

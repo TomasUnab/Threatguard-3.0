@@ -2,21 +2,102 @@ const { InstallerCommon } = require('./common');
 const os = require('os');
 const path = require('path');
 const fs = require('fs-extra');
+const net = require('net');
 
 class WindowsInstaller extends InstallerCommon {
     constructor() {
         super();
-        this.installPath = 'C:\\ThreatGuard';
+        // In production (NSIS), installPath is where the executable is located.
+        // In development, use a fixed path.
+        if (process.env.NODE_ENV === 'development') {
+             this.installPath = 'C:\\ThreatGuard_Dev';
+        } else {
+             // process.execPath is .../ThreatGuard Installer.exe
+             this.installPath = path.dirname(process.execPath);
+        }
+
         this.snortPath = 'C:\\Snort';
         this.postgresPath = 'C:\\Program Files\\PostgreSQL\\15';
         this.redisPath = 'C:\\Redis';
     }
 
     /**
+     * Check if a port is free
+     */
+    checkPort(port) {
+        return new Promise((resolve) => {
+            const server = net.createServer();
+            server.once('error', () => resolve(false)); // Port in use
+            server.once('listening', () => {
+                server.close();
+                resolve(true); // Port free
+            });
+            server.listen(port);
+        });
+    }
+
+    /**
+     * Get installation path
+     */
+    getInstallPath() {
+        return this.installPath;
+    }
+
+    /**
      * Check system requirements
      */
-    async checkRequirements() {
+    async checkRequirements(config) {
         this.log('Checking system requirements...');
+
+        // Check Database (verify Windows service, not just client command)
+        const dbType = config && config.dbType ? config.dbType : 'postgresql';
+        let dbValid = false;
+        let dbValue = 'Not installed';
+        let dbRequired = '';
+
+        if (dbType === 'postgresql') {
+            dbRequired = 'PostgreSQL 13+';
+            try {
+                // Check for PostgreSQL service
+                const { stdout } = await this.execCommand('powershell "Get-Service | Where-Object {$_.Name -like \'*postgresql*\'} | Select-Object -First 1 Name,Status"');
+                if (stdout && stdout.includes('postgresql')) {
+                    // Service exists, get version
+                    try {
+                        const { stdout: version } = await this.execCommand('psql --version');
+                        dbValue = version.trim() + ' (Service detected)';
+                        dbValid = true;
+                    } catch {
+                        dbValue = 'PostgreSQL service found, version unknown';
+                        dbValid = true;
+                    }
+                } else {
+                    dbValue = 'Not installed (Will be installed automatically)';
+                }
+            } catch {
+                dbValue = 'Not installed (Will be installed automatically)';
+            }
+        } else if (dbType === 'mysql') {
+            dbRequired = 'MySQL 8.0+';
+            try {
+                // Check for MySQL service
+                const { stdout } = await this.execCommand('powershell "Get-Service | Where-Object {$_.Name -like \'*mysql*\'} | Select-Object -First 1 Name,Status"');
+                if (stdout && stdout.includes('mysql')) {
+                    // Service exists, get version
+                    try {
+                        const { stdout: version } = await this.execCommand('mysql --version');
+                        dbValue = version.trim() + ' (Service detected)';
+                        dbValid = true;
+                    } catch {
+                        dbValue = 'MySQL service found, version unknown';
+                        dbValid = true;
+                    }
+                } else {
+                    dbValue = 'Not installed (Will be installed automatically)';
+                }
+            } catch {
+                dbValue = 'Not installed (Will be installed automatically)';
+            }
+        }
 
         const requirements = {
             os: {
@@ -39,6 +120,11 @@ class WindowsInstaller extends InstallerCommon {
                 value: this.isAdmin() ? 'Yes' : 'No',
                 required: 'Administrator access required'
             },
+            ports: {
+                valid: (await this.checkPort(3000)) && (await this.checkPort(8000)),
+                value: `3000: ${await this.checkPort(3000) ? 'Free' : 'Busy'}, 8000: ${await this.checkPort(8000) ? 'Free' : 'Busy'}`,
+                required: 'Ports 3000 & 8000 free'
+            },
             python: {
                 valid: await this.commandExists('python'),
                 value: await this.getPythonVersion(),
@@ -48,6 +134,11 @@ class WindowsInstaller extends InstallerCommon {
                 valid: await this.commandExists('node'),
                 value: await this.getNodeVersion(),
                 required: 'Node.js 18+'
+            },
+            db: {
+                valid: dbValid,
+                value: dbValue,
+                required: dbRequired
             }
         };
 
@@ -146,7 +237,7 @@ class WindowsInstaller extends InstallerCommon {
                 progress: 15,
                 message: 'Installing system dependencies...'
             });
-            await this.installSystemDependencies();
+            await this.installSystemDependencies(config);
 
             // Step 3: Create directories (25%)
             progressCallback({
@@ -180,13 +271,18 @@ class WindowsInstaller extends InstallerCommon {
             });
             await this.installSnort();
 
-            // Step 7: Setup PostgreSQL (65%)
+            // Step 7: Setup Database (65%)
             progressCallback({
                 step: 'database',
                 progress: 65,
-                message: 'Configuring PostgreSQL database...'
+                message: `Configuring ${config.dbType === 'mysql' ? 'MySQL' : 'PostgreSQL'} database...`
             });
-            await this.setupPostgreSQL(config);
+            
+            if (config.dbType === 'mysql') {
+                await this.setupMySQL(config);
+            } else {
+                await this.setupPostgreSQL(config);
+            }
 
             // Step 8: Setup Redis (70%)
             progressCallback({
@@ -294,17 +390,23 @@ class WindowsInstaller extends InstallerCommon {
     /**
      * Install system dependencies
      */
-    async installSystemDependencies() {
+    async installSystemDependencies(config) {
         this.log('Installing system dependencies...');
 
         const packages = [
             'python --version=3.11',
             'nodejs --version=20.10.0',
-            'postgresql15',
             'redis-64',
             'git',
             'nssm'
         ];
+
+        // Add database package based on selection
+        if (config && config.dbType === 'mysql') {
+            packages.push('mysql');
+        } else {
+            packages.push('postgresql15');
+        }
 
         for (const pkg of packages) {
             try {
@@ -365,16 +467,53 @@ class WindowsInstaller extends InstallerCommon {
     async installPythonDependencies() {
         this.log('Installing Python dependencies...');
 
-        // Create virtual environment
-        await this.execCommand(`python -m venv "${this.installPath}\\venv"`);
+        // Create virtual environment without pip initially (faster, more reliable)
+        try {
+            await this.execCommand(`python -m venv "${this.installPath}\\venv" --without-pip`);
+        } catch (error) {
+            // Fallback: try with pip
+            this.log('Retrying venv creation with pip...', 'warn');
+            await this.execCommand(`python -m venv "${this.installPath}\\venv"`);
+        }
 
-        // Install dependencies
-        await this.execCommand(
-            `"${this.installPath}\\venv\\Scripts\\python.exe" -m pip install --upgrade pip setuptools wheel`
-        );
-        await this.execCommand(
-            `"${this.installPath}\\venv\\Scripts\\python.exe" -m pip install -r "${this.installPath}\\requirements.txt"`
-        );
+        // Wait for venv to fully initialize
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        // Download and install pip manually using get-pip.py
+        const getPipPath = path.join(os.tmpdir(), 'get-pip.py');
+        try {
+            await this.execCommand(`powershell -Command "Invoke-WebRequest -Uri 'https://bootstrap.pypa.io/get-pip.py' -OutFile '${getPipPath}'"`);
+            await this.execCommand(`"${this.installPath}\\venv\\Scripts\\python.exe" "${getPipPath}"`);
+            await fs.remove(getPipPath);
+            await new Promise(resolve => setTimeout(resolve, 2000));
+        } catch (error) {
+            this.log('Pip installation via get-pip.py failed, continuing...', 'warn');
+        }
+
+        const pythonExe = `"${this.installPath}\\venv\\Scripts\\python.exe"`;
+        
+        // Create a batch file to install dependencies
+        const batchScript = `
+@echo off
+cd /d "${this.installPath}"
+echo Installing pymysql and cryptography...
+"${this.installPath}\\venv\\Scripts\\python.exe" -m pip install pymysql cryptography --no-warn-script-location
+timeout /t 2 /nobreak > nul
+echo Installing requirements...
+if exist "${this.installPath}\\requirements.txt" (
+    "${this.installPath}\\venv\\Scripts\\python.exe" -m pip install -r "${this.installPath}\\requirements.txt" --no-warn-script-location
+)
+`;
+
+        const batchFile = path.join(os.tmpdir(), 'install_deps.bat');
+        await fs.writeFile(batchFile, batchScript);
+
+        try {
+            await this.execCommand(`cmd /c "${batchFile}"`);
+            await fs.remove(batchFile);
+        } catch (error) {
+            this.log(`Warning installing some dependencies: ${error.message}`, 'warn');
+        }
 
         this.log('Python dependencies installed');
     }
@@ -432,10 +571,96 @@ class WindowsInstaller extends InstallerCommon {
     }
 
     /**
+     * Setup MySQL
+     */
+    async setupMySQL(config) {
+        this.log('Setting up MySQL...');
+
+        // Install MySQL if not present
+        if (!await this.commandExists('mysql')) {
+            this.log('Installing MySQL Server...');
+            try {
+                await this.execCommand('choco install mysql -y');
+                await this.execCommand('refreshenv');
+            } catch (error) {
+                this.log(`Failed to install MySQL: ${error.message}`, 'warn');
+            }
+        }
+
+        const dbPassword = this.generatePassword(16);
+        const dbPort = config.dbPort || 3306;
+
+        // Create database and user
+        const sqlScript = `
+      CREATE DATABASE IF NOT EXISTS threatguard_db;
+      CREATE USER IF NOT EXISTS 'threatguard_user'@'localhost' IDENTIFIED BY '${dbPassword}';
+      ALTER USER 'threatguard_user'@'localhost' IDENTIFIED BY '${dbPassword}';
+      GRANT ALL PRIVILEGES ON threatguard_db.* TO 'threatguard_user'@'localhost';
+      FLUSH PRIVILEGES;
+    `;
+
+        await fs.writeFile('C:\\temp_setup_mysql.sql', sqlScript);
+        
+        try {
+            // Try to execute with mysql client
+            // Assuming root has no password or we can access it. 
+            // In a real scenario, we might need to ask for root password if it's already installed.
+            // For fresh choco install, it usually has empty root password or logs it.
+            
+            let mysqlCmd = `mysql -u root`;
+            if (config.dbAdminPassword) {
+                mysqlCmd += ` -p"${config.dbAdminPassword}"`;
+            }
+            mysqlCmd += ` -e "source C:\\temp_setup_mysql.sql"`;
+
+            await this.execCommand(
+                mysqlCmd,
+                { timeout: 15000 }
+            );
+        } catch (error) {
+             this.log(`Warning: Failed to configure MySQL users automatically. You may need to configure the DB manually. Error: ${error.message}`, 'warn');
+        } finally {
+            try { await fs.remove('C:\\temp_setup_mysql.sql'); } catch (e) {}
+        }
+
+        // Update .env file
+        const envPath = `${this.installPath}\\.env`;
+        
+        // Create .env content for MySQL
+        // SQLAlchemy format: mysql+pymysql://user:password@host:port/dbname
+        const envContent = `DATABASE_URL=mysql+pymysql://threatguard_user:${dbPassword}@localhost:${dbPort}/threatguard_db
+API_PORT=${config.apiPort || 8000}
+SECRET_KEY=${this.generateSecretKey()}
+JWT_SECRET=${this.generateSecretKey()}
+INTERFACE=${config.networkInterface ? (config.networkInterface.index || '1') : '1'}
+`;
+        
+        // We overwrite .env or append if not exists. 
+        // Since we are in setup, we can probably just write it.
+        // But let's respect the template logic if we can, but template is PG specific usually.
+        // So we just write the file here for MySQL case.
+        await fs.writeFile(envPath, envContent);
+
+        this.log('MySQL configured');
+        return dbPassword;
+    }
+
+    /**
      * Setup PostgreSQL
      */
     async setupPostgreSQL(config) {
         this.log('Setting up PostgreSQL...');
+
+        // Install PostgreSQL if not present
+        if (!await this.commandExists('psql')) {
+            this.log('Installing PostgreSQL 15...');
+            try {
+                await this.execCommand('choco install postgresql15 -y');
+                await this.execCommand('refreshenv');
+            } catch (error) {
+                this.log(`Failed to install PostgreSQL: ${error.message}`, 'warn');
+            }
+        }
 
         const dbPassword = this.generatePassword(16);
 
@@ -470,12 +695,26 @@ class WindowsInstaller extends InstallerCommon {
         
         await this.sleep(5000); // Wait a bit longer for startup
 
-        // Create database and user
+        // Create database and user (Robust Script)
         const sqlScript = `
-      CREATE DATABASE threatguard_db;
+DO
+$do$
+BEGIN
+   IF NOT EXISTS (
+      SELECT FROM pg_catalog.pg_roles
+      WHERE  rolname = 'threatguard_user') THEN
       CREATE USER threatguard_user WITH PASSWORD '${dbPassword}';
-      GRANT ALL PRIVILEGES ON DATABASE threatguard_db TO threatguard_user;
-      ALTER DATABASE threatguard_db OWNER TO threatguard_user;
+   ELSE
+      ALTER USER threatguard_user WITH PASSWORD '${dbPassword}';
+   END IF;
+END
+$do$;
+
+SELECT 'CREATE DATABASE threatguard_db'
+WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'threatguard_db')\\gexec
+
+GRANT ALL PRIVILEGES ON DATABASE threatguard_db TO threatguard_user;
+ALTER DATABASE threatguard_db OWNER TO threatguard_user;
     `;
 
         await fs.writeFile('C:\\temp_setup_db.sql', sqlScript);
@@ -505,11 +744,13 @@ class WindowsInstaller extends InstallerCommon {
 
             // Try to execute with a timeout and default password to avoid hanging
             // We set a timeout because psql might hang waiting for a password
+            const pgPassword = config.dbAdminPassword || 'postgres';
+            
             await this.execCommand(
                 `"${psqlPath}" -U postgres -f C:\\temp_setup_db.sql`,
                 { 
                     timeout: 15000, // 15 seconds timeout
-                    env: { ...process.env, PGPASSWORD: 'postgres' }
+                    env: { ...process.env, PGPASSWORD: pgPassword }
                 }
             );
         } catch (error) {
@@ -532,7 +773,7 @@ class WindowsInstaller extends InstallerCommon {
         if (await fs.pathExists(envTemplate)) {
             await this.processTemplate(envTemplate, envPath, {
                 DATABASE_PASSWORD: dbPassword,
-                API_PORT: config.apiPort || 8000,
+                API_PORT: config.apiPort || 9000,
                 FRONTEND_PORT: config.frontendPort || 3000,
                 SECRET_KEY: this.generateSecretKey(),
                 JWT_SECRET: this.generateSecretKey(),
@@ -542,8 +783,9 @@ class WindowsInstaller extends InstallerCommon {
         } else {
             this.log(`Warning: .env.template not found at ${envTemplate}. Creating default .env file.`, 'warn');
             // Create a basic .env file if template is missing
-            const basicEnv = `DATABASE_URL=postgresql://threatguard_user:${dbPassword}@localhost:5432/threatguard_db
-API_PORT=${config.apiPort || 8000}
+            const basicEnv = `DATABASE_URL=postgresql://threatguard_user:${dbPassword}@127.0.0.1:5432/threatguard_db
+API_HOST=127.0.0.1
+API_PORT=${config.apiPort || 9000}
 SECRET_KEY=${this.generateSecretKey()}
 JWT_SECRET=${this.generateSecretKey()}
 `;

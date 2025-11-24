@@ -6,14 +6,15 @@ let config = {
     networkInterface: null,
     apiPort: 8000,
     frontendPort: 3000,
-    postgresPort: 5432,
+    dbPort: 5432,
     redisPort: 6379,
+    dbType: 'postgresql',
     installPath: process.platform === 'win32' ? 'C:\\ThreatGuard' : '/opt/threatguard',
     components: {
         api: true,
         frontend: true,
         snort: true,
-        postgres: true,
+        database: true,
         redis: true,
         openvas: true,
         elasticsearch: false
@@ -22,6 +23,7 @@ let config = {
 
 const screens = [
     'welcome',
+    'database',
     'requirements',
     'network',
     'ports',
@@ -51,17 +53,51 @@ function initializeEventListeners() {
     document.getElementById('port-frontend').addEventListener('change', (e) => {
         config.frontendPort = parseInt(e.target.value);
     });
-    document.getElementById('port-postgres').addEventListener('change', (e) => {
-        config.postgresPort = parseInt(e.target.value);
+    document.getElementById('port-db').addEventListener('change', (e) => {
+        config.dbPort = parseInt(e.target.value);
     });
     document.getElementById('port-redis').addEventListener('change', (e) => {
         config.redisPort = parseInt(e.target.value);
     });
 
-    // Component checkboxes
-    document.getElementById('comp-postgres').addEventListener('change', (e) => {
-        config.components.postgres = e.target.checked;
+    // Database selection
+    const dbOptions = document.querySelectorAll('.db-option');
+    dbOptions.forEach(option => {
+        option.addEventListener('click', () => {
+            // Remove selected class from all
+            dbOptions.forEach(opt => opt.classList.remove('selected'));
+            // Add to clicked
+            option.classList.add('selected');
+            // Update config
+            config.dbType = option.dataset.value;
+            
+            // Update port default
+            const portInput = document.getElementById('port-db');
+            if (config.dbType === 'postgresql') {
+                config.dbPort = 5432;
+                portInput.value = 5432;
+            } else {
+                config.dbPort = 3306;
+                portInput.value = 3306;
+            }
+        });
     });
+
+    // DB Admin Password
+    const dbAdminPassInput = document.getElementById('db-admin-password');
+    if (dbAdminPassInput) {
+        dbAdminPassInput.addEventListener('change', (e) => {
+            config.dbAdminPassword = e.target.value;
+        });
+    }
+
+    // Component checkboxes
+    const compDb = document.getElementById('comp-postgres'); // Reusing ID but logic is generic
+    if (compDb) {
+        compDb.addEventListener('change', (e) => {
+            config.components.database = e.target.checked;
+        });
+    }
     document.getElementById('comp-redis').addEventListener('change', (e) => {
         config.components.redis = e.target.checked;
     });
@@ -72,28 +108,6 @@ function initializeEventListeners() {
     document.getElementById('comp-elasticsearch').addEventListener('change', (e) => {
         config.components.elasticsearch = e.target.checked;
         updateSpaceRequired();
-    });
-
-    // Log toggle
-    document.getElementById('toggle-logs').addEventListener('click', () => {
-        const logs = document.getElementById('installation-logs');
-        logs.classList.toggle('hidden');
-    });
-
-    // Copy password button
-    document.getElementById('copy-password').addEventListener('click', () => {
-        const password = document.getElementById('password-value').textContent;
-        navigator.clipboard.writeText(password);
-        alert('Contraseña copiada al portapapeles');
-    });
-
-    // IPC listeners
-    ipcRenderer.on('install-progress', (event, progress) => {
-        updateProgress(progress);
-    });
-
-    ipcRenderer.on('error', (event, error) => {
-        showError(error.message, error.details);
     });
 }
 
@@ -154,12 +168,12 @@ function updateNavigation() {
         btnNext.textContent = 'Finalizar';
         btnNext.disabled = false;
         btnNext.onclick = () => {
+            let url = null;
             if (document.getElementById('start-on-complete').checked) {
                 // Open browser to ThreatGuard
-                const url = `http://localhost:${config.frontendPort}`;
-                require('electron').shell.openExternal(url);
+                url = `http://localhost:${config.frontendPort}`;
             }
-            window.close();
+            ipcRenderer.send('finish-installation', url);
         };
     } else {
         btnNext.style.display = 'block';
@@ -172,14 +186,52 @@ function updateNavigation() {
  * Handle next button
  */
 async function handleNext() {
-    // Validate current screen
-    if (!await validateCurrentScreen()) {
-        return;
+    const currentScreenId = screens[currentScreen];
+
+    // Validation before proceeding
+    if (currentScreenId === 'requirements') {
+        const allValid = document.querySelectorAll('.requirement-item .status.valid').length === 8; // Now 8 items
+        if (!allValid) {
+            // Check if critical system requirements fail (not installable components)
+            // DB, Python, Node, Ports can be installed/fixed automatically
+            const criticalFailed = 
+                document.querySelector('#req-os .status.error') ||
+                document.querySelector('#req-ram .status.error') ||
+                document.querySelector('#req-disk .status.error') ||
+                document.querySelector('#req-permissions .status.error');
+            
+            if (criticalFailed) {
+                alert('Por favor, solucione los requisitos del sistema antes de continuar.\n\nLos componentes faltantes (Base de Datos, Python, Node.js) serán instalados automáticamente.');
+                return;
+            }
+            
+            // Warn about missing components that will be auto-installed
+            const missingComponents = [];
+            if (document.querySelector('#req-db .status.error')) missingComponents.push('Base de Datos');
+            if (document.querySelector('#req-python .status.error')) missingComponents.push('Python');
+            if (document.querySelector('#req-node .status.error')) missingComponents.push('Node.js');
+            
+            if (missingComponents.length > 0) {
+                const confirmed = confirm(
+                    `Los siguientes componentes no están instalados:\n\n• ${missingComponents.join('\n• ')}\n\nSerán instalados automáticamente durante el proceso.\n\n¿Desea continuar?`
+                );
+                if (!confirmed) return;
+            }
+        }
     }
 
-    // Move to next screen
     if (currentScreen < screens.length - 1) {
-        showScreen(currentScreen + 1);
+        currentScreen++;
+        showScreen(currentScreen);
+
+        // Trigger actions based on screen
+        if (screens[currentScreen] === 'requirements') {
+            checkRequirements();
+        } else if (screens[currentScreen] === 'network') {
+            loadNetworkInterfaces();
+        } else if (screens[currentScreen] === 'installation') {
+            startInstallation();
+        }
     }
 }
 
@@ -187,8 +239,9 @@ async function handleNext() {
  * Handle back button
  */
 function handleBack() {
-    if (currentScreen > 0 && currentScreen !== 5 && currentScreen !== 6) {
-        showScreen(currentScreen - 1);
+    if (currentScreen > 0) {
+        currentScreen--;
+        showScreen(currentScreen);
     }
 }
 
@@ -212,29 +265,41 @@ async function validateCurrentScreen() {
  * Check system requirements
  */
 async function checkRequirements() {
-    const result = await ipcRenderer.invoke('check-requirements');
-
-    if (!result.success) {
-        showError('Error al verificar requisitos', result.error);
-        return;
-    }
-
-    const requirements = result.requirements;
-
-    // Update UI
-    for (const [key, req] of Object.entries(requirements)) {
-        const element = document.getElementById(`req-${key}`);
-        if (element) {
-            const status = element.querySelector('.status');
-            const value = element.querySelector('.value');
-
-            status.textContent = req.valid ? '✅' : '❌';
-            value.textContent = req.value;
-
-            if (!req.valid) {
-                element.style.color = '#e53e3e';
-            }
+    const items = ['os', 'ram', 'disk', 'permissions', 'python', 'node', 'ports', 'db'];
+    
+    // Reset status
+    items.forEach(id => {
+        const el = document.getElementById(`req-${id}`);
+        if (el) {
+            el.querySelector('.status').textContent = '⏳';
+            el.querySelector('.status').className = 'status';
+            el.querySelector('.value').textContent = 'Verificando...';
         }
+    });
+
+    try {
+        // Pass config to checkRequirements to know which DB to check
+        const response = await ipcRenderer.invoke('check-requirements', config);
+        const results = response.requirements || response;
+        
+        Object.keys(results).forEach(key => {
+            const result = results[key];
+            const el = document.getElementById(`req-${key}`);
+            if (el) {
+                const statusEl = el.querySelector('.status');
+                const valueEl = el.querySelector('.value');
+                
+                statusEl.textContent = result.valid ? '✅' : '❌';
+                statusEl.className = `status ${result.valid ? 'valid' : 'error'}`;
+                valueEl.textContent = result.value;
+                
+                if (!result.valid) {
+                    valueEl.classList.add('text-red-400');
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Error checking requirements:', error);
     }
 }
 
@@ -242,10 +307,11 @@ async function checkRequirements() {
  * Validate requirements
  */
 function validateRequirements() {
-    const requirements = ['os', 'ram', 'disk', 'permissions', 'python', 'node'];
+    const requirements = ['os', 'ram', 'disk', 'permissions', 'python', 'node', 'ports'];
 
     for (const req of requirements) {
         const element = document.getElementById(`req-${req}`);
+        if (!element) continue; // Skip if element doesn't exist (e.g. ports might be optional in UI)
         const status = element.querySelector('.status');
 
         if (status.textContent === '❌') {
@@ -362,7 +428,19 @@ function updateSpaceRequired() {
  * Start installation
  */
 async function startInstallation() {
+    // Get install path to display
+    try {
+        const result = await ipcRenderer.invoke('get-install-path');
+        if (result.success) {
+            const pathDisplay = document.getElementById('install-path-display');
+            if (pathDisplay) pathDisplay.textContent = result.path;
+        }
+    } catch (e) {
+        console.error('Could not get install path', e);
+    }
+
     const btnNext = document.getElementById('btn-next');
+    const btnBack = document.getElementById('btn-back');
     btnNext.style.display = 'none';
 
     // Create progress steps

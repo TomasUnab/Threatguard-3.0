@@ -1,15 +1,13 @@
-const { app, BrowserWindow, ipcMain, Tray, Menu, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
 // Import installers
 const { LinuxInstaller } = require('./backend/linux-installer');
 const { WindowsInstaller } = require('./backend/windows-installer');
-const { UnixInstaller } = require('./backend/unix-installer');
 
 let mainWindow;
 let installer;
-let tray;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -36,8 +34,8 @@ function createWindow() {
   // Detect OS and create appropriate installer
   if (process.platform === 'win32') {
     installer = new WindowsInstaller();
-  } else if (process.platform === 'linux' || process.platform === 'darwin') {
-    installer = new UnixInstaller();
+  } else if (process.platform === 'linux') {
+    installer = new LinuxInstaller();
   } else {
     console.error('Unsupported platform:', process.platform);
     app.quit();
@@ -51,9 +49,9 @@ function createWindow() {
 // IPC Handlers
 
 // Check system requirements
-ipcMain.handle('check-requirements', async () => {
+ipcMain.handle('check-requirements', async (event, config) => {
   try {
-    const requirements = await installer.checkRequirements();
+    const requirements = await installer.checkRequirements(config);
     return { success: true, requirements };
   } catch (error) {
     return { success: false, error: error.message };
@@ -103,87 +101,35 @@ ipcMain.handle('get-logs', async () => {
   }
 });
 
-// Handle PostgreSQL installation
-ipcMain.handle('install-postgresql', async () => {
+// Get install path
+ipcMain.handle('get-install-path', async () => {
   try {
-    const installerPath = path.join(__dirname, '../binaries/postgresql-installer.exe');
-
-    // Ensure the installer exists
-    if (!fs.existsSync(installerPath)) {
-      throw new Error('El instalador de PostgreSQL no se encuentra.');
-    }
-
-    // Execute the PostgreSQL installer in silent mode
-    const { exec } = require('child_process');
-    await new Promise((resolve, reject) => {
-      exec(
-        `\"${installerPath}\" --mode unattended --superpassword \"secure_password\"`,
-        (error, stdout, stderr) => {
-          if (error) {
-            reject(`Error al instalar PostgreSQL: ${error.message}`);
-          } else {
-            resolve(stdout ? stdout : stderr);
-          }
-        }
-      );
-    });
-
-    return { success: true, message: 'PostgreSQL instalado correctamente.' };
+    const path = installer.getInstallPath();
+    return { success: true, path };
   } catch (error) {
     return { success: false, error: error.message };
   }
 });
 
-// Handle directory selection
-ipcMain.handle('select-directory', async () => {
-  try {
-    const result = await dialog.showOpenDialog(mainWindow, {
-      properties: ['openDirectory']
-    });
-
-    if (result.canceled) {
-      return { success: false, message: 'Selección de directorio cancelada.' };
-    }
-
-    const selectedPath = result.filePaths[0];
-    return { success: true, path: selectedPath };
-  } catch (error) {
-    return { success: false, error: error.message };
+// Finish installation
+ipcMain.on('finish-installation', async (event, url) => {
+  if (url) {
+    const { shell } = require('electron');
+    await shell.openExternal(url);
   }
+  app.quit();
 });
 
-// Handle directory creation
-ipcMain.handle('create-directory', async (event, directoryPath) => {
-  try {
-    if (!fs.existsSync(directoryPath)) {
-      fs.mkdirSync(directoryPath, { recursive: true });
+// App lifecycle
+app.whenReady().then(() => {
+  createWindow();
+
+  app.on('activate', () => {
+    if (BrowserWindow.getAllWindows().length === 0) {
+      createWindow();
     }
-    return { success: true, message: 'Directorio creado correctamente.' };
-  } catch (error) {
-    return { success: false, error: error.message };
-  }
+  });
 });
-
-// Integrate directory selection into installation flow
-ipcMain.handle('install-with-directory', async (event, { directoryPath, config }) => {
-  try {
-    // Ensure the directory exists
-    if (!fs.existsSync(directoryPath)) {
-      fs.mkdirSync(directoryPath, { recursive: true });
-    }
-
-    // Pass the directory to the installer
-    const result = await installer.install({ ...config, installPath: directoryPath }, (progress) => {
-      mainWindow.webContents.send('install-progress', progress);
-    });
-
-    return result;
-  } catch (error) {
-    return { success: false, error: error.message };
-  }
-});
-
-app.whenReady().then(createWindow);
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
@@ -191,8 +137,13 @@ app.on('window-all-closed', () => {
   }
 });
 
-app.on('activate', () => {
-  if (BrowserWindow.getAllWindows().length === 0) {
-    createWindow();
+// Handle uncaught exceptions
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught exception:', error);
+  if (mainWindow) {
+    mainWindow.webContents.send('error', {
+      message: 'An unexpected error occurred',
+      details: error.message
+    });
   }
 });

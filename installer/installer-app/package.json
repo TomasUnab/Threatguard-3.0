@@ -80,14 +80,18 @@
         },
         "win": {
             "target": [
-                "portable"
+                "nsis"
             ],
             "icon": "assets/icon.ico",
             "forceCodeSigning": false,
             "requestedExecutionLevel": "requireAdministrator"
         },
-        "portable": {
-            "artifactName": "ThreatGuard-Installer-${version}.exe"
+        "nsis": {
+            "oneClick": false,
+            "allowToChangeInstallationDirectory": true,
+            "perMachine": true,
+            "runAfterFinish": true,
+            "shortcutName": "ThreatGuard"
         }
     }
 }
