@@ -288,5 +288,56 @@
     </div>
 
     <script src="installer.js"></script>
+    <script>
+        const { ipcRenderer } = require('electron');
+
+        document.getElementById('browse-button').addEventListener('click', async () => {
+            const result = await ipcRenderer.invoke('select-directory');
+            if (result.success) {
+                document.getElementById('install-directory').value = result.path;
+            } else {
+                alert(result.message);
+            }
+        });
+
+        document.getElementById('directory-form').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const directoryPath = document.getElementById('install-directory').value;
+            if (!directoryPath) {
+                alert('Por favor, selecciona un directorio de instalación.');
+                return;
+            }
+
+            const result = await ipcRenderer.invoke('create-directory', directoryPath);
+            if (result.success) {
+                alert('Directorio creado correctamente.');
+            } else {
+                alert(result.error);
+            }
+        });
+
+        // Navegar entre pantallas y validar selección de directorio
+        document.getElementById('btn-next').addEventListener('click', async () => {
+            const currentScreen = document.querySelector('.screen.active');
+            const nextScreen = currentScreen.nextElementSibling;
+
+            if (currentScreen.id === 'screen-installation-directory') {
+                const directoryPath = document.getElementById('install-directory').value;
+                if (!directoryPath) {
+                    alert('Por favor, selecciona un directorio de instalación antes de continuar.');
+                    return;
+                }
+                const result = await ipcRenderer.invoke('create-directory', directoryPath);
+                if (!result.success) {
+                    alert(`Error al crear el directorio: ${result.error}`);
+                    return;
+                }
+                await ipcRenderer.invoke('set-install-path', directoryPath);
+            }
+
+            currentScreen.classList.remove('active');
+            nextScreen.classList.add('active');
+        });
+    </script>
 </body>
 </html>
