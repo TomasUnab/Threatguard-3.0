@@ -275,23 +275,60 @@ class InstallerCommon {
 
     /**
      * Get resource path (for Electron app resources)
+     * Returns null if resource is not found instead of throwing
      */
-    getResourcePath(relativePath) {
+    getResourcePath(relativePath, throwOnError = false) {
         if (process.env.NODE_ENV === 'development') {
-            return path.join(__dirname, '../../..', relativePath);
+            const devPath = path.join(__dirname, '../../..', relativePath);
+            if (fs.existsSync(devPath)) {
+                return devPath;
+            }
+            if (throwOnError) {
+                throw new Error(`Resource not found in development: ${relativePath}`);
+            }
+            return null;
         } else {
-            // In production, check both app.asar and extraResources
+            // In production, resources are in process.resourcesPath
+            // Try multiple possible locations
             const { app } = require('electron');
-            const asarPath = path.join(process.resourcesPath, relativePath);
+            
+            // 1. Try app.asar.unpacked (for files that need to be unpacked like assets)
+            const unpackedPath = path.join(process.resourcesPath, 'app.asar.unpacked', relativePath);
+            if (fs.existsSync(unpackedPath)) {
+                return unpackedPath;
+            }
+            
+            // 2. Try extraResources/app/ path (where we package them)
             const extraResourcesPath = path.join(process.resourcesPath, 'app', relativePath);
-
+            if (fs.existsSync(extraResourcesPath)) {
+                return extraResourcesPath;
+            }
+            
+            // 3. Try direct extraResources path
+            const directResourcePath = path.join(process.resourcesPath, relativePath);
+            if (fs.existsSync(directResourcePath)) {
+                return directResourcePath;
+            }
+            
+            // 4. Try asar path (for files inside asar)
+            const asarPath = path.join(process.resourcesPath, 'app.asar', relativePath);
             if (fs.existsSync(asarPath)) {
                 return asarPath;
-            } else if (fs.existsSync(extraResourcesPath)) {
-                return extraResourcesPath;
-            } else {
+            }
+            
+            // Log available paths for debugging
+            console.warn(`Resource not found: ${relativePath}`);
+            console.warn(`Tried paths:`);
+            console.warn(`  - ${unpackedPath}`);
+            console.warn(`  - ${extraResourcesPath}`);
+            console.warn(`  - ${directResourcePath}`);
+            console.warn(`  - ${asarPath}`);
+            console.warn(`process.resourcesPath: ${process.resourcesPath}`);
+            
+            if (throwOnError) {
                 throw new Error(`Resource not found: ${relativePath}`);
             }
+            return null;
         }
     }
 

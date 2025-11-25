@@ -1,0 +1,515 @@
+================================================================================
+                    CONTEXTO DE DISEÑO - THREATGUARD INSTALLER
+================================================================================
+
+DESCRIPCIÓN DEL PROYECTO
+========================
+ThreatGuard es una plataforma empresarial de ciberseguridad para SOCs (Security 
+Operations Centers) que combina:
+- Detección de amenazas en tiempo real (IDS con Snort 3)
+- Análisis con Machine Learning
+- Gestión de vulnerabilidades (OpenVAS)
+- Automatización SOAR
+
+COMPONENTES TÉCNICOS:
+- API Backend (Python/FastAPI) - Puerto 9000
+- Frontend Web (HTML/CSS/JavaScript) - Puerto 3000
+- PostgreSQL/MySQL - Puertos 5432/3306
+- Snort IDS, Redis, OpenVAS
+
+
+================================================================================
+                           PALETA DE COLORES
+================================================================================
+
+COLORES CORPORATIVOS:
+--------------------
+Azul Oscuro Primario:    #1e3a8a  (rgb(30, 58, 138))
+Azul Medio Corporativo:  #2563eb  (rgb(37, 99, 235))
+Azul Claro Acentos:      #3b82f6  (rgb(59, 130, 246))
+Azul Logo:               #3182ce  (rgb(49, 130, 206))
+
+COLORES DE ESTADO:
+-----------------
+Verde Success:           #10b981  (rgb(16, 185, 129))
+Rojo Error:              #ef4444  (rgb(239, 68, 68))
+Amarillo Warning:        #fbbf24  (rgb(251, 191, 36))
+Naranja Caution:         #d97706  (rgb(217, 119, 6))
+
+FONDOS Y NEUTROS:
+----------------
+Blanco Principal:        #ffffff
+Gris Muy Claro:          #f8fafc  (Footer background)
+Gris Oscuro Texto:       #2d3748
+Gris Medio Texto:        #718096
+
+
+================================================================================
+                          TIPOGRAFÍA Y TEXTO
+================================================================================
+
+FONT FAMILY: Segoe UI, Roboto, -apple-system, sans-serif
+
+TAMAÑOS:
+--------
+H1 (Header Principal):   1.75rem (28px), font-weight: 600
+H2 (Títulos Pantalla):   1.5rem (24px), margin-bottom: 1.5rem
+H3 (Subtítulos):         1.1rem, margin-bottom: 0.25rem
+Cuerpo Normal:           0.9-1rem
+Texto Pequeño:           0.85rem
+Version Info:            0.85rem, color: rgba(255,255,255,0.9)
+
+LINE HEIGHT: 1.5-1.6 para lectura óptima
+
+
+================================================================================
+                      DIMENSIONES Y ESTRUCTURA
+================================================================================
+
+VENTANA PRINCIPAL:
+-----------------
+Ancho:                   1100px
+Alto:                    900px
+Resizable:               Sí
+Border Radius:           16px
+Box Shadow:              0 20px 60px rgba(0, 0, 0, 0.3)
+
+ESTRUCTURA LAYOUT:
+-----------------
+┌─────────────────────────────────────────┐
+│  HEADER                                 │  ~80px
+│  - Gradiente azul (#1e3a8a → #2563eb)  │
+│  - Logo SVG + Título + Versión          │
+├─────────────────────────────────────────┤
+│                                         │
+│  MAIN CONTENT                           │  Flexible
+│  - Fondo blanco                         │
+│  - Padding: 2.5rem                      │
+│  - Pantallas dinámicas (8 screens)     │
+│                                         │
+├─────────────────────────────────────────┤
+│  FOOTER                                 │  Min 85px
+│  - Fondo: #f8fafc                       │
+│  - Padding: 25px 50px                   │
+│  - Botones: "Atrás" | "Comenzar"       │
+└─────────────────────────────────────────┘
+
+
+================================================================================
+                        ELEMENTOS VISUALES
+================================================================================
+
+1. LOGO SHIELD SVG (32x32px):
+   ----------------------------
+   <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+       <path d="M12 2L4 6v6c0 5.5 3.8 10.7 8 12 4.2-1.3 8-6.5 8-12V6l-8-4z" 
+             fill="#3182ce" stroke="#3182ce" stroke-width="2"/>
+   </svg>
+
+2. BADGES DE COMPONENTES (Iniciales en círculos):
+   ----------------------------------------------
+   - IDS, ML, UI: Azul #3182ce, texto blanco
+   - VS: Verde (vulnerabilidades)
+   - PG, MY: Púrpura (bases de datos)
+   
+   Estilo: border-radius: 8px, padding: 12px, font-size: 20px, font-weight: bold
+
+3. INDICADORES DE ESTADO (Círculos sólidos):
+   -----------------------------------------
+   ● Verde (#10b981)   = Exitoso / Puerto Libre / Válido
+   ● Rojo (#ef4444)    = Error / Puerto Ocupado / Inválido
+   ● Amarillo (#fbbf24) = En Progreso / Verificando
+
+
+================================================================================
+                          BOTONES Y CONTROLES
+================================================================================
+
+BOTÓN PRIMARIO (.btn-primary):
+------------------------------
+Background:       linear-gradient(135deg, #2563eb, #1e40af)
+Color:            white
+Border:           none
+Padding:          14px 28px
+Min-width:        120px
+Border-radius:    8px
+Font-size:        0.95rem
+Font-weight:      600
+Cursor:           pointer
+Transition:       all 0.3s ease
+
+Hover Effect:
+  transform: translateY(-2px)
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4)
+
+BOTÓN SECUNDARIO (.btn-secondary):
+----------------------------------
+Background:       transparent
+Color:            #64748b
+Border:           1px solid #cbd5e1
+(Resto igual a btn-primary)
+
+Hover Effect:
+  background: #f1f5f9
+  border-color: #94a3b8
+
+
+================================================================================
+                    PANTALLAS DEL INSTALLER (8 PASOS)
+================================================================================
+
+SCREEN 1: WELCOME (Bienvenida)
+------------------------------
+Elementos:
+- Logo grande centrado con shield SVG
+- Título "Bienvenido a ThreatGuard"
+- Feature list con 6 items:
+  * Detección de Amenazas (Badge: IDS)
+  * Machine Learning (Badge: ML)
+  * Dashboard Profesional (Badge: UI)
+  * Gestión de Vulnerabilidades (Badge: VS)
+  * PostgreSQL (Badge: PG)
+  * MySQL (Badge: MY)
+- Cada feature: badge + título + descripción
+
+SCREEN 2: DATABASE SELECTION (Selección BD)
+-------------------------------------------
+Elementos:
+- Título "Seleccione Motor de Base de Datos"
+- 2 Cards grandes (PostgreSQL / MySQL)
+- Card seleccionado: borde azul (#2563eb)
+- Cada card muestra:
+  * Logo/icono de la BD
+  * Nombre y versión
+  * Descripción breve
+  * Nota: "Se instalará automáticamente si no está presente"
+
+SCREEN 3: REQUIREMENTS (Verificación de Requisitos)
+---------------------------------------------------
+Elementos:
+- Título "Verificación de Requisitos"
+- Lista de 9 items a verificar:
+
+  ● Sistema Operativo          Windows 10/11
+  ● Memoria RAM                8 GB mínimo
+  ● Espacio en Disco           50 GB disponible
+  ● Permisos de Administrador  Requerido
+  ● Motor de Base de Datos     PostgreSQL/MySQL
+  ● Python 3.10+               Auto-instalable
+  ● Node.js 18+                Auto-instalable
+  ● Puertos Aplicación         3000 (Frontend), 9000 (API)
+  ● Puertos Base de Datos      5432 (PostgreSQL), 3306 (MySQL)
+
+Layout de cada item:
+  [Círculo de estado] [Nombre del requisito]     [Valor/Estado]
+
+- INFO BOX (azul claro con borde):
+  Background: rgba(49, 130, 206, 0.1)
+  Border-left: 4px solid #3182ce
+  Padding: 12px 16px
+  
+  Texto 1: "INFO: Los componentes faltantes serán instalados automáticamente"
+  Texto 2: "ADVERTENCIA: Si algún puerto está ocupado, cierre la aplicación que lo usa"
+
+DETECCIÓN DE PUERTOS OCUPADOS:
+------------------------------
+Cuando un puerto está en uso, se muestra:
+  "Frontend (3000): Ocupado por node.exe (PID: 1234)"
+  "PostgreSQL (5432): Ocupado por postgres.exe (PID: 5678)"
+
+Popup de advertencia:
+  ⚠️ PUERTOS OCUPADOS DETECTADOS:
+  
+  • Frontend (3000): Ocupado por node.exe (PID: 1234)
+  • PostgreSQL (5432): Ocupado por postgres.exe (PID: 5678)
+  
+  Estos puertos están siendo utilizados por otra aplicación.
+  Por favor, cierre las aplicaciones que usan estos puertos antes de continuar.
+  
+  ¿Desea continuar de todas formas? (No recomendado)
+
+SCREEN 4: NETWORK (Interfaz de Red)
+-----------------------------------
+Elementos:
+- Título "Selección de Interfaz de Red"
+- Subtítulo "Snort monitoreará el tráfico en la interfaz seleccionada"
+- Lista de interfaces disponibles (cards seleccionables)
+- Cada card muestra:
+  * Radio button
+  * Nombre de la interfaz
+  * Dirección IP
+  * Dirección MAC
+  * Estado (Conectado/Desconectado)
+  * Máscara de red
+
+SCREEN 5: PORTS (Configuración de Puertos)
+------------------------------------------
+Elementos:
+- Título "Configuración de Puertos"
+- 4 inputs numéricos:
+  * Puerto API Backend: 9000 (default)
+  * Puerto Frontend Web: 3000 (default)
+  * Puerto Base de Datos: 5432 (PostgreSQL) / 3306 (MySQL)
+  * Puerto Redis: 6379 (default)
+- Rango válido: 1024-65535
+- Validación en tiempo real
+
+SCREEN 6: COMPONENTS (Selección de Componentes)
+-----------------------------------------------
+Elementos:
+- Título "Seleccione Componentes"
+- Checkboxes para cada componente:
+  
+  ✓ ThreatGuard API         (Requerido - disabled)
+  ✓ ThreatGuard Frontend    (Requerido - disabled)
+  ☐ Snort IDS              (Opcional)
+  ☐ Base de Datos          (Opcional - auto-detectado)
+  ☐ Redis                  (Opcional)
+  ☐ OpenVAS                (Opcional - +2.5 GB)
+  ☐ Elasticsearch          (Opcional - +3.0 GB)
+
+- Cálculo dinámico de espacio:
+  "Espacio requerido: 8.5 GB (base) + componentes opcionales"
+
+SCREEN 7: INSTALLATION (Proceso de Instalación)
+-----------------------------------------------
+Elementos:
+- Título "Instalando ThreatGuard"
+- Path de instalación mostrado: "C:\ThreatGuard"
+- Barra de progreso global (0-100%)
+- Lista de pasos de instalación con estados:
+  
+  ✓ Instalando dependencias
+  ⏳ Creando directorios
+  ☐ Configurando base de datos
+  ☐ Instalando Snort
+  ☐ Configurando API
+  ☐ Instalando frontend
+  ☐ Finalizando instalación
+
+- Área de logs en tiempo real (scrollable):
+  [TIMESTAMP] Instalando Python 3.10...
+  [TIMESTAMP] Descargando Node.js...
+  [TIMESTAMP] Configurando PostgreSQL...
+
+SCREEN 8: COMPLETE (Finalización)
+---------------------------------
+Elementos:
+- Ícono de éxito grande (✓ verde)
+- Título "¡Instalación Completada!"
+- Resumen:
+  * Componentes instalados
+  * Rutas de instalación
+  * Puertos configurados
+  * URL de acceso: http://localhost:3000
+- Botón "Finalizar" (cierra el installer)
+
+
+================================================================================
+                      COMPONENTES UI ESPECÍFICOS
+================================================================================
+
+1. INFO BOX (Cajas informativas):
+   ------------------------------
+   - Fondo semi-transparente del color del tipo
+   - Borde izquierdo sólido (4px) del color intenso
+   - Padding: 12px 16px
+   - Border-radius: 4px
+   
+   Variantes:
+   * INFO (Azul):    background: rgba(49, 130, 206, 0.1), border: #3182ce
+   * WARNING (Naranja): background: rgba(217, 119, 6, 0.1), border: #d97706
+   * ERROR (Rojo):   background: rgba(239, 68, 68, 0.1), border: #ef4444
+   * SUCCESS (Verde): background: rgba(16, 185, 129, 0.1), border: #10b981
+
+2. REQUIREMENT ITEM (Item de requisito):
+   -------------------------------------
+   Display: flex
+   Align-items: center
+   Padding: 1rem
+   Border-bottom: 1px solid #e2e8f0
+   
+   Estructura:
+   [● Status] [Label (flex: 1)] [Value (text-align: right)]
+
+3. NETWORK INTERFACE CARD (Tarjeta de interfaz):
+   ---------------------------------------------
+   Border: 2px solid #e2e8f0
+   Border-radius: 8px
+   Padding: 1rem
+   Cursor: pointer
+   Transition: all 0.3s
+   
+   Selected:
+     border-color: #2563eb
+     background: rgba(37, 99, 235, 0.05)
+
+4. PROGRESS BAR (Barra de progreso):
+   ---------------------------------
+   Height: 24px
+   Background: #e2e8f0
+   Border-radius: 12px
+   Overflow: hidden
+   
+   Fill:
+     Background: linear-gradient(90deg, #2563eb, #3b82f6)
+     Height: 100%
+     Transition: width 0.3s ease
+
+
+================================================================================
+                      INTERACCIONES Y ESTADOS
+================================================================================
+
+TRANSICIONES:
+- Duración estándar: 0.3s ease
+- Hover en botones: translateY(-2px) + box-shadow
+- Hover en cards: border-color change + subtle background
+- Screen transitions: fade in/out
+
+ESTADOS DE VALIDACIÓN:
+- Input válido: border-color verde
+- Input inválido: border-color rojo + mensaje de error
+- Loading: spinner o texto "Verificando..." con color amarillo
+
+FEEDBACK VISUAL:
+- Acción exitosa: ✓ verde + mensaje breve
+- Error: ✗ rojo + descripción del error
+- En progreso: ⏳ o spinner + texto descriptivo
+
+
+================================================================================
+                    PRINCIPIOS DE DISEÑO
+================================================================================
+
+✓ HACER:
+--------
+- Diseño corporativo serio y profesional
+- Iconos SVG simples y claros
+- Badges con iniciales en mayúsculas
+- Círculos de colores sólidos para estados (●)
+- Gradientes sutiles en azules
+- Sombras suaves para profundidad
+- Información precisa y directa
+- Feedback visual claro en cada acción
+- Contraste adecuado (ratio WCAG AA mínimo)
+- Espaciado generoso (no amontonar elementos)
+
+✗ NO HACER:
+-----------
+- NO usar emojis (🎉, 🚀, ✨, 💻, 🔒, etc.)
+- NO usar colores brillantes/neón
+- NO usar animaciones excesivas o distractivas
+- NO usar fuentes decorativas o difíciles de leer
+- NO sobrecargar con información innecesaria
+- NO usar jerga técnica sin explicación
+- NO ocultar información crítica
+
+
+================================================================================
+                   ESPECIFICACIONES TÉCNICAS
+================================================================================
+
+FRAMEWORK: Electron 28.3.3
+- Node.js integrado
+- Chromium embebido
+- IPC (Inter-Process Communication) para backend-frontend
+
+ESTILOS: CSS puro sin frameworks
+- No Tailwind, no Bootstrap
+- Custom properties (CSS variables) para colores
+- Flexbox y Grid para layouts
+- Media queries limitadas (ventana fija)
+
+COMPATIBILIDAD:
+- Windows 10/11 exclusivamente
+- Permisos de administrador requeridos
+- Detección automática de servicios Windows
+- PowerShell para comandos del sistema
+
+ARCHIVOS PRINCIPALES:
+- installer/installer-app/src/renderer/index.html (Estructura)
+- installer/installer-app/src/renderer/styles.css (Estilos)
+- installer/installer-app/src/renderer/installer.js (Lógica)
+- installer/installer-app/src/backend/windows-installer.js (Backend)
+
+
+================================================================================
+                        FUNCIONALIDADES CLAVE
+================================================================================
+
+AUTO-DETECCIÓN:
+- Servicios de Windows (PostgreSQL, MySQL)
+- Python instalado (versión)
+- Node.js instalado (versión)
+- Puertos en uso (con nombre del proceso y PID)
+- Interfaces de red disponibles
+- Espacio en disco disponible
+- Memoria RAM del sistema
+
+AUTO-INSTALACIÓN:
+- Python 3.10+ si no está presente
+- Node.js 18+ si no está presente
+- PostgreSQL 15 o MySQL 8.0 según selección
+- Dependencias de pip (requirements.txt)
+- Dependencias de npm (package.json)
+
+VALIDACIONES:
+- Requisitos del sistema antes de instalar
+- Puertos disponibles antes de configurar
+- Permisos de administrador al inicio
+- Espacio en disco suficiente
+- Interfaz de red seleccionada válida
+
+
+================================================================================
+                          MENSAJES Y TEXTOS
+================================================================================
+
+TÍTULOS DE PANTALLAS:
+- "Bienvenido a ThreatGuard"
+- "Seleccione Motor de Base de Datos"
+- "Verificación de Requisitos"
+- "Selección de Interfaz de Red"
+- "Configuración de Puertos"
+- "Seleccione Componentes"
+- "Instalando ThreatGuard"
+- "¡Instalación Completada!"
+
+MENSAJES INFORMATIVOS:
+- "Los componentes faltantes serán instalados automáticamente"
+- "Si algún puerto está ocupado, cierre la aplicación que lo usa antes de continuar"
+- "Snort monitoreará el tráfico en la interfaz seleccionada"
+- "Se instalará automáticamente si no está presente"
+
+MENSAJES DE ERROR/ADVERTENCIA:
+- "PUERTOS OCUPADOS DETECTADOS"
+- "Requisito crítico no cumplido"
+- "Por favor, cierre las aplicaciones que usan estos puertos antes de continuar"
+- "¿Desea continuar de todas formas? (No recomendado)"
+
+ETIQUETAS DE BOTONES:
+- "Atrás" (navegación)
+- "Siguiente" (navegación)
+- "Comenzar" (inicio instalación)
+- "Finalizar" (cierre al completar)
+
+
+================================================================================
+                              NOTAS FINALES
+================================================================================
+
+Este installer es parte de un sistema empresarial de ciberseguridad. El diseño
+debe transmitir:
+- CONFIANZA: Colores corporativos serios, sin frivolidades
+- PROFESIONALIDAD: Información técnica precisa y clara
+- CLARIDAD: Estados y acciones siempre visibles y comprensibles
+- ROBUSTEZ: Validaciones exhaustivas antes de proceder
+
+El usuario típico es un administrador de sistemas o profesional de seguridad
+que valora la funcionalidad sobre la estética, pero aprecia un diseño limpio
+y moderno que facilite su trabajo.
+
+================================================================================
+                              FIN DEL CONTEXTO
+================================================================================

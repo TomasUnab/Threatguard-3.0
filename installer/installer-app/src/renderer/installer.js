@@ -109,6 +109,20 @@ function initializeEventListeners() {
         config.components.elasticsearch = e.target.checked;
         updateSpaceRequired();
     });
+    
+    // Finish button event
+    const btnFinish = document.getElementById('btn-finish');
+    if (btnFinish) {
+        btnFinish.addEventListener('click', () => {
+            let url = null;
+            const startCheckbox = document.getElementById('start-on-complete');
+            if (startCheckbox && startCheckbox.checked) {
+                // Open browser to ThreatGuard
+                url = `http://localhost:${config.frontendPort}`;
+            }
+            ipcRenderer.send('finish-installation', url);
+        });
+    }
 }
 
 /**
@@ -156,7 +170,7 @@ function updateNavigation() {
     // Back button
     btnBack.disabled = currentScreen === 0 || currentScreen === 5 || currentScreen === 6;
 
-    // Next button
+    // Next button - hide on installation screen (second to last) and completion screen (last)
     if (currentScreen === 0) {
         btnNext.style.display = 'block';
         btnNext.textContent = 'Comenzar →';
@@ -164,17 +178,7 @@ function updateNavigation() {
     } else if (currentScreen === screens.length - 2) {
         btnNext.style.display = 'none'; // Hide during installation
     } else if (currentScreen === screens.length - 1) {
-        btnNext.style.display = 'block'; // Show again for finish
-        btnNext.textContent = 'Finalizar';
-        btnNext.disabled = false;
-        btnNext.onclick = () => {
-            let url = null;
-            if (document.getElementById('start-on-complete').checked) {
-                // Open browser to ThreatGuard
-                url = `http://localhost:${config.frontendPort}`;
-            }
-            ipcRenderer.send('finish-installation', url);
-        };
+        btnNext.style.display = 'none'; // Hide on completion - use btn-finish instead
     } else {
         btnNext.style.display = 'block';
         btnNext.textContent = 'Siguiente →';
@@ -265,15 +269,22 @@ async function validateCurrentScreen() {
  * Check system requirements
  */
 async function checkRequirements() {
-    const items = ['os', 'ram', 'disk', 'permissions', 'python', 'node', 'ports', 'db'];
+    const items = ['os', 'ram', 'disk', 'permissions', 'python', 'node', 'ports', 'dbPorts', 'db'];
     
-    // Reset status
+    // Reset status - actualizado para Tailwind
     items.forEach(id => {
         const el = document.getElementById(`req-${id}`);
         if (el) {
-            el.querySelector('.status').textContent = '⏳';
-            el.querySelector('.status').className = 'status';
-            el.querySelector('.value').textContent = 'Verificando...';
+            const statusDot = el.querySelector('.w-3.h-3.rounded-full') || el.querySelector('div[class*="rounded-full"]');
+            const valueEl = el.querySelector('.value');
+            
+            if (statusDot) {
+                statusDot.className = 'w-3 h-3 rounded-full bg-yellow-500 animate-pulse';
+            }
+            if (valueEl) {
+                valueEl.textContent = 'Verificando...';
+                valueEl.className = 'value text-gray-900 dark:text-white font-medium';
+            }
         }
     });
 
@@ -286,16 +297,24 @@ async function checkRequirements() {
             const result = results[key];
             const el = document.getElementById(`req-${key}`);
             if (el) {
-                const statusEl = el.querySelector('.status');
+                const statusDot = el.querySelector('.w-3.h-3.rounded-full') || el.querySelector('div[class*="rounded-full"]');
                 const valueEl = el.querySelector('.value');
                 
-                statusEl.textContent = result.valid ? '●' : '●';
-                statusEl.style.color = result.valid ? '#10b981' : '#ef4444';
-                statusEl.className = `status ${result.valid ? 'valid' : 'error'}`;
-                valueEl.textContent = result.value;
+                if (statusDot) {
+                    if (result.valid) {
+                        statusDot.className = 'w-3 h-3 rounded-full bg-green-500';
+                    } else {
+                        statusDot.className = 'w-3 h-3 rounded-full bg-red-500';
+                    }
+                }
                 
-                if (!result.valid) {
-                    valueEl.classList.add('text-red-400');
+                if (valueEl) {
+                    valueEl.textContent = result.value;
+                    if (result.valid) {
+                        valueEl.className = 'value text-gray-900 dark:text-white font-medium';
+                    } else {
+                        valueEl.className = 'value text-red-600 dark:text-red-400 font-medium';
+                    }
                 }
             }
         });
@@ -308,21 +327,49 @@ async function checkRequirements() {
  * Validate requirements
  */
 function validateRequirements() {
-    const requirements = ['os', 'ram', 'disk', 'permissions', 'python', 'node', 'ports'];
+    const requirements = ['os', 'ram', 'disk', 'permissions', 'python', 'node', 'ports', 'dbPorts'];
+    const portsOccupied = [];
+    const componentsToInstall = [];
 
     for (const req of requirements) {
         const element = document.getElementById(`req-${req}`);
-        if (!element) continue; // Skip if element doesn't exist (e.g. ports might be optional in UI)
+        if (!element) continue;
         const status = element.querySelector('.status');
+        const valueEl = element.querySelector('.value');
 
         if (status.textContent === '●' && status.style.color === 'rgb(239, 68, 68)') {
-            // Allow to continue even if some requirements fail
-            // They will be installed during installation
-            const confirmed = confirm(
-                'Algunos requisitos no se cumplen. Los componentes faltantes se instalarán automáticamente. ¿Desea continuar?'
-            );
-            return confirmed;
+            // Check if it's a port issue
+            if (req === 'ports' || req === 'dbPorts') {
+                const portInfo = valueEl.textContent;
+                if (portInfo.includes('Ocupado')) {
+                    portsOccupied.push(portInfo);
+                }
+            } else if (req !== 'os' && req !== 'ram' && req !== 'disk' && req !== 'permissions') {
+                // Components that can be auto-installed
+                componentsToInstall.push(element.querySelector('.label').textContent);
+            } else {
+                // Critical requirements
+                alert(`Requisito crítico no cumplido: ${element.querySelector('.label').textContent}\n\nPor favor, solucione este problema antes de continuar.`);
+                return false;
+            }
         }
+    }
+
+    // Show specific warnings for occupied ports
+    if (portsOccupied.length > 0) {
+        const portDetails = portsOccupied.join('\n• ');
+        const confirmed = confirm(
+            `⚠️ PUERTOS OCUPADOS DETECTADOS:\n\n• ${portDetails}\n\nEstos puertos están siendo utilizados por otra aplicación.\n\nPor favor, cierre las aplicaciones que usan estos puertos antes de continuar.\n\n¿Desea continuar de todas formas? (No recomendado)`
+        );
+        if (!confirmed) return false;
+    }
+
+    // Show info about components to auto-install
+    if (componentsToInstall.length > 0) {
+        const confirmed = confirm(
+            `Los siguientes componentes se instalarán automáticamente:\n\n• ${componentsToInstall.join('\n• ')}\n\n¿Desea continuar?`
+        );
+        if (!confirmed) return false;
     }
 
     return true;
@@ -340,39 +387,53 @@ async function loadNetworkInterfaces() {
     }
 
     const container = document.getElementById('network-interfaces');
-    container.innerHTML = '';
+    const template = container.querySelector('.network-interface-card');
+    
+    // Limpiar solo las interfaces dinámicas (no el template)
+    container.querySelectorAll('.network-interface-card:not(.hidden)').forEach(el => el.remove());
 
     result.interfaces.forEach((iface, index) => {
-        const div = document.createElement('div');
-        div.className = 'network-interface';
+        const card = template.cloneNode(true);
+        card.classList.remove('hidden');
+        
+        const radio = card.querySelector('.interface-radio');
+        const label = card.querySelector('label');
+        const radioId = `interface-${iface.name}`;
+        
+        radio.id = radioId;
+        radio.value = iface.name;
+        label.setAttribute('for', radioId);
+        
         if (index === 0) {
-            div.classList.add('selected');
+            radio.checked = true;
             config.networkInterface = iface;
         }
-
-        div.innerHTML = `
-      <input type="radio" name="network-interface" value="${iface.name}" ${index === 0 ? 'checked' : ''}>
-      <div>
-        <div class="interface-name">${iface.name}</div>
-        <div class="interface-details">
-          <div>IP: ${iface.ip}</div>
-          <div>MAC: ${iface.mac}</div>
-          <div>Estado: ${iface.status}</div>
-          <div>Máscara: ${iface.netmask}</div>
-        </div>
-      </div>
-    `;
-
-        div.addEventListener('click', () => {
-            document.querySelectorAll('.network-interface').forEach(el => {
-                el.classList.remove('selected');
-            });
-            div.classList.add('selected');
-            div.querySelector('input').checked = true;
+        
+        // Poblar datos de la interfaz
+        card.querySelector('.interface-name').textContent = iface.name;
+        card.querySelector('.interface-ip').textContent = iface.ip || 'No asignada';
+        card.querySelector('.interface-mac').textContent = iface.mac || 'Desconocida';
+        card.querySelector('.interface-netmask').textContent = iface.netmask || 'N/A';
+        
+        // Estado de conexión
+        const statusDot = card.querySelector('.status-dot');
+        const statusText = card.querySelector('.interface-status');
+        const isConnected = iface.status === 'up' || iface.ip;
+        
+        if (isConnected) {
+            statusDot.className = 'status-dot h-2.5 w-2.5 rounded-full bg-green-500';
+            statusText.textContent = 'Conectado';
+        } else {
+            statusDot.className = 'status-dot h-2.5 w-2.5 rounded-full bg-gray-500';
+            statusText.textContent = 'Desconectado';
+        }
+        
+        // Event listener para selección
+        radio.addEventListener('change', () => {
             config.networkInterface = iface;
         });
-
-        container.appendChild(div);
+        
+        container.appendChild(card);
     });
 }
 
@@ -444,7 +505,7 @@ async function startInstallation() {
     const btnBack = document.getElementById('btn-back');
     btnNext.style.display = 'none';
 
-    // Create progress steps
+    // Create progress steps - estructura Tailwind actualizada
     const steps = [
         { id: 'dependencies', label: 'Instalando dependencias' },
         { id: 'directories', label: 'Creando directorios' },
@@ -462,25 +523,45 @@ async function startInstallation() {
     container.innerHTML = '';
 
     steps.forEach(step => {
-        const div = document.createElement('div');
-        div.className = 'progress-step pending';
-        div.id = `step-${step.id}`;
-        div.innerHTML = `
-      <div class="step-status">⏳</div>
-      <div class="step-label">${step.label}</div>
-    `;
-        container.appendChild(div);
+        const li = document.createElement('li');
+        li.className = 'flex items-center gap-3 text-gray-500 dark:text-gray-400';
+        li.id = `step-${step.id}`;
+        li.innerHTML = `
+            <span class="material-symbols-outlined text-gray-400 step-icon">circle</span>
+            <span class="text-sm step-label">${step.label}</span>
+        `;
+        container.appendChild(li);
     });
+
+    // Limpiar logs
+    const logsContainer = document.getElementById('installation-logs');
+    logsContainer.innerHTML = '<pre class="text-xs text-green-400 font-mono whitespace-pre-wrap leading-relaxed">Iniciando instalación...</pre>';
 
     // Start installation
     const result = await ipcRenderer.invoke('install', config);
 
     if (result.success) {
-        // Update completion screen
-        document.getElementById('url-value').textContent =
-            `http://localhost:${config.frontendPort}`;
-        document.getElementById('email-value').textContent = result.credentials.email;
-        document.getElementById('password-value').textContent = result.credentials.password;
+        // Update completion screen with correct IDs
+        const urlElement = document.getElementById('complete-url');
+        const emailElement = document.getElementById('admin-email');
+        const passwordElement = document.getElementById('admin-password');
+        const credentialsBox = document.getElementById('credentials-box');
+        
+        if (urlElement) {
+            const url = `http://localhost:${config.frontendPort}`;
+            urlElement.textContent = url;
+            urlElement.href = url;
+        }
+        
+        if (result.credentials && emailElement && passwordElement) {
+            emailElement.textContent = result.credentials.email || 'admin@threatguard.local';
+            passwordElement.textContent = result.credentials.password || 'TG-2024-Default';
+            
+            // Show credentials box
+            if (credentialsBox) {
+                credentialsBox.classList.remove('hidden');
+            }
+        }
 
         // Move to completion screen
         showScreen(screens.length - 1);
@@ -490,12 +571,16 @@ async function startInstallation() {
 }
 
 /**
- * Update installation progress
+ * Update installation progress - actualizado para Tailwind
  */
 function updateProgress(progress) {
     // Update progress bar
     const progressBar = document.getElementById('progress-bar');
+    const progressPercentage = document.getElementById('progress-percentage');
     progressBar.style.width = `${progress.progress}%`;
+    if (progressPercentage) {
+        progressPercentage.textContent = `${Math.round(progress.progress)}%`;
+    }
 
     // Update current step
     document.getElementById('current-step').textContent = progress.message;
@@ -503,32 +588,45 @@ function updateProgress(progress) {
     // Update step status
     const stepElement = document.getElementById(`step-${progress.step}`);
     if (stepElement) {
-        stepElement.className = 'progress-step active';
-        stepElement.querySelector('.step-status').textContent = '●';
-        stepElement.querySelector('.step-status').style.color = '#fbbf24';
+        const icon = stepElement.querySelector('.step-icon');
+        if (icon) {
+            icon.textContent = 'pending';
+            icon.className = 'material-symbols-outlined text-yellow-500 step-icon animate-pulse';
+        }
+        stepElement.className = 'flex items-center gap-3 text-yellow-500 dark:text-yellow-400';
     }
 
     // Mark previous steps as complete
-    const allSteps = document.querySelectorAll('.progress-step');
+    const allSteps = document.querySelectorAll('#progress-steps li');
+    let foundCurrent = false;
     allSteps.forEach(step => {
-        if (step.id !== `step-${progress.step}` && step.classList.contains('active')) {
-            step.className = 'progress-step complete';
-            step.querySelector('.step-status').textContent = '●';
-            step.querySelector('.step-status').style.color = '#10b981';
+        if (step.id === `step-${progress.step}`) {
+            foundCurrent = true;
+        } else if (!foundCurrent) {
+            // Este es un paso anterior, marcarlo como completo
+            const icon = step.querySelector('.step-icon');
+            if (icon) {
+                icon.textContent = 'check_circle';
+                icon.className = 'material-symbols-outlined text-green-500 step-icon';
+            }
+            step.className = 'flex items-center gap-3 text-green-600 dark:text-green-400';
         }
     });
 
     // Add log entry
     const logs = document.getElementById('installation-logs');
-    const logEntry = document.createElement('div');
+    const logEntry = document.createElement('pre');
+    logEntry.className = 'text-xs text-green-400 font-mono whitespace-pre-wrap leading-relaxed';
     logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${progress.message}`;
     logs.appendChild(logEntry);
     logs.scrollTop = logs.scrollHeight;
 
-    // Estimate time remaining
-    const remaining = Math.round((100 - progress.progress) * 2); // Rough estimate
-    document.getElementById('time-remaining').textContent =
-        `Tiempo estimado: ${Math.floor(remaining / 60)}:${(remaining % 60).toString().padStart(2, '0')}`;
+    // Estimate time remaining (opcional, si existe el elemento)
+    const timeRemaining = document.getElementById('time-remaining');
+    if (timeRemaining) {
+        const remaining = Math.round((100 - progress.progress) * 2);
+        timeRemaining.textContent = `Tiempo estimado: ${Math.floor(remaining / 60)}:${(remaining % 60).toString().padStart(2, '0')}`;
+    }
 }
 
 /**

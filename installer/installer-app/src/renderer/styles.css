@@ -15,8 +15,8 @@ body {
 }
 
 .installer-container {
-    width: 900px;
-    height: 700px;
+    width: 1100px;
+    height: 900px;
     background: white;
     border-radius: 16px;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
@@ -48,9 +48,10 @@ body {
 /* Main Content */
 .installer-content {
     flex: 1;
-    padding: 40px;
+    padding: 40px 50px;
     overflow-y: auto;
     position: relative;
+    min-height: 0;
 }
 
 .screen {
@@ -468,11 +469,14 @@ h2 {
 
 /* Footer */
 .installer-footer {
-    padding: 20px 40px;
+    padding: 25px 50px;
     border-top: 1px solid #e2e8f0;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    background: white;
+    flex-shrink: 0;
+    min-height: 85px;
 }
 
 .page-indicator {
@@ -484,17 +488,18 @@ h2 {
 .btn-primary,
 .btn-secondary,
 .btn-icon {
-    padding: 12px 24px;
+    padding: 14px 28px;
     border: none;
     border-radius: 8px;
     font-size: 16px;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s;
+    min-width: 120px;
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
     color: white;
 }
 

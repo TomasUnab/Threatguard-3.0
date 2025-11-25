@@ -1,113 +1,120 @@
 <!DOCTYPE html>
-<html lang="es">
+<html class="dark" lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ThreatGuard Installer</title>
-    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#2463eb",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#111621"
+                    },
+                    fontFamily: {
+                        display: "Inter"
+                    },
+                    borderRadius: {
+                        DEFAULT: "0.25rem",
+                        lg: "0.5rem",
+                        xl: "0.75rem",
+                        full: "9999px"
+                    }
+                }
+            }
+        };
+    </script>
     <style>
         .material-symbols-outlined {
-            font-variation-settings:
-            'FILL' 0,
-            'wght' 400,
-            'GRAD' 0,
-            'opsz' 24
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            font-size: inherit;
+            vertical-align: bottom;
         }
-
-        /* Database Selection Styles */
-        .database-options {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-            margin-top: 1.5rem;
+        
+        .screen {
+            display: none;
         }
-
-        .db-option {
-            display: flex;
-            align-items: center;
-            padding: 1.5rem;
-            border: 2px solid #e2e8f0;
-            border-radius: 0.5rem;
-            cursor: pointer;
-            transition: all 0.2s;
+        
+        .screen.active {
+            display: block;
         }
-
-        .db-option:hover {
-            border-color: #3182ce;
-            background-color: #ebf8ff;
+        
+        /* Radio button styles for network interface selection */
+        .interface-radio:checked + label {
+            border-color: #2463eb !important;
+            background-color: rgba(36, 99, 235, 0.05) !important;
         }
-
-        .db-option.selected {
-            border-color: #3182ce;
-            background-color: #ebf8ff;
-            box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.2);
+        
+        .interface-radio:checked + label .radio-border {
+            border-color: #2463eb !important;
         }
-
-        .db-icon {
-            font-size: 2.5rem;
-            margin-right: 1.5rem;
-        }
-
-        .db-info h3 {
-            margin: 0 0 0.25rem 0;
-            font-size: 1.1rem;
-            color: #2d3748;
-        }
-
-        .db-info p {
-            margin: 0;
-            font-size: 0.9rem;
-            color: #718096;
+        
+        .interface-radio:checked + label .radio-dot {
+            transform: scale(1) !important;
         }
     </style>
 </head>
-<body>
-    <div class="installer-container">
-        <!-- Header -->
-        <header class="installer-header">
-            <div class="logo">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" style="vertical-align: middle; margin-right: 10px;">
-                    <path d="M12 2L4 6v6c0 5.5 3.8 10.7 8 12 4.2-1.3 8-6.5 8-12V6l-8-4z" fill="#3182ce" stroke="#3182ce" stroke-width="2"/>
-                </svg>
-                <h1 style="display: inline-block;">ThreatGuard</h1>
-                <p class="version">Installation Wizard v1.0</p>
-            </div>
-        </header>
+<body class="font-display antialiased bg-background-light dark:bg-background-dark text-gray-900 dark:text-gray-100 flex flex-col min-h-screen">
+    <!-- Header -->
+    <header class="bg-primary text-white py-8 px-10">
+        <div class="max-w-4xl mx-auto flex flex-col items-center text-center">
+            <svg class="h-20 w-20 mb-4" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2L4 5v6c0 5.5 3.58 10.37 8 11 4.42-.63 8-5.5 8-11V5l-8-3z" fill="#2463EB" stroke="white"></path>
+                <circle cx="12" cy="11" fill="white" r="3"></circle>
+                <path d="M12 21.72c-2.8.44-5.2-1.92-5.2-1.92s1.4-2.8 5.2-2.8 5.2 2.8 5.2 2.8-2.4 2.36-5.2 1.92z" fill="white"></path>
+            </svg>
+            <h1 class="text-3xl font-bold">ThreatGuard</h1>
+            <p class="text-blue-200 mt-1">Installation Wizard v1.0</p>
+        </div>
+    </header>
 
-        <!-- Main Content -->
-        <main class="installer-content">
+    <!-- Main Content -->
+    <main class="flex-grow py-12 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-4xl mx-auto">
             <!-- Screen 1: Welcome -->
             <div id="screen-welcome" class="screen active">
-                <h2>Bienvenido a ThreatGuard</h2>
-                <div class="welcome-content">
-                    <div class="feature-list">
-                        <div class="feature">
-                            <span class="icon" style="background: #3182ce; color: white; border-radius: 8px; padding: 12px; font-size: 20px; font-weight: bold;">IDS</span>
-                            <div>
-                                <h3>Detección de Amenazas</h3>
-                                <p>Sistema IDS con Snort 3 para detección en tiempo real</p>
-                            </div>
+                <h2 class="text-3xl font-bold mb-8 text-gray-800 dark:text-gray-200">Bienvenido a ThreatGuard</h2>
+                <div class="space-y-4">
+                    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm flex items-center space-x-6">
+                        <div class="flex-shrink-0 w-14 h-14 bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-300 rounded-lg flex items-center justify-center">
+                            <span class="text-xl font-bold">IDS</span>
                         </div>
-                        <div class="feature">
-                            <span class="icon" style="background: #3182ce; color: white; border-radius: 8px; padding: 12px; font-size: 20px; font-weight: bold;">ML</span>
-                            <div>
-                                <h3>Machine Learning</h3>
-                                <p>Análisis inteligente de patrones de ataque</p>
-                            </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-900 dark:text-white">Detección de Amenazas</h3>
+                            <p class="text-gray-600 dark:text-gray-400 mt-1">Sistema IDS con Snort 3 para detección en tiempo real</p>
                         </div>
-                        <div class="feature">
-                            <span class="icon" style="background: #3182ce; color: white; border-radius: 8px; padding: 12px; font-size: 20px; font-weight: bold;">UI</span>
-                            <div>
-                                <h3>Dashboard Interactivo</h3>
-                                <p>Visualización en tiempo real de alertas y métricas</p>
-                            </div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm flex items-center space-x-6">
+                        <div class="flex-shrink-0 w-14 h-14 bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-300 rounded-lg flex items-center justify-center">
+                            <span class="text-xl font-bold">ML</span>
                         </div>
-                        <div class="feature">
-                            <span class="icon" style="background: #3182ce; color: white; border-radius: 8px; padding: 12px; font-size: 20px; font-weight: bold;">VS</span>
-                            <div>
-                                <h3>Escaneo de Vulnerabilidades</h3>
-                                <p>Integración con OpenVAS para análisis completo</p>
-                            </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-900 dark:text-white">Machine Learning</h3>
+                            <p class="text-gray-600 dark:text-gray-400 mt-1">Análisis inteligente de patrones de ataque</p>
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm flex items-center space-x-6">
+                        <div class="flex-shrink-0 w-14 h-14 bg-teal-100 dark:bg-teal-900/50 text-teal-600 dark:text-teal-300 rounded-lg flex items-center justify-center">
+                            <span class="text-xl font-bold">UI</span>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-900 dark:text-white">Dashboard Interactivo</h3>
+                            <p class="text-gray-600 dark:text-gray-400 mt-1">Visualización en tiempo real de alertas y métricas</p>
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm flex items-center space-x-6">
+                        <div class="flex-shrink-0 w-14 h-14 bg-orange-100 dark:bg-orange-900/50 text-orange-600 dark:text-orange-300 rounded-lg flex items-center justify-center">
+                            <span class="text-xl font-bold">VS</span>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-900 dark:text-white">Escaneo de Vulnerabilidades</h3>
+                            <p class="text-gray-600 dark:text-gray-400 mt-1">Integración con OpenVAS para análisis completo</p>
                         </div>
                     </div>
                 </div>
@@ -115,246 +122,445 @@
 
             <!-- Screen 2: Database Selection -->
             <div id="screen-database" class="screen">
-                <h2>Selección de Base de Datos</h2>
-                <p class="subtitle">Elija el motor de base de datos que desea utilizar</p>
-                <div class="database-options">
-                    <div class="db-option selected" data-value="postgresql">
-                        <div class="db-icon" style="background: #336791; color: white; border-radius: 8px; padding: 15px; font-weight: bold; font-size: 18px;">PG</div>
-                        <div class="db-info">
-                            <h3>PostgreSQL (Recomendado)</h3>
-                            <p>Rendimiento optimizado para ThreatGuard. Soporte nativo para JSONB y UUID.</p>
+                <h2 class="text-3xl font-bold mb-8 text-gray-800 dark:text-gray-200">Seleccione Motor de Base de Datos</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="db-option bg-white dark:bg-gray-800 rounded-lg p-6 border-2 border-primary cursor-pointer transition-all hover:shadow-lg dark:hover:shadow-primary/20" data-value="postgresql">
+                        <div class="flex items-start space-x-4">
+                            <img alt="PostgreSQL logo" class="w-12 h-12 mt-1" src="https://www.postgresql.org/media/img/about/press/elephant.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                            <div class="w-12 h-12 mt-1 bg-blue-900 rounded flex items-center justify-center text-white font-bold" style="display:none;">PG</div>
+                            <div class="flex-1">
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">PostgreSQL</h3>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">Versión 16.2</p>
+                                <p class="mt-2 text-sm text-gray-500 dark:text-gray-300">Base de datos relacional de objetos de código abierto, potente y robusta.</p>
+                                <p class="mt-4 text-xs italic text-gray-400 dark:text-gray-500">Se instalará automáticamente si no está presente.</p>
+                            </div>
                         </div>
                     </div>
-                    <div class="db-option" data-value="mysql">
-                        <div class="db-icon" style="background: #00758f; color: white; border-radius: 8px; padding: 15px; font-weight: bold; font-size: 18px;">MY</div>
-                        <div class="db-info">
-                            <h3>MySQL / MariaDB</h3>
-                            <p>Motor de base de datos popular y ligero. (Soporte experimental)</p>
+                    <div class="db-option bg-white dark:bg-gray-800 rounded-lg p-6 border-2 border-gray-200 dark:border-gray-700 cursor-pointer transition-all hover:border-primary/50 hover:shadow-lg dark:hover:shadow-blue-500/10" data-value="mysql">
+                        <div class="flex items-start space-x-4">
+                            <img alt="MySQL logo" class="w-12 h-12 mt-1" src="https://www.mysql.com/common/logos/logo-mysql-170x115.png" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                            <div class="w-12 h-12 mt-1 bg-orange-600 rounded flex items-center justify-center text-white font-bold" style="display:none;">MY</div>
+                            <div class="flex-1">
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">MySQL</h3>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">Versión 8.0</p>
+                                <p class="mt-2 text-sm text-gray-500 dark:text-gray-300">Sistema de gestión de bases de datos relacional de código abierto muy popular.</p>
+                                <p class="mt-4 text-xs italic text-gray-400 dark:text-gray-500">Se instalará automáticamente si no está presente.</p>
+                            </div>
                         </div>
-                    </div>
-                </div>
-                
-                <div class="db-credentials-section" style="margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 8px;">
-                    <h3 style="font-size: 1rem; margin-bottom: 10px;">Credenciales Existentes (Opcional)</h3>
-                    <p style="font-size: 0.85rem; color: #aaa; margin-bottom: 10px;">
-                        Si ya tiene la base de datos instalada, ingrese la contraseña del usuario administrador (postgres/root) para permitir que el instalador cree la base de datos.
-                    </p>
-                    <div class="config-item">
-                        <label for="db-admin-password">Contraseña Admin DB:</label>
-                        <input type="password" id="db-admin-password" placeholder="Dejar en blanco si es instalación nueva" style="width: 100%; padding: 8px; background: #333; border: 1px solid #555; color: white; border-radius: 4px;">
                     </div>
                 </div>
             </div>
 
             <!-- Screen 3: Requirements Check -->
             <div id="screen-requirements" class="screen">
-                <h2>Verificación de Requisitos</h2>
-                <div class="requirements-content">
-                    <div class="requirement-item" id="req-os">
-                        <span class="status" style="color: #fbbf24;">●</span>
-                        <span class="label">Sistema Operativo</span>
-                        <span class="value">Verificando...</span>
-                    </div>
-                    <div class="requirement-item" id="req-ram">
-                        <span class="status" style="color: #fbbf24;">●</span>
-                        <span class="label">Memoria RAM</span>
-                        <span class="value">Verificando...</span>
-                    </div>
-                    <div class="requirement-item" id="req-disk">
-                        <span class="status" style="color: #fbbf24;">●</span>
-                        <span class="label">Espacio en Disco</span>
-                        <span class="value">Verificando...</span>
-                    </div>
-                    <div class="requirement-item" id="req-permissions">
-                        <span class="status" style="color: #fbbf24;">●</span>
-                        <span class="label">Permisos de Administrador</span>
-                        <span class="value">Verificando...</span>
-                    </div>
-                    <div class="requirement-item" id="req-db">
-                        <span class="status" style="color: #fbbf24;">●</span>
-                        <span class="label">Motor de Base de Datos</span>
-                        <span class="value">Verificando...</span>
-                    </div>
-                    <div class="requirement-item" id="req-python">
-                        <span class="status" style="color: #fbbf24;">●</span>
-                        <span class="label">Python 3.10+</span>
-                        <span class="value">Verificando...</span>
-                    </div>
-                    <div class="requirement-item" id="req-node">
-                        <span class="status" style="color: #fbbf24;">●</span>
-                        <span class="label">Node.js 18+</span>
-                        <span class="value">Verificando...</span>
-                    </div>
-                    <div class="requirement-item" id="req-ports">
-                        <span class="status" style="color: #fbbf24;">●</span>
-                        <span class="label">Puertos Disponibles</span>
-                        <span class="value">Verificando...</span>
-                    </div>
+                <h2 class="text-3xl font-bold mb-8 text-gray-800 dark:text-gray-200">Verificación de Requisitos</h2>
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+                    <ul class="divide-y divide-gray-200 dark:divide-gray-700">
+                        <li class="p-4 flex justify-between items-center" id="req-os">
+                            <div class="flex items-center space-x-4">
+                                <div class="w-3 h-3 rounded-full bg-yellow-500 animate-pulse"></div>
+                                <span class="text-gray-700 dark:text-gray-300">Sistema Operativo</span>
+                            </div>
+                            <span class="value text-gray-900 dark:text-white font-medium">Verificando...</span>
+                        </li>
+                        <li class="p-4 flex justify-between items-center" id="req-ram">
+                            <div class="flex items-center space-x-4">
+                                <div class="w-3 h-3 rounded-full bg-yellow-500 animate-pulse"></div>
+                                <span class="text-gray-700 dark:text-gray-300">Memoria RAM</span>
+                            </div>
+                            <span class="value text-gray-900 dark:text-white font-medium">Verificando...</span>
+                        </li>
+                        <li class="p-4 flex justify-between items-center" id="req-disk">
+                            <div class="flex items-center space-x-4">
+                                <div class="w-3 h-3 rounded-full bg-yellow-500 animate-pulse"></div>
+                                <span class="text-gray-700 dark:text-gray-300">Espacio en Disco</span>
+                            </div>
+                            <span class="value text-gray-900 dark:text-white font-medium">Verificando...</span>
+                        </li>
+                        <li class="p-4 flex justify-between items-center" id="req-permissions">
+                            <div class="flex items-center space-x-4">
+                                <div class="w-3 h-3 rounded-full bg-yellow-500 animate-pulse"></div>
+                                <span class="text-gray-700 dark:text-gray-300">Permisos de Administrador</span>
+                            </div>
+                            <span class="value text-gray-900 dark:text-white font-medium">Verificando...</span>
+                        </li>
+                        <li class="p-4 flex justify-between items-center" id="req-db">
+                            <div class="flex items-center space-x-4">
+                                <div class="w-3 h-3 rounded-full bg-yellow-500 animate-pulse"></div>
+                                <span class="text-gray-700 dark:text-gray-300">Motor de Base de Datos</span>
+                            </div>
+                            <span class="value text-gray-900 dark:text-white font-medium">Verificando...</span>
+                        </li>
+                        <li class="p-4 flex justify-between items-center" id="req-python">
+                            <div class="flex items-center space-x-4">
+                                <div class="w-3 h-3 rounded-full bg-yellow-500 animate-pulse"></div>
+                                <span class="text-gray-700 dark:text-gray-300">Python 3.10+</span>
+                            </div>
+                            <span class="value text-gray-900 dark:text-white font-medium">Verificando...</span>
+                        </li>
+                        <li class="p-4 flex justify-between items-center" id="req-node">
+                            <div class="flex items-center space-x-4">
+                                <div class="w-3 h-3 rounded-full bg-yellow-500 animate-pulse"></div>
+                                <span class="text-gray-700 dark:text-gray-300">Node.js 18+</span>
+                            </div>
+                            <span class="value text-gray-900 dark:text-white font-medium">Verificando...</span>
+                        </li>
+                        <li class="p-4 flex flex-col items-start" id="req-ports">
+                            <div class="w-full flex justify-between items-center">
+                                <div class="flex items-center space-x-4">
+                                    <div class="w-3 h-3 rounded-full bg-yellow-500 animate-pulse"></div>
+                                    <span class="text-gray-700 dark:text-gray-300">Puertos Aplicación</span>
+                                </div>
+                                <span class="value text-gray-900 dark:text-white font-medium">Verificando...</span>
+                            </div>
+                            <div class="port-details pl-7 mt-2 text-sm text-gray-500 dark:text-gray-400 w-full hidden"></div>
+                        </li>
+                        <li class="p-4 flex flex-col items-start" id="req-dbPorts">
+                            <div class="w-full flex justify-between items-center">
+                                <div class="flex items-center space-x-4">
+                                    <div class="w-3 h-3 rounded-full bg-yellow-500 animate-pulse"></div>
+                                    <span class="text-gray-700 dark:text-gray-300">Puertos Base de Datos</span>
+                                </div>
+                                <span class="value text-gray-900 dark:text-white font-medium">Verificando...</span>
+                            </div>
+                            <div class="port-details pl-7 mt-2 text-sm text-gray-500 dark:text-gray-400 w-full hidden"></div>
+                        </li>
+                    </ul>
                 </div>
-                <div class="info-box" style="background: rgba(49, 130, 206, 0.1); border-left: 4px solid #3182ce; padding: 12px 16px;">
-                    <p><strong style="color: #3182ce;">INFO:</strong> Los componentes faltantes serán instalados automáticamente</p>
+                <div class="mt-8 bg-blue-50 dark:bg-gray-800/60 p-4 rounded-md border-l-4 border-primary">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg aria-hidden="true" class="h-5 w-5 text-primary" fill="currentColor" viewBox="0 0 20 20">
+                                <path clip-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" fill-rule="evenodd"></path>
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-blue-800 dark:text-blue-200">
+                                Los componentes y dependencias faltantes se instalarán automáticamente.
+                            </p>
+                            <p class="mt-2 text-sm text-blue-800 dark:text-blue-200">
+                                Si algún puerto requerido está ocupado, por favor, detenga la aplicación que lo está utilizando antes de continuar.
+                            </p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <!-- Screen 4: Network Interface Selection -->
             <div id="screen-network" class="screen">
-                <h2>Selección de Interfaz de Red</h2>
-                <p class="subtitle">Snort monitoreará el tráfico en la interfaz seleccionada</p>
-                <div class="network-interfaces" id="network-interfaces">
-                    <!-- Interfaces will be populated dynamically -->
+                <h2 class="text-3xl font-bold mb-8 text-gray-800 dark:text-gray-200">Selección de Interfaz de Red</h2>
+                <p class="text-base mb-6 text-gray-600 dark:text-gray-400">Snort monitoreará el tráfico en la interfaz seleccionada</p>
+                <div id="network-interfaces" class="flex flex-col gap-4">
+                    <!-- Interfaces will be populated dynamically with this structure: -->
+                    <!-- Example interface card -->
+                    <div class="network-interface-card hidden">
+                        <input class="interface-radio absolute h-0 w-0 appearance-none" type="radio" name="network-interface" />
+                        <label class="flex cursor-pointer flex-col gap-4 rounded-xl border-2 border-gray-200 bg-white p-5 transition-all duration-200 hover:border-primary/50 dark:border-gray-700 dark:bg-gray-800 dark:hover:border-primary/50">
+                            <div class="flex items-center gap-4">
+                                <div class="radio-border flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border-2 border-gray-300 bg-transparent transition-colors duration-200 dark:border-gray-600">
+                                    <div class="radio-dot h-2.5 w-2.5 scale-0 rounded-full bg-primary transition-transform duration-200"></div>
+                                </div>
+                                <div class="flex grow items-center justify-between gap-4">
+                                    <p class="interface-name text-base font-bold text-gray-900 dark:text-white"></p>
+                                    <div class="flex items-center gap-2">
+                                        <div class="status-dot h-2.5 w-2.5 rounded-full bg-green-500"></div>
+                                        <p class="interface-status text-sm font-medium text-gray-600 dark:text-gray-300">Conectado</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 gap-x-8 gap-y-4 border-t border-gray-200 pt-4 dark:border-gray-700 sm:grid-cols-3">
+                                <div>
+                                    <p class="text-xs font-medium text-gray-500 dark:text-gray-400">Dirección IP</p>
+                                    <p class="interface-ip mt-1 text-sm font-semibold text-gray-800 dark:text-gray-200"></p>
+                                </div>
+                                <div>
+                                    <p class="text-xs font-medium text-gray-500 dark:text-gray-400">Dirección MAC</p>
+                                    <p class="interface-mac mt-1 text-sm font-semibold text-gray-800 dark:text-gray-200"></p>
+                                </div>
+                                <div>
+                                    <p class="text-xs font-medium text-gray-500 dark:text-gray-400">Máscara de red</p>
+                                    <p class="interface-netmask mt-1 text-sm font-semibold text-gray-800 dark:text-gray-200"></p>
+                                </div>
+                            </div>
+                        </label>
+                    </div>
                 </div>
             </div>
 
             <!-- Screen 5: Port Configuration -->
             <div id="screen-ports" class="screen">
-                <h2>Configuración de Puertos</h2>
-                <div class="port-config">
-                    <div class="config-item">
-                        <label for="port-api">Puerto API Backend:</label>
-                        <input type="number" id="port-api" value="8000" min="1024" max="65535">
+                <h2 class="text-3xl font-bold mb-4 text-gray-800 dark:text-gray-200">Configuración de Puertos</h2>
+                <p class="text-base mb-8 text-gray-600 dark:text-gray-400">Define los puertos de comunicación para los servicios de la aplicación. Asegúrate de que no estén en uso por otros servicios.</p>
+                <div class="flex flex-col gap-6">
+                    <div class="flex flex-col gap-2">
+                        <label class="text-base font-medium text-gray-700 dark:text-gray-200" for="port-api">Puerto API Backend</label>
+                        <div class="relative">
+                            <input class="form-input w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800/60 p-3 pr-10 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary" 
+                                   id="port-api" placeholder="Ej: 9000" type="number" value="9000" min="1024" max="65535" />
+                            <div class="port-status-icon pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 hidden">
+                                <span class="material-symbols-outlined text-green-500">check_circle</span>
+                            </div>
+                        </div>
+                        <p class="port-message text-sm text-gray-500 dark:text-gray-400">Rango válido: 1024-65535.</p>
                     </div>
-                    <div class="config-item">
-                        <label for="port-frontend">Puerto Frontend Web:</label>
-                        <input type="number" id="port-frontend" value="3000" min="1024" max="65535">
+                    <div class="flex flex-col gap-2">
+                        <label class="text-base font-medium text-gray-700 dark:text-gray-200" for="port-frontend">Puerto Frontend Web</label>
+                        <div class="relative">
+                            <input class="form-input w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800/60 p-3 pr-10 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary" 
+                                   id="port-frontend" placeholder="Ej: 3000" type="number" value="3000" min="1024" max="65535" />
+                            <div class="port-status-icon pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 hidden">
+                                <span class="material-symbols-outlined text-green-500">check_circle</span>
+                            </div>
+                        </div>
+                        <p class="port-message text-sm text-gray-500 dark:text-gray-400">Rango válido: 1024-65535.</p>
                     </div>
-                    <div class="config-item">
-                        <label for="port-db">Puerto Base de Datos:</label>
-                        <input type="number" id="port-db" value="5432" min="1024" max="65535">
+                    <div class="flex flex-col gap-2">
+                        <label class="text-base font-medium text-gray-700 dark:text-gray-200" for="port-db">Puerto Base de Datos</label>
+                        <div class="relative">
+                            <input class="form-input w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800/60 p-3 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary" 
+                                   id="port-db" placeholder="Ej: 5432" type="number" value="5432" min="1024" max="65535" />
+                        </div>
+                        <p class="port-message text-sm text-gray-500 dark:text-gray-400">Rango válido: 1024-65535.</p>
                     </div>
-                    <div class="config-item">
-                        <label for="port-redis">Puerto Redis:</label>
-                        <input type="number" id="port-redis" value="6379" min="1024" max="65535">
+                    <div class="flex flex-col gap-2">
+                        <label class="text-base font-medium text-gray-700 dark:text-gray-200" for="port-redis">Puerto Redis</label>
+                        <div class="relative">
+                            <input class="form-input w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800/60 p-3 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary" 
+                                   id="port-redis" placeholder="Ej: 6379" type="number" value="6379" min="1024" max="65535" />
+                        </div>
+                        <p class="port-message text-sm text-gray-500 dark:text-gray-400">Rango válido: 1024-65535.</p>
                     </div>
                 </div>
             </div>
 
             <!-- Screen 6: Component Selection -->
             <div id="screen-components" class="screen">
-                <h2>Seleccione Componentes</h2>
-                <div class="components-list">
-                    <div class="component-item">
-                        <input type="checkbox" id="comp-api" checked disabled>
-                        <label for="comp-api">
-                            <strong>ThreatGuard API</strong>
-                            <span class="required">(Requerido)</span>
-                            <p>Backend con Machine Learning</p>
-                        </label>
-                    </div>
-                    <div class="component-item">
-                        <input type="checkbox" id="comp-frontend" checked disabled>
-                        <label for="comp-frontend">
-                            <strong>ThreatGuard Frontend</strong>
-                            <span class="required">(Requerido)</span>
-                            <p>Interfaz web de usuario</p>
-                        </label>
-                    </div>
-                    <div class="component-item">
-                        <input type="checkbox" id="comp-snort" checked disabled>
-                        <label for="comp-snort">
-                            <strong>Snort 3 IDS</strong>
-                            <span class="required">(Requerido)</span>
-                            <p>Sistema de detección de intrusiones</p>
-                        </label>
-                    </div>
-                    <div class="component-item">
-                        <input type="checkbox" id="comp-postgres" checked disabled>
-                        <label for="comp-postgres">
-                            <strong>Base de Datos</strong>
-                            <span class="required">(Requerido)</span>
-                            <p>Motor de base de datos seleccionado</p>
-                        </label>
-                    </div>
-                    <div class="component-item">
-                        <input type="checkbox" id="comp-redis" checked>
-                        <label for="comp-redis">
-                            <strong>Redis Cache</strong>
-                            <p>Cache y cola de mensajes</p>
-                        </label>
-                    </div>
-                    <div class="component-item">
-                        <input type="checkbox" id="comp-openvas" checked>
-                        <label for="comp-openvas">
-                            <strong>OpenVAS Scanner</strong>
-                            <p>Escáner de vulnerabilidades</p>
-                        </label>
-                    </div>
-                    <div class="component-item">
-                        <input type="checkbox" id="comp-elasticsearch">
-                        <label for="comp-elasticsearch">
-                            <strong>Elasticsearch</strong>
-                            <span class="optional">(Opcional)</span>
-                            <p>Gestión avanzada de logs</p>
-                        </label>
-                    </div>
+                <div class="mb-8">
+                    <h2 class="text-3xl font-bold mb-2 text-gray-800 dark:text-gray-200">Seleccione Componentes</h2>
+                    <p class="text-base text-gray-600 dark:text-gray-400">Seleccione los componentes que desea instalar. Los componentes requeridos están preseleccionados.</p>
                 </div>
-                <div class="space-info">
-                    <p>Espacio requerido: <strong id="space-required">8.5 GB</strong></p>
+                
+                <div class="flex flex-col divide-y divide-gray-200 dark:divide-gray-700 border-y border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-lg">
+                    <label class="flex items-center gap-x-4 p-4 cursor-not-allowed opacity-60">
+                        <input id="comp-api" checked disabled class="h-5 w-5 rounded border-2 bg-transparent text-primary checked:bg-primary checked:border-primary focus:ring-0 border-gray-300 dark:border-gray-600" type="checkbox"/>
+                        <div class="flex-grow">
+                            <p class="text-base font-medium text-gray-700 dark:text-gray-300">ThreatGuard API</p>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Backend con Machine Learning</p>
+                        </div>
+                        <span class="text-xs font-semibold uppercase tracking-wider bg-orange-100 dark:bg-orange-900/50 text-orange-600 dark:text-orange-400 px-2 py-1 rounded-full">Requerido</span>
+                    </label>
+                    
+                    <label class="flex items-center gap-x-4 p-4 cursor-not-allowed opacity-60">
+                        <input id="comp-frontend" checked disabled class="h-5 w-5 rounded border-2 bg-transparent text-primary checked:bg-primary checked:border-primary focus:ring-0 border-gray-300 dark:border-gray-600" type="checkbox"/>
+                        <div class="flex-grow">
+                            <p class="text-base font-medium text-gray-700 dark:text-gray-300">ThreatGuard Frontend</p>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Interfaz web de usuario</p>
+                        </div>
+                        <span class="text-xs font-semibold uppercase tracking-wider bg-orange-100 dark:bg-orange-900/50 text-orange-600 dark:text-orange-400 px-2 py-1 rounded-full">Requerido</span>
+                    </label>
+                    
+                    <label class="flex items-center gap-x-4 p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150">
+                        <input id="comp-snort" checked class="h-5 w-5 rounded border-2 bg-transparent text-primary checked:bg-primary checked:border-primary focus:ring-2 focus:ring-primary/50 border-gray-400 dark:border-gray-500" type="checkbox"/>
+                        <div class="flex-grow">
+                            <p class="text-base font-medium text-gray-800 dark:text-white">Snort IDS</p>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Sistema de detección de intrusiones</p>
+                        </div>
+                    </label>
+                    
+                    <label class="flex items-center gap-x-4 p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150">
+                        <input id="comp-database" checked class="h-5 w-5 rounded border-2 bg-transparent text-primary checked:bg-primary checked:border-primary focus:ring-2 focus:ring-primary/50 border-gray-400 dark:border-gray-500" type="checkbox"/>
+                        <div class="flex-grow">
+                            <p class="text-base font-medium text-gray-800 dark:text-white">Base de Datos</p>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Motor de base de datos seleccionado</p>
+                        </div>
+                        <span class="text-xs font-semibold uppercase tracking-wider bg-green-100 dark:bg-green-900/50 text-green-600 dark:text-green-400 px-2 py-1 rounded-full">Detectado</span>
+                    </label>
+                    
+                    <label class="flex items-center gap-x-4 p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150">
+                        <input id="comp-redis" checked class="h-5 w-5 rounded border-2 bg-transparent text-primary checked:bg-primary checked:border-primary focus:ring-2 focus:ring-primary/50 border-gray-400 dark:border-gray-500" type="checkbox"/>
+                        <div class="flex-grow">
+                            <p class="text-base font-medium text-gray-800 dark:text-white">Redis</p>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Cache y cola de mensajes</p>
+                        </div>
+                    </label>
+                    
+                    <label class="flex items-center gap-x-4 p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150">
+                        <input id="comp-openvas" class="h-5 w-5 rounded border-2 bg-transparent text-primary checked:bg-primary checked:border-primary focus:ring-2 focus:ring-primary/50 border-gray-400 dark:border-gray-500" type="checkbox"/>
+                        <div class="flex-grow">
+                            <p class="text-base font-medium text-gray-800 dark:text-white">OpenVAS</p>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Escáner de vulnerabilidades</p>
+                        </div>
+                        <span class="text-sm text-gray-500 dark:text-gray-400">+2.5 GB</span>
+                    </label>
+                    
+                    <label class="flex items-center gap-x-4 p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150">
+                        <input id="comp-elasticsearch" class="h-5 w-5 rounded border-2 bg-transparent text-primary checked:bg-primary checked:border-primary focus:ring-2 focus:ring-primary/50 border-gray-400 dark:border-gray-500" type="checkbox"/>
+                        <div class="flex-grow">
+                            <p class="text-base font-medium text-gray-800 dark:text-white">Elasticsearch</p>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Gestión avanzada de logs</p>
+                        </div>
+                        <span class="text-sm text-gray-500 dark:text-gray-400">+3.0 GB</span>
+                    </label>
+                </div>
+                
+                <div class="mt-6 p-4 bg-blue-50 dark:bg-gray-800/60 rounded-lg border border-blue-200 dark:border-gray-700">
+                    <p class="text-base font-medium text-gray-700 dark:text-gray-200">
+                        <span class="font-bold text-gray-900 dark:text-white">Espacio requerido:</span> 
+                        <span id="space-required">8.5 GB</span> (base) + componentes opcionales
+                    </p>
                 </div>
             </div>
 
-            <!-- Screen 6: Installation -->
+            <!-- Screen 7: Installation -->
             <div id="screen-installation" class="screen">
-                <h2>Instalando ThreatGuard...</h2>
-                <p class="text-sm text-gray-400 mb-4">Destino: <span id="install-path-display" class="font-mono text-white">...</span></p>
-                <div class="installation-progress">
-                    <div class="progress-steps" id="progress-steps">
-                        <!-- Steps will be populated dynamically -->
+                <h2 class="text-4xl font-bold mb-4 text-gray-800 dark:text-white">Instalando ThreatGuard</h2>
+                <p class="text-base mb-8 text-gray-600 dark:text-gray-400">
+                    Ruta de Instalación: <code class="bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-300 px-2 py-1 rounded font-mono text-sm" id="install-path-display">C:\ThreatGuard</code>
+                </p>
+                
+                <!-- Progress Bar -->
+                <div class="flex flex-col gap-3 mb-8">
+                    <div class="flex gap-6 justify-between">
+                        <p class="text-gray-800 dark:text-white text-base font-medium">Progreso General</p>
+                        <p class="text-gray-600 dark:text-gray-400 text-sm" id="progress-percentage">0%</p>
                     </div>
-                    <div class="progress-bar-container">
-                        <div class="progress-bar" id="progress-bar"></div>
+                    <div class="rounded bg-gray-200 dark:bg-gray-700 h-3 overflow-hidden">
+                        <div class="h-full rounded bg-primary transition-all duration-500" id="progress-bar" style="width: 0%;"></div>
                     </div>
-                    <div class="progress-info">
-                        <p id="current-step">Iniciando instalación...</p>
-                        <p id="time-remaining">Tiempo estimado: calculando...</p>
+                    <p class="text-gray-600 dark:text-gray-400 text-sm" id="current-step">Iniciando instalación...</p>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Installation Steps -->
+                    <div class="flex flex-col">
+                        <h3 class="text-lg font-bold mb-4 text-gray-800 dark:text-white">Pasos de la Instalación</h3>
+                        <ul class="flex flex-col gap-3" id="progress-steps">
+                            <li class="flex items-center gap-3 text-gray-500 dark:text-gray-400">
+                                <span class="material-symbols-outlined text-gray-400">circle</span>
+                                <span class="text-sm">Verificando Requisitos del Sistema</span>
+                            </li>
+                            <li class="flex items-center gap-3 text-gray-500 dark:text-gray-400">
+                                <span class="material-symbols-outlined text-gray-400">circle</span>
+                                <span class="text-sm">Desempaquetando Archivos</span>
+                            </li>
+                            <li class="flex items-center gap-3 text-gray-500 dark:text-gray-400">
+                                <span class="material-symbols-outlined text-gray-400">circle</span>
+                                <span class="text-sm">Configurando Base de Datos</span>
+                            </li>
+                            <li class="flex items-center gap-3 text-gray-500 dark:text-gray-400">
+                                <span class="material-symbols-outlined text-gray-400">circle</span>
+                                <span class="text-sm">Instalando Servicio de Detección</span>
+                            </li>
+                            <li class="flex items-center gap-3 text-gray-500 dark:text-gray-400">
+                                <span class="material-symbols-outlined text-gray-400">circle</span>
+                                <span class="text-sm">Desplegando Motor de Análisis ML</span>
+                            </li>
+                            <li class="flex items-center gap-3 text-gray-500 dark:text-gray-400">
+                                <span class="material-symbols-outlined text-gray-400">circle</span>
+                                <span class="text-sm">Finalizando Instalación</span>
+                            </li>
+                        </ul>
                     </div>
-                    <div class="log-container">
-                        <button id="toggle-logs" class="btn-secondary">Ver Detalles</button>
-                        <div id="installation-logs" class="logs hidden"></div>
+                    
+                    <!-- Real-time Log Viewer -->
+                    <div class="flex flex-col">
+                        <h3 class="text-lg font-bold mb-4 text-gray-800 dark:text-white">Registros en Tiempo Real</h3>
+                        <div class="bg-gray-900 border border-gray-700 rounded-lg p-4 h-64 overflow-y-auto" id="installation-logs">
+                            <pre class="text-xs text-gray-400 font-mono whitespace-pre-wrap leading-relaxed">Esperando inicio de instalación...</pre>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Screen 7: Completion -->
+            <!-- Screen 8: Completion -->
             <div id="screen-complete" class="screen">
-                <h2><span style="color: #10b981; font-size: 32px;">✓</span> Instalación Completada</h2>
-                <div class="completion-content">
-                    <div class="success-checks">
-                        <div class="check-item" style="color: #10b981;">✓ Base de datos inicializada</div>
-                        <div class="check-item" style="color: #10b981;">✓ Servicios configurados</div>
-                        <div class="check-item" style="color: #10b981;">✓ Snort configurado</div>
-                        <div class="check-item" style="color: #10b981;">✓ Usuario administrador creado</div>
+                <div class="flex flex-col items-center max-w-2xl mx-auto">
+                    <!-- Success Icon -->
+                    <div class="flex h-20 w-20 items-center justify-center rounded-full bg-green-500/10 mb-6">
+                        <span class="material-symbols-outlined text-5xl text-green-500">check_circle</span>
                     </div>
-                    <div class="credentials-box">
-                        <h3>Credenciales de Acceso</h3>
-                        <div class="credential-item">
-                            <label>URL:</label>
-                            <span id="url-value">http://localhost:3000</span>
-                        </div>
-                        <div class="credential-item">
-                            <label>Email:</label>
-                            <span id="email-value">admin@threatguard.local</span>
-                        </div>
-                        <div class="credential-item">
-                            <label>Contraseña:</label>
-                            <span id="password-value">TG-2024-XXXXXXXX</span>
-                            <button id="copy-password" class="btn-icon" title="Copiar">Copy</button>
+                    
+                    <!-- Title -->
+                    <div class="text-center mb-8">
+                        <h2 class="text-4xl font-bold mb-3 text-gray-800 dark:text-white">¡Instalación Completada!</h2>
+                        <p class="text-base text-gray-600 dark:text-gray-400">ThreatGuard se ha instalado correctamente en su sistema.</p>
+                    </div>
+                    
+                    <!-- Installation Details -->
+                    <div class="w-full bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 mb-8">
+                        <div class="grid grid-cols-[auto_1fr] gap-x-6">
+                            <div class="col-span-2 grid grid-cols-subgrid border-b border-gray-200 dark:border-gray-700 py-4 px-6 first:pt-6 last:pb-6">
+                                <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Componentes Instalados</p>
+                                <p class="text-sm text-gray-900 dark:text-white">Real-Time Detection Engine, ML Analysis Core, SOAR Module</p>
+                            </div>
+                            <div class="col-span-2 grid grid-cols-subgrid border-b border-gray-200 dark:border-gray-700 py-4 px-6">
+                                <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Ruta de Instalación</p>
+                                <p class="text-sm text-gray-900 dark:text-white font-mono" id="complete-install-path">C:\ThreatGuard</p>
+                            </div>
+                            <div class="col-span-2 grid grid-cols-subgrid border-b border-gray-200 dark:border-gray-700 py-4 px-6">
+                                <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Puertos Configurados</p>
+                                <p class="text-sm text-gray-900 dark:text-white" id="complete-ports">3000 (Frontend), 9000 (API)</p>
+                            </div>
+                            <div class="col-span-2 grid grid-cols-subgrid py-4 px-6 last:pb-6">
+                                <p class="text-sm font-medium text-gray-600 dark:text-gray-400">URL de Acceso</p>
+                                <a class="text-sm text-primary hover:underline" href="http://localhost:3000" id="complete-url">http://localhost:3000</a>
+                            </div>
                         </div>
                     </div>
-                    <div class="start-option">
-                        <input type="checkbox" id="start-on-complete" checked>
-                        <label for="start-on-complete">Iniciar ThreatGuard al completar</label>
+                    
+                    <!-- Credentials Box (Optional, shown if needed) -->
+                    <div class="w-full bg-blue-50 dark:bg-gray-800/60 rounded-lg border border-blue-200 dark:border-gray-700 p-6 mb-8 hidden" id="credentials-box">
+                        <h3 class="text-lg font-bold mb-4 text-gray-800 dark:text-white">Credenciales de Acceso</h3>
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm font-medium text-gray-600 dark:text-gray-400">Email:</span>
+                                <span class="text-sm font-mono text-gray-900 dark:text-white" id="admin-email">admin@threatguard.local</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm font-medium text-gray-600 dark:text-gray-400">Contraseña:</span>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-sm font-mono text-gray-900 dark:text-white" id="admin-password">TG-2024-XXXXXXXX</span>
+                                    <button class="text-primary hover:text-primary/80 transition-colors" id="copy-password" title="Copiar contraseña">
+                                        <span class="material-symbols-outlined text-xl">content_copy</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Start Option -->
+                    <div class="w-full flex items-center gap-3 mb-8 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                        <input type="checkbox" id="start-on-complete" checked class="h-5 w-5 rounded border-2 bg-transparent text-primary checked:bg-primary checked:border-primary focus:ring-2 focus:ring-primary/50 border-gray-400 dark:border-gray-500" />
+                        <label for="start-on-complete" class="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer">Abrir ThreatGuard en el navegador</label>
+                    </div>
+                    
+                    <!-- Finish Button -->
+                    <div class="w-full flex justify-center">
+                        <button id="btn-finish" class="px-8 py-3 rounded-lg bg-primary text-white hover:bg-primary/90 transition-colors font-semibold text-base focus:outline-none focus:ring-4 focus:ring-primary/30">
+                            Finalizar
+                        </button>
                     </div>
                 </div>
             </div>
-        </main>
+        </div>
+    </main>
 
-        <!-- Footer with Navigation -->
-        <footer class="installer-footer">
-            <button id="btn-back" class="btn-secondary">← Atrás</button>
-            <div class="page-indicator" id="page-indicator">1 / 7</div>
-            <button id="btn-next" class="btn-primary">Siguiente →</button>
-        </footer>
-    </div>
+    <!-- Footer with Navigation -->
+    <footer class="bg-white dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-700 py-4 px-6">
+        <div class="max-w-4xl mx-auto flex justify-between items-center">
+            <button id="btn-back" class="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors flex items-center gap-2" type="button" disabled>
+                <span class="material-symbols-outlined">arrow_back</span>
+                Atrás
+            </button>
+            <div class="text-sm text-gray-500 dark:text-gray-400" id="page-indicator">
+                1 / 8
+            </div>
+            <button id="btn-next" class="px-6 py-2 rounded-lg bg-primary text-white hover:bg-blue-600 transition-colors font-semibold flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary focus:ring-offset-background-light dark:focus:ring-offset-background-dark" type="button">
+                Comenzar
+                <span class="material-symbols-outlined">arrow_forward</span>
+            </button>
+        </div>
+    </footer>
 
     <script src="installer.js"></script>
     <script>
@@ -408,5 +614,7 @@
             nextScreen.classList.add('active');
         });
     </script>
+</body>
+</html>
 </body>
 </html>

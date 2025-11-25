@@ -37,6 +37,67 @@ class WindowsInstaller extends InstallerCommon {
     }
 
     /**
+     * Get process using a specific port (Windows only)
+     */
+    async getPortProcess(port) {
+        try {
+            const { stdout } = await this.execCommand(`netstat -ano | findstr :${port}`);
+            if (stdout) {
+                // Parse netstat output to get PID
+                const lines = stdout.trim().split('\n');
+                for (const line of lines) {
+                    if (line.includes('LISTENING')) {
+                        const parts = line.trim().split(/\s+/);
+                        const pid = parts[parts.length - 1];
+                        if (pid && pid !== '0') {
+                            // Get process name from PID
+                            try {
+                                const { stdout: processInfo } = await this.execCommand(`tasklist /FI "PID eq ${pid}" /FO CSV /NH`);
+                                if (processInfo) {
+                                    const processName = processInfo.split(',')[0].replace(/"/g, '');
+                                    return `${processName} (PID: ${pid})`;
+                                }
+                            } catch {
+                                return `PID: ${pid}`;
+                            }
+                        }
+                    }
+                }
+            }
+            return 'Desconocido';
+        } catch {
+            return 'No disponible';
+        }
+    }
+
+    /**
+     * Get status for multiple ports with process information
+     */
+    async getPortsStatus(ports) {
+        const statuses = [];
+        const portNames = {
+            3000: 'Frontend',
+            9000: 'API',
+            5432: 'PostgreSQL',
+            3306: 'MySQL'
+        };
+
+        for (const port of ports) {
+            const isFree = await this.checkPort(port);
+            const portName = portNames[port] || port.toString();
+            
+            if (isFree) {
+                statuses.push(`${portName} (${port}): Libre ✓`);
+            } else {
+                const process = await this.getPortProcess(port);
+                statuses.push(`${portName} (${port}): Ocupado por ${process}`);
+            }
+        }
+
+        return statuses.join(' | ');
+    }
+
+    /**
      * Get installation path
      */
     getInstallPath() {
@@ -121,9 +182,14 @@ class WindowsInstaller extends InstallerCommon {
                 required: 'Administrator access required'
             },
             ports: {
-                valid: (await this.checkPort(3000)) && (await this.checkPort(8000)),
-                value: `3000: ${await this.checkPort(3000) ? 'Free' : 'Busy'}, 8000: ${await this.checkPort(8000) ? 'Free' : 'Busy'}`,
-                required: 'Ports 3000 & 8000 free'
+                valid: (await this.checkPort(3000)) && (await this.checkPort(9000)),
+                value: await this.getPortsStatus([3000, 9000]),
+                required: 'Puertos 3000 y 9000 libres'
+            },
+            dbPorts: {
+                valid: (await this.checkPort(5432)) && (await this.checkPort(3306)),
+                value: await this.getPortsStatus([5432, 3306]),
+                required: 'Puertos de base de datos disponibles'
             },
             python: {
                 valid: await this.commandExists('python'),
@@ -247,13 +313,14 @@ class WindowsInstaller extends InstallerCommon {
             });
             await this.createDirectories(config.installPath);
 
-            // Step 4: Copy application files (35%)
+            // Step 4: Copy application files (35%) - SKIPPED (no assets folder)
             progressCallback({
                 step: 'files',
                 progress: 35,
-                message: 'Copying application files...'
+                message: 'Preparing application files...'
             });
-            await this.copyApplicationFiles(config.installPath);
+            // await this.copyApplicationFiles(config.installPath); // Commented out - no assets
+            this.log('Skipping application files copy (no assets folder)');
 
             // Step 5: Install Python dependencies (45%)
             progressCallback({
@@ -448,8 +515,13 @@ class WindowsInstaller extends InstallerCommon {
 
     /**
      * Copy application files to the selected installation path
+     * DISABLED - No assets folder available in packaged app
      */
     async copyApplicationFiles(installPath) {
+        this.log('copyApplicationFiles is disabled - no assets folder');
+        return; // Skip this step
+        
+        /* Original code - commented out
         this.log(`Copying application files to ${installPath}...`);
 
         const sourcePath = path.join(__dirname, '../../assets');
@@ -459,6 +531,7 @@ class WindowsInstaller extends InstallerCommon {
         fs.copySync(sourcePath, destinationPath);
 
         this.log('Application files copied successfully.');
+        */
     }
 
     /**
@@ -527,7 +600,7 @@ if exist "${this.installPath}\\requirements.txt" (
         // Check for bundled installer (EXE)
         const snortInstaller = this.getResourcePath('binaries/windows/Snort-3.1.74.0.exe');
 
-        if (await fs.pathExists(snortInstaller)) {
+        if (snortInstaller && await fs.pathExists(snortInstaller)) {
             this.log('Found bundled Snort installer. Installing...');
             try {
                 await this.execCommand(`"${snortInstaller}" /S`);
@@ -837,7 +910,7 @@ JWT_SECRET=${this.generateSecretKey()}
 
         const servicesScript = this.getResourcePath('services/windows/install-services.ps1');
 
-        if (await fs.pathExists(servicesScript)) {
+        if (servicesScript && await fs.pathExists(servicesScript)) {
             try {
                 await this.execCommand(
                     `powershell -ExecutionPolicy Bypass -File "${servicesScript}" -InstallPath "${this.installPath}"`
@@ -847,7 +920,7 @@ JWT_SECRET=${this.generateSecretKey()}
                 this.log(`Failed to configure services: ${error.message}`, 'warn');
             }
         } else {
-            this.log(`Services script not found at ${servicesScript}. Skipping service configuration.`, 'warn');
+            this.log('Services script not found. Skipping service configuration.', 'warn');
         }
     }
 
@@ -860,15 +933,15 @@ JWT_SECRET=${this.generateSecretKey()}
         const snortTemplate = this.getResourcePath('config/snort.lua.template');
         const snortConfig = `${this.snortPath}\\etc\\snort.lua`;
 
-        if (await fs.pathExists(snortTemplate)) {
+        if (snortTemplate && await fs.pathExists(snortTemplate)) {
             await this.processTemplate(snortTemplate, snortConfig, {
                 INTERFACE: config.networkInterface ? (config.networkInterface.index || '1') : '1'
             });
         } else {
-            this.log(`Warning: snort.lua.template not found at ${snortTemplate}. Checking for snort.lua...`, 'warn');
+            this.log(`Warning: snort.lua.template not found. Checking for snort.lua...`, 'warn');
             // Fallback to snort.lua if template is missing
             const snortLuaSource = this.getResourcePath('config/snort.lua');
-            if (await fs.pathExists(snortLuaSource)) {
+            if (snortLuaSource && await fs.pathExists(snortLuaSource)) {
                  await fs.copy(snortLuaSource, snortConfig);
                  this.log('Copied snort.lua directly (no template processing).');
             } else {
@@ -878,10 +951,10 @@ JWT_SECRET=${this.generateSecretKey()}
 
         // Copy rules
         const rulesPath = this.getResourcePath('config/local.rules');
-        if (await fs.pathExists(rulesPath)) {
+        if (rulesPath && await fs.pathExists(rulesPath)) {
             await this.copyFile(rulesPath, `${this.snortPath}\\rules\\local.rules`);
         } else {
-             this.log(`Warning: local.rules not found at ${rulesPath}.`, 'warn');
+             this.log('Warning: local.rules not found.', 'warn');
         }
 
         this.log('Snort configured');
@@ -1011,20 +1084,10 @@ except Exception as e:
             const shortcutPath = path.join(desktopPath, 'ThreatGuard Dashboard.url');
             const iconPath = `${this.installPath}\\assets\\icon.ico`;
             
-            // Ensure assets folder exists in install path
-            const assetsDest = `${this.installPath}\\assets`;
-            await this.createDirectory(assetsDest);
-            
-            // Copy icon from resources
-            const iconSource = this.getResourcePath('assets/icon.ico');
-            if (await fs.pathExists(iconSource)) {
-                await fs.copy(iconSource, iconPath);
-            }
-
+            // Create desktop shortcut without icon (skip icon copy to avoid asset errors)
             const content = `[InternetShortcut]
 URL=http://localhost:3000
 IconIndex=0
-IconFile=${iconPath}
 `;
             await fs.writeFile(shortcutPath, content);
             this.log('Desktop shortcut created');

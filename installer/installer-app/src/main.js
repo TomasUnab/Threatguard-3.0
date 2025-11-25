@@ -11,25 +11,23 @@ let installer;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 900,
-    height: 700,
+    width: 1100,
+    height: 900,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
       enableRemoteModule: true
     },
-    resizable: false,
+    resizable: true,
     frame: true,
-    title: 'ThreatGuard Installer',
-    icon: path.join(__dirname, '../assets/icon.png')
+    title: 'ThreatGuard Installer'
+    // No icon - will use Electron default
   });
 
   mainWindow.loadFile(path.join(__dirname, 'renderer/index.html'));
 
-  // Open DevTools in development
-  if (process.env.NODE_ENV === 'development') {
-    mainWindow.webContents.openDevTools();
-  }
+  // Open DevTools always for debugging
+  mainWindow.webContents.openDevTools();
 
   // Detect OS and create appropriate installer
   if (process.platform === 'win32') {
@@ -115,8 +113,15 @@ ipcMain.handle('get-install-path', async () => {
 ipcMain.on('finish-installation', async (event, url) => {
   if (url) {
     const { shell } = require('electron');
-    await shell.openExternal(url);
+    const { exec } = require('child_process');
+    
+    // Use a Windows command to open the browser after a delay
+    // This runs independently of the Electron app
+    const command = `powershell -Command "Start-Sleep -Seconds 5; Start-Process '${url}'"`;
+    exec(command);
   }
+  
+  // Close the installer immediately
   app.quit();
 });
 

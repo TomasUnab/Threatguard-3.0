@@ -36,10 +36,14 @@
             "src/**/*",
             "package.json"
         ],
+        "asarUnpack": [
+            "src/backend/**/*"
+        ],
         "extraResources": [
             {
                 "from": "../../src",
-                "to": "app/src"
+                "to": "app/src",
+                "filter": ["**/*"]
             },
             {
                 "from": "resources_to_package/threatguard_api.py",
@@ -51,23 +55,18 @@
             },
             {
                 "from": "../../PAGINA WEB",
-                "to": "app/PAGINA WEB"
+                "to": "app/PAGINA WEB",
+                "filter": ["**/*"]
             },
             {
                 "from": "../../config",
-                "to": "app/config"
-            },
-            {
-                "from": "binaries",
-                "to": "binaries"
-            },
-            {
-                "from": "services",
-                "to": "services"
+                "to": "app/config",
+                "filter": ["**/*"]
             },
             {
                 "from": "../../assets",
-                "to": "assets"
+                "to": "assets",
+                "filter": ["**/*"]
             }
         ],
         "linux": {
@@ -75,14 +74,12 @@
                 "AppImage",
                 "deb"
             ],
-            "category": "Utility",
-            "icon": "assets/icon.png"
+            "category": "Utility"
         },
         "win": {
             "target": [
                 "nsis"
             ],
-            "icon": "assets/icon.ico",
             "forceCodeSigning": false,
             "requestedExecutionLevel": "requireAdministrator"
         },
