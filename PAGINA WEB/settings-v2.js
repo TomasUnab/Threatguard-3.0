@@ -273,54 +273,385 @@ async function loadUsers() {
 
 // ============ GESTIÓN DE ACTIVOS (TAGS) ============
 
-async function loadAssets() {
-    try {
-        const response = await fetch(`${API_URL}/settings/assets`);
-        const data = await response.json();
+// Variable para almacenar los activos cargados
+let allAssets = [];
 
-        const tbody = document.getElementById('assets-table-body');
-        tbody.innerHTML = data.assets.map(asset => `
-            <tr class="border-b border-[#3b4754] hover:bg-[#1c2127] transition-colors">
+// Normalizar el sistema operativo a Windows, Linux o macOS
+function normalizeOS(osType, osVersion = '') {
+    if (!osType) return { type: 'unknown', display: 'Desconocido', icon: 'device_unknown' };
+    
+    const os = (osType + ' ' + osVersion).toLowerCase();
+    
+    if (os.includes('windows') || os.includes('win32') || os.includes('win64')) {
+        // Detectar versión de Windows
+        if (os.includes('10.0.19') || os.includes('10.0.22')) {
+            const build = os.match(/10\.0\.(\d+)/);
+            if (build) {
+                const buildNum = parseInt(build[1]);
+                if (buildNum >= 22000) {
+                    return { type: 'windows', display: 'Windows 11', icon: 'laptop_windows' };
+                }
+            }
+            return { type: 'windows', display: 'Windows 10', icon: 'laptop_windows' };
+        }
+        return { type: 'windows', display: 'Windows', icon: 'laptop_windows' };
+    }
+    
+    if (os.includes('linux') || os.includes('ubuntu') || os.includes('debian') || os.includes('centos') || os.includes('fedora') || os.includes('rhel')) {
+        return { type: 'linux', display: 'Linux', icon: 'terminal' };
+    }
+    
+    if (os.includes('darwin') || os.includes('macos') || os.includes('mac os') || os.includes('osx')) {
+        return { type: 'macos', display: 'macOS', icon: 'laptop_mac' };
+    }
+    
+    return { type: 'unknown', display: osType || 'Desconocido', icon: 'device_unknown' };
+}
+
+// Aplicar filtros a los activos
+function filterAssets() {
+    const osFilter = document.getElementById('filter-os')?.value || '';
+    const avFilter = document.getElementById('filter-antivirus')?.value || '';
+    const telFilter = document.getElementById('filter-telemetry')?.value || '';
+    
+    let filtered = allAssets;
+    
+    // Filtro por SO
+    if (osFilter) {
+        filtered = filtered.filter(asset => {
+            const osInfo = normalizeOS(asset.os_type, asset.os_version);
+            return osInfo.type === osFilter;
+        });
+    }
+    
+    // Filtro por Antivirus
+    if (avFilter !== '') {
+        const hasAV = avFilter === 'true';
+        filtered = filtered.filter(asset => asset.antivirus_active === hasAV);
+    }
+    
+    // Filtro por Telemetría
+    if (telFilter !== '') {
+        const hasTel = telFilter === 'true';
+        filtered = filtered.filter(asset => asset.telemetry_enabled === hasTel);
+    }
+    
+    renderAssetsTable(filtered);
+}
+
+// Renderizar tabla de activos
+function renderAssetsTable(assets) {
+    const tbody = document.getElementById('assets-table-body');
+    if (!tbody) return;
+    
+    if (!assets || assets.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="8" class="px-4 py-8 text-center text-[#9dabb9]">
+                    <div class="flex flex-col items-center gap-3">
+                        <span class="material-symbols-outlined text-4xl">search_off</span>
+                        <p>No se encontraron activos con los filtros aplicados</p>
+                    </div>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    tbody.innerHTML = assets.map(asset => {
+        const osInfo = normalizeOS(asset.os_type, asset.os_version);
+        const isOnline = asset.status === 'active' || asset.status === 'online';
+        const tagsHtml = (asset.tags || []).map(tag => 
+            `<span class="px-2 py-0.5 rounded text-xs cursor-pointer hover:opacity-80" style="background-color: ${tag.color}20; color: ${tag.color}">
+                ${tag.name}
+                <button onclick="removeTagFromAsset('${asset.id}', '${tag.id}')" class="ml-1 hover:text-red-400">×</button>
+            </span>`
+        ).join('');
+        
+        return `
+            <tr class="border-b border-[#3b4754] hover:bg-[#1c2127] transition-colors" data-asset-id="${asset.id}">
                 <td class="px-4 py-3">
-                    <span class="w-2 h-2 rounded-full ${asset.status === 'online' ? 'bg-green-500' : 'bg-gray-500'} inline-block"></span>
+                    <div class="flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-500'}"></span>
+                        <span class="text-xs ${isOnline ? 'text-green-400' : 'text-gray-400'}">${isOnline ? 'Online' : 'Offline'}</span>
+                    </div>
                 </td>
                 <td class="px-4 py-3">
-                    <p class="text-white font-medium">${asset.hostname}</p>
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
+                            <span class="material-symbols-outlined text-primary">${osInfo.icon}</span>
+                        </div>
+                        <div>
+                            <p class="text-white font-medium">${asset.hostname || 'Unknown'}</p>
+                            <p class="text-xs text-gray-500">${isOnline ? 'online' : 'offline'}</p>
+                        </div>
+                    </div>
                 </td>
                 <td class="px-4 py-3 text-[#9dabb9] text-sm">
                     <p>${asset.ip_address || 'N/A'}</p>
-                    <p class="text-xs">${asset.mac_address || 'N/A'}</p>
+                    <p class="text-xs text-gray-500">${asset.mac_address || 'N/A'}</p>
                 </td>
-                <td class="px-4 py-3 text-[#9dabb9] text-sm">${asset.os_type || 'N/A'}</td>
+                <td class="px-4 py-3 text-[#9dabb9] text-sm">${osInfo.display}</td>
+                <td class="px-4 py-3">
+                    <div class="flex flex-col gap-1">
+                        <div class="flex items-center gap-1">
+                            <span class="w-2 h-2 rounded-full ${asset.antivirus_active ? 'bg-green-500' : 'bg-red-500'}"></span>
+                            <span class="text-xs ${asset.antivirus_active ? 'text-green-400' : 'text-red-400'}">
+                                ${asset.antivirus_active ? 'Antivirus Activo' : 'Sin Antivirus'}
+                            </span>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <span class="w-2 h-2 rounded-full ${asset.telemetry_enabled ? 'bg-primary' : 'bg-gray-500'}"></span>
+                            <span class="text-xs ${asset.telemetry_enabled ? 'text-primary' : 'text-gray-400'}">
+                                ${asset.telemetry_enabled ? 'Telemetría Activa' : 'Sin Telemetría'}
+                            </span>
+                        </div>
+                    </div>
+                </td>
+                <td class="px-4 py-3">
+                    <div class="flex gap-1 flex-wrap items-center">
+                        ${tagsHtml}
+                        <button onclick="showAddTagMenu('${asset.id}', this)" class="w-5 h-5 rounded bg-[#283039] hover:bg-[#3b4754] flex items-center justify-center text-gray-400 hover:text-white">
+                            <span class="material-symbols-outlined" style="font-size: 14px;">add</span>
+                        </button>
+                    </div>
+                </td>
+                <td class="px-4 py-3">
+                    <span class="px-2 py-1 rounded text-xs font-medium ${getRiskClass(asset.risk_score || 0)}">
+                        ${getRiskLabel(asset.risk_score || 0)}
+                        <span class="ml-1">(${asset.risk_score || 0})</span>
+                    </span>
+                </td>
                 <td class="px-4 py-3">
                     <div class="flex gap-2">
-                        <span class="px-2 py-1 rounded text-xs ${asset.antivirus_active ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}">
-                            ${asset.antivirus_active ? 'AV' : 'No AV'}
-                        </span>
-                        <span class="px-2 py-1 rounded text-xs ${asset.telemetry_enabled ? 'bg-blue-500/20 text-blue-400' : 'bg-gray-500/20 text-gray-400'}">
-                            ${asset.telemetry_enabled ? 'Tel' : 'No Tel'}
-                        </span>
+                        <button onclick="openAssetDetails('${asset.id}')" class="p-1.5 hover:bg-[#283039] rounded" title="Ver detalles">
+                            <span class="material-symbols-outlined text-[#9dabb9] hover:text-white" style="font-size: 18px;">settings</span>
+                        </button>
+                        <button onclick="showAssetInfo('${asset.id}')" class="p-1.5 hover:bg-[#283039] rounded" title="Información">
+                            <span class="material-symbols-outlined text-[#9dabb9] hover:text-white" style="font-size: 18px;">info</span>
+                        </button>
                     </div>
-                </td>
-                <td class="px-4 py-3">
-                    <div class="flex gap-1 flex-wrap">
-                        ${asset.tags.map(tag => `<span class="px-2 py-1 rounded text-xs" style="background-color: ${tag.color}20; color: ${tag.color}">${tag.name}</span>`).join('')}
-                    </div>
-                </td>
-                <td class="px-4 py-3">
-                    <span class="text-white font-medium">${asset.risk_score || 0}</span>
-                </td>
-                <td class="px-4 py-3">
-                    <button class="p-1 hover:bg-[#283039] rounded">
-                        <span class="material-symbols-outlined text-[#9dabb9]" style="font-size: 18px;">more_vert</span>
-                    </button>
                 </td>
             </tr>
-        `).join('');
+        `;
+    }).join('');
+}
+
+// Obtener clase de riesgo
+function getRiskClass(score) {
+    if (score >= 75) return 'bg-red-500/20 text-red-400';
+    if (score >= 50) return 'bg-orange-500/20 text-orange-400';
+    if (score >= 25) return 'bg-yellow-500/20 text-yellow-400';
+    return 'bg-green-500/20 text-green-400';
+}
+
+// Obtener etiqueta de riesgo
+function getRiskLabel(score) {
+    if (score >= 75) return 'Crítico';
+    if (score >= 50) return 'Alto';
+    if (score >= 25) return 'Medio';
+    return 'Bajo';
+}
+
+async function loadAssets() {
+    const tbody = document.getElementById('assets-table-body');
+    if (tbody) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="8" class="px-4 py-8 text-center text-[#9dabb9]">
+                    <div class="flex flex-col items-center gap-3">
+                        <span class="material-symbols-outlined text-4xl animate-spin">sync</span>
+                        <p>Cargando activos...</p>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }
+    
+    try {
+        const response = await fetch(`${API_URL}/settings/assets`);
+        const data = await response.json();
+        
+        allAssets = data.assets || [];
+        filterAssets();
+        
     } catch (error) {
         console.error('Error cargando activos:', error);
+        if (tbody) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="8" class="px-4 py-8 text-center text-red-400">
+                        <div class="flex flex-col items-center gap-3">
+                            <span class="material-symbols-outlined text-4xl">error</span>
+                            <p>Error al cargar activos: ${error.message}</p>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }
     }
 }
+
+// Configurar event listeners para los filtros
+function setupAssetFilters() {
+    const osFilter = document.getElementById('filter-os');
+    const avFilter = document.getElementById('filter-antivirus');
+    const telFilter = document.getElementById('filter-telemetry');
+    
+    if (osFilter) osFilter.addEventListener('change', filterAssets);
+    if (avFilter) avFilter.addEventListener('change', filterAssets);
+    if (telFilter) telFilter.addEventListener('change', filterAssets);
+    
+    // Botón de actualizar
+    const refreshBtn = document.getElementById('refresh-assets-btn');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', loadAssets);
+    }
+    
+    // Botón de auto-tag
+    const autoTagBtn = document.getElementById('auto-tag-btn');
+    if (autoTagBtn) {
+        autoTagBtn.addEventListener('click', autoTagAssets);
+    }
+}
+
+// Auto-tag de activos
+async function autoTagAssets() {
+    try {
+        showNotification('Aplicando tags automáticos...', 'info');
+        
+        const response = await fetch(`${API_URL}/settings/assets/auto-tag`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            showNotification(`Tags aplicados: ${data.tagged_count || 0} activos actualizados`, 'success');
+            loadAssets(); // Recargar para ver cambios
+            loadTags(); // Recargar tags
+        } else {
+            throw new Error('Error del servidor');
+        }
+    } catch (error) {
+        showNotification('Error al aplicar tags automáticos', 'error');
+        console.error('Error auto-tag:', error);
+    }
+}
+
+// Eliminar tag de un activo
+async function removeTagFromAsset(assetId, tagId) {
+    try {
+        const response = await fetch(`${API_URL}/settings/assets/${assetId}/tags/${tagId}`, {
+            method: 'DELETE'
+        });
+        
+        if (response.ok) {
+            showNotification('Tag eliminado', 'success');
+            loadAssets();
+        }
+    } catch (error) {
+        showNotification('Error al eliminar tag', 'error');
+    }
+}
+
+// Mostrar menú para agregar tag
+function showAddTagMenu(assetId, button) {
+    // Cerrar cualquier menú abierto
+    document.querySelectorAll('.tag-menu-popup').forEach(m => m.remove());
+    
+    // Crear menú popup
+    const menu = document.createElement('div');
+    menu.className = 'tag-menu-popup absolute z-50 bg-[#1c2127] border border-[#3b4754] rounded-lg shadow-xl p-2 min-w-[150px]';
+    menu.innerHTML = '<p class="text-gray-400 text-xs px-2 py-1">Cargando tags...</p>';
+    
+    // Posicionar menú
+    const rect = button.getBoundingClientRect();
+    menu.style.position = 'fixed';
+    menu.style.top = (rect.bottom + 5) + 'px';
+    menu.style.left = rect.left + 'px';
+    
+    document.body.appendChild(menu);
+    
+    // Cerrar al hacer clic fuera
+    setTimeout(() => {
+        document.addEventListener('click', function closeMenu(e) {
+            if (!menu.contains(e.target)) {
+                menu.remove();
+                document.removeEventListener('click', closeMenu);
+            }
+        });
+    }, 0);
+    
+    // Cargar tags disponibles
+    fetch(`${API_URL}/settings/tags`)
+        .then(r => r.json())
+        .then(data => {
+            const tags = data.tags || [];
+            if (tags.length === 0) {
+                menu.innerHTML = '<p class="text-gray-400 text-xs px-2 py-1">No hay tags disponibles</p>';
+                return;
+            }
+            
+            menu.innerHTML = tags.map(tag => `
+                <button onclick="addTagToAsset('${assetId}', '${tag.id}')" class="w-full text-left px-2 py-1.5 hover:bg-[#283039] rounded flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full" style="background-color: ${tag.color}"></span>
+                    <span class="text-white text-sm">${tag.name}</span>
+                </button>
+            `).join('');
+        })
+        .catch(() => {
+            menu.innerHTML = '<p class="text-red-400 text-xs px-2 py-1">Error cargando tags</p>';
+        });
+}
+
+// Agregar tag a un activo
+async function addTagToAsset(assetId, tagId) {
+    try {
+        const response = await fetch(`${API_URL}/settings/assets/${assetId}/tags/${tagId}`, {
+            method: 'POST'
+        });
+        
+        if (response.ok) {
+            showNotification('Tag agregado', 'success');
+            document.querySelectorAll('.tag-menu-popup').forEach(m => m.remove());
+            loadAssets();
+        }
+    } catch (error) {
+        showNotification('Error al agregar tag', 'error');
+    }
+}
+
+// Abrir detalles del activo
+function openAssetDetails(assetId) {
+    const asset = allAssets.find(a => a.id === assetId);
+    if (asset) {
+        showNotification(`Detalles de ${asset.hostname}`, 'info');
+        // TODO: Implementar modal de detalles
+    }
+}
+
+// Mostrar información del activo
+function showAssetInfo(assetId) {
+    const asset = allAssets.find(a => a.id === assetId);
+    if (asset) {
+        const osInfo = normalizeOS(asset.os_type, asset.os_version);
+        alert(`
+Hostname: ${asset.hostname}
+IP: ${asset.ip_address}
+MAC: ${asset.mac_address}
+SO: ${osInfo.display}
+Antivirus: ${asset.antivirus_active ? 'Activo' : 'Inactivo'}
+Telemetría: ${asset.telemetry_enabled ? 'Activa' : 'Inactiva'}
+Riesgo: ${getRiskLabel(asset.risk_score || 0)} (${asset.risk_score || 0})
+        `);
+    }
+}
+
+// Inicializar filtros cuando se carga la sección de assets
+document.addEventListener('DOMContentLoaded', () => {
+    setupAssetFilters();
+});
 
 // Tabs de Assets
 document.getElementById('tab-assets')?.addEventListener('click', () => {

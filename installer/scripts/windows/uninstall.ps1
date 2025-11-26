@@ -64,15 +64,20 @@ try {
         }
     }
 
-    # 3. Remove Desktop Shortcut
-    Log "Removing desktop shortcut..."
-    $desktopShortcut = Join-Path ([Environment]::GetFolderPath("Desktop")) "ThreatGuard Dashboard.url"
-    if (Test-Path -LiteralPath $desktopShortcut) {
-        try {
-            Remove-Item -LiteralPath $desktopShortcut -Force
-            Log "Desktop shortcut removed."
-        } catch {
-            Log "Failed to remove desktop shortcut: $_"
+    # 3. Remove Desktop Shortcut (both .url and .lnk)
+    Log "Removing desktop shortcuts..."
+    $desktopShortcuts = @(
+        (Join-Path ([Environment]::GetFolderPath("Desktop")) "ThreatGuard Dashboard.url"),
+        (Join-Path ([Environment]::GetFolderPath("Desktop")) "ThreatGuard.lnk")
+    )
+    foreach ($desktopShortcut in $desktopShortcuts) {
+        if (Test-Path -LiteralPath $desktopShortcut) {
+            try {
+                Remove-Item -LiteralPath $desktopShortcut -Force
+                Log "Desktop shortcut removed: $desktopShortcut"
+            } catch {
+                Log "Failed to remove desktop shortcut: $_"
+            }
         }
     }
 

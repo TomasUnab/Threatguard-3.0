@@ -1,270 +1,174 @@
-<div class="flex items-center gap-4 text-white">
-    <div class="size-6 text-primary">
-        <span class="material-symbols-outlined !text-3xl">security</span>
-    </div>
-    <h2 class="text-white text-xl font-bold leading-tight tracking-[-0.015em]">ThreatGuard</h2>
-</div>
-<div class="flex items-center gap-9">
-    <a class="text-white text-sm font-bold leading-normal" href="/executive_summary/code.html">Dashboard</a>
-    <a class="text-white text-sm font-bold leading-normal" href="/alerts/code.html">Alerts</a>
-    <a class="text-white text-sm font-bold leading-normal" href="/assets/code.html">Assets</a>
-    <a class="text-white text-sm font-bold leading-normal" href="/vulnerability_management/code.html">Vulnerability
-        Management</a>
-    <a class="text-white text-sm font-bold leading-normal" href="/soar/code.html">SOAR</a>
-    <a class="text-white text-sm font-bold leading-normal" href="/reports/code.html">Reports</a>
-    <a class="text-white text-sm font-bold leading-normal" href="/settings/code.html">Settings</a>
-</div>
-<div class="flex flex-1 justify-end gap-4">
-    <div class="flex gap-2 relative">
-        <button id="btn-notifications"
-            class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 bg-[#283039] text-white gap-2 text-sm font-bold leading-normal tracking-[0.015em] min-w-0 px-3 hover:bg-[#3b4754]">
-            <span class="material-symbols-outlined">notifications</span>
-        </button>
-        <button id="btn-settings"
-            class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 bg-[#283039] text-white gap-2 text-sm font-bold leading-normal tracking-[0.015em] min-w-0 px-3 hover:bg-[#3b4754]">
-            <span class="material-symbols-outlined">settings</span>
-        </button>
-        <div id="settings-menu"
-            class="hidden absolute right-0 top-12 w-48 bg-[#1c2127] border border-[#3b4754] rounded-lg shadow-lg z-50">
-            <button onclick="toggleTheme()"
-                class="w-full px-4 py-3 text-left text-white hover:bg-[#283039] flex items-center gap-2">
-                <span class="material-symbols-outlined">dark_mode</span>
-                Cambiar Tema
-            </button>
-        </div>
-    </div>
-</div>
-</header>
-<script src="/header-utils.js"></script>
-<main class="flex flex-1 justify-center py-5 px-4 md:px-10 lg:px-40">
-    <div class="layout-content-container flex flex-col max-w-[1200px] flex-1 gap-6">
-        <!-- Asset Inventory View -->
-        <div id="inventory-view">
-            <div class="flex flex-wrap justify-between gap-3 p-4">
-                <p class="text-white text-4xl font-black leading-tight tracking-[-0.033em] min-w-72">Inventario de
-                    Activos</p>
-            </div>
-            <div class="px-4 py-3 @container">
-                <div class="flex overflow-hidden rounded-lg border border-[#3b4754] bg-[#111418]">
-                    <table class="flex-1">
-                        <thead>
-                            <tr class="bg-[#1c2127]">
-                                <th class="px-4 py-3 text-left text-white w-[250px] text-sm font-medium leading-normal">
-                                    Hostname</th>
-                                <th class="px-4 py-3 text-left text-white w-[150px] text-sm font-medium leading-normal">
-                                    IP</th>
-                                <th class="px-4 py-3 text-left text-white w-[200px] text-sm font-medium leading-normal">
-                                    SO</th>
-                                <th class="px-4 py-3 text-left text-white w-[180px] text-sm font-medium leading-normal">
-                                    Estado Agente</th>
-                                <th class="px-4 py-3 text-left text-white w-60 text-sm font-medium leading-normal">
-                                    Conteo Vuln. Críticas (OpenVAS)</th>
-                                <th class="px-4 py-3 text-left text-white w-60 text-sm font-medium leading-normal">
-                                    Conteo Vuln. Altas (OpenVAS)</th>
-                            </tr>
-                        </thead>
-                        <tbody id="assets-table">
-                            <tr>
-                                <td colspan="6" class="h-[72px] px-4 py-2 text-center text-[#9dabb9] text-sm">Cargando
-                                    activos...</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-        <!-- Asset Profile View (hidden by default) -->
-        <div class="hidden" id="asset-profile-view">
-            <div class="flex flex-wrap gap-2 p-4 items-center">
-                <a class="text-[#9dabb9] text-base font-medium leading-normal hover:text-primary" href="#"
-                    onclick="showInventoryView()">Inventario de Activos</a>
-                <span class="text-[#9dabb9] text-base font-medium leading-normal">/</span>
-                <span class="text-white text-base font-medium leading-normal">SERVER-01</span>
-            </div>
-            <div class="p-4 rounded-lg bg-[#111418] border border-[#3b4754]">
-                <div class="flex items-center justify-between pb-4 border-b border-[#3b4754]">
-                    <div>
-                        <h3 class="text-2xl font-bold text-white">SERVER-01</h3>
-                        <p class="text-sm text-[#9dabb9]">192.168.1.10</p>
-                    </div>
-                    <div class="flex gap-2">
-                        <span
-                            class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-500/80 text-white">Crítico</span>
-                        <span
-                            class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-500/80 text-white">Producción</span>
-                    </div>
-                </div>
-                <div class="mt-4">
-                    <div class="border-b border-[#3b4754]">
-                        <nav aria-label="Tabs" class="-mb-px flex space-x-8">
-                            <button
-                                class="tab-button border-primary text-primary whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm"
-                                onclick="switchTab(event, 'vulnerabilities')">Vulnerabilidades</button>
-                            <button
-                                class="tab-button border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm"
-                                onclick="switchTab(event, 'alerts')">Alertas</button>
-                            <button
-                                class="tab-button border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm"
-                                onclick="switchTab(event, 'info')">Información del Agente</button>
-                        </nav>
-                    </div>
-                    <div class="py-4">
-                        <div class="tab-content" id="vulnerabilities">
-                            <div class="overflow-x-auto">
-                                <table class="min-w-full">
-                                    <thead>
-                                        <tr class="bg-[#1c2127]">
-                                            <th
-                                                class="px-4 py-3 text-left text-white text-xs font-medium uppercase tracking-wider">
-                                                CVE</th>
-                                            <th
-                                                class="px-4 py-3 text-left text-white text-xs font-medium uppercase tracking-wider">
-                                                Severidad</th>
-                                            <th
-                                                class="px-4 py-3 text-left text-white text-xs font-medium uppercase tracking-wider">
-                                                Descripción</th>
-                                            <th
-                                                class="px-4 py-3 text-left text-white text-xs font-medium uppercase tracking-wider">
-                                                Remediación</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="divide-y divide-[#3b4754]">
-                                        <tr>
-                                            <td class="px-4 py-3 text-white">CVE-2021-44228</td>
-                                            <td class="px-4 py-3"><span
-                                                    class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-600 text-red-100">Crítica</span>
-                                            </td>
-                                            <td class="px-4 py-3 text-[#9dabb9]">Remote code execution in Apache Log4j
-                                            </td>
-                                            <td class="px-4 py-3 text-[#9dabb9]">Update to version 2.17.1 or later.</td>
-                                        </tr>
-                                        <tr>
-                                            <td class="px-4 py-3 text-white">CVE-2022-22965</td>
-                                            <td class="px-4 py-3"><span
-                                                    class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-600 text-red-100">Crítica</span>
-                                            </td>
-                                            <td class="px-4 py-3 text-[#9dabb9]">Spring4Shell RCE vulnerability</td>
-                                            <td class="px-4 py-3 text-[#9dabb9]">Upgrade Spring Framework versions.</td>
-                                        </tr>
-                                        <tr>
-                                            <td class="px-4 py-3 text-white">CVE-2023-12345</td>
-                                            <td class="px-4 py-3"><span
-                                                    class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-orange-600 text-orange-100">Alta</span>
-                                            </td>
-                                            <td class="px-4 py-3 text-[#9dabb9]">Example high severity vulnerability
-                                            </td>
-                                            <td class="px-4 py-3 text-[#9dabb9]">Apply vendor patch.</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                        <div class="tab-content hidden" id="alerts">
-                            <p class="text-white">Alertas para SERVER-01 (Tabla de alertas filtrada aquí)</p>
-                        </div>
-                        <div class="tab-content hidden" id="info">
-                            <div class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                                <div class="font-semibold text-white">Agent ID:</div>
-                                <div class="text-[#9dabb9]">001</div>
-                                <div class="font-semibold text-white">Version:</div>
-                                <div class="text-[#9dabb9]">4.3.10</div>
-                                <div class="font-semibold text-white">Status:</div>
-                                <div class="text-green-400">Active</div>
-                                <div class="font-semibold text-white">Last Keep Alive:</div>
-                                <div class="text-[#9dabb9]">2023-10-27T10:30:00Z</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</main>
-</div>
-</div>
-<script>
-    function showAssetProfile() {
-        document.getElementById('inventory-view').classList.add('hidden');
-        document.getElementById('asset-profile-view').classList.remove('hidden');
-    }
-
-    function showInventoryView() {
-        document.getElementById('inventory-view').classList.remove('hidden');
-        document.getElementById('asset-profile-view').classList.add('hidden');
-    }
-
-    function switchTab(event, tabName) {
-        let i, tabcontent, tablinks;
-        tabcontent = document.getElementsByClassName("tab-content");
-        for (i = 0; i < tabcontent.length; i++) {
-            tabcontent[i].classList.add("hidden");
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <title>ThreatGuard - Asset Inventory</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#137fec",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101922",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
         }
-        tablinks = document.getElementsByClassName("tab-button");
-        for (i = 0; i < tablinks.length; i++) {
-            tablinks[i].className = tablinks[i].className.replace(" border-primary text-primary", " border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-300");
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
         }
-        document.getElementById(tabName).classList.remove("hidden");
-        event.currentTarget.className = event.currentTarget.className.replace(" border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-300", " border-primary text-primary");
-    }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-white">
+    <div class="relative flex h-auto min-h-screen w-full flex-col">
+        <header class="sticky top-0 z-50 flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#283039] bg-background-dark px-10 py-3">
+            <div class="flex items-center gap-8">
+                <div class="flex items-center gap-4 text-white">
+                    <div class="size-6 text-primary">
+                        <span class="material-symbols-outlined !text-3xl">security</span>
+                    </div>
+                    <h2 class="text-white text-xl font-bold leading-tight tracking-[-0.015em]">ThreatGuard</h2>
+                </div>
+                <div class="flex items-center gap-9">
+                    <a class="text-white text-sm font-medium leading-normal" href="/executive_summary/code.html">Dashboard</a>
+                    <a class="text-white text-sm font-medium leading-normal" href="/alerts/code.html">Alerts</a>
+                    <a class="text-primary text-sm font-bold leading-normal" href="/assets/code.html">Assets</a>
+                    <a class="text-white text-sm font-medium leading-normal" href="/vulnerability_management/code.html">Vulnerability Management</a>
+                    <a class="text-white text-sm font-medium leading-normal" href="/soar/code.html">SOAR</a>
+                    <a class="text-white text-sm font-medium leading-normal" href="/reports/code.html">Reports</a>
+                    <a class="text-white text-sm font-medium leading-normal" href="/settings/code.html">Settings</a>
+                </div>
+            </div>
+            <div class="flex flex-1 justify-end gap-4">
+                <div class="flex gap-2 relative">
+                    <button id="btn-notifications" class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 bg-[#283039] text-white gap-2 text-sm font-bold leading-normal tracking-[0.015em] min-w-0 px-3 hover:bg-[#3b4754]">
+                        <span class="material-symbols-outlined">notifications</span>
+                    </button>
+                    <button id="btn-settings" class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 bg-[#283039] text-white gap-2 text-sm font-bold leading-normal tracking-[0.015em] min-w-0 px-3 hover:bg-[#3b4754]">
+                        <span class="material-symbols-outlined">settings</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+        
+        <main class="flex flex-1 justify-center py-5 px-4 md:px-10 lg:px-40">
+            <div class="layout-content-container flex flex-col max-w-[1400px] flex-1 gap-6">
+                <!-- Asset Inventory View -->
+                <div id="inventory-view">
+                    <div class="flex flex-wrap justify-between gap-3 p-4">
+                        <p class="text-white text-4xl font-black leading-tight tracking-[-0.033em] min-w-72">Inventario de Activos</p>
+                        <button onclick="loadAssets()" class="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
+                            <span class="material-symbols-outlined">refresh</span>
+                            <span>Actualizar</span>
+                        </button>
+                    </div>
+                    <div class="px-4 py-3 @container">
+                        <div class="flex overflow-hidden rounded-lg border border-[#3b4754] bg-[#111418]">
+                            <table class="flex-1">
+                                <thead>
+                                    <tr class="bg-[#1c2127]">
+                                        <th class="px-4 py-3 text-left text-white w-[250px] text-sm font-medium leading-normal">Hostname</th>
+                                        <th class="px-4 py-3 text-left text-white w-[150px] text-sm font-medium leading-normal">IP</th>
+                                        <th class="px-4 py-3 text-left text-white w-[200px] text-sm font-medium leading-normal">SO</th>
+                                        <th class="px-4 py-3 text-left text-white w-[180px] text-sm font-medium leading-normal">Estado Agente</th>
+                                        <th class="px-4 py-3 text-left text-white w-60 text-sm font-medium leading-normal">Vuln. Críticas</th>
+                                        <th class="px-4 py-3 text-left text-white w-60 text-sm font-medium leading-normal">Vuln. Altas</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="assets-table">
+                                    <tr>
+                                        <td colspan="6" class="h-[72px] px-4 py-2 text-center text-[#9dabb9] text-sm">Cargando activos...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
 
-    // Set the default view
-    document.addEventListener('DOMContentLoaded', () => {
-        showInventoryView();
-    });
-
-</script>
-<script>
-    async function loadAssets() {
-        try {
-            const [vulnResponse, sysResponse] = await Promise.all([
-                fetch('/api/vulnerabilities'),
-                fetch('http://localhost:8000/system/info')
-            ]);
-
-            const vulnData = await vulnResponse.json();
-            const sysData = await sysResponse.json();
-
+    <script>
+        const API_URL = 'http://localhost:8000';
+        
+        async function loadAssets() {
             const tbody = document.getElementById('assets-table');
+            tbody.innerHTML = '<tr><td colspan="6" class="h-[72px] px-4 py-2 text-center text-[#9dabb9] text-sm">Cargando activos...</td></tr>';
+            
+            try {
+                const response = await fetch(`${API_URL}/assets`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                const assets = data.assets || [];
 
-            // Verificar si hay agente disponible
-            console.log('System data:', sysData);
-            if (!sysData || sysData.hostname === 'Unknown' || sysData.status === 'Inactive') {
-                tbody.innerHTML = '<tr><td colspan="6" class="h-[72px] px-4 py-2 text-center text-[#9dabb9] text-sm">Ningún agente o activo está disponible</td></tr>';
-                return;
+                if (!assets || assets.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="h-[72px] px-4 py-2 text-center text-[#9dabb9] text-sm">No hay agentes registrados. Ejecute el agente para registrar este dispositivo.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = assets.map(asset => {
+                    const isActive = asset.status === 'Active';
+                    const statusClass = isActive ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400';
+                    const statusText = isActive ? 'Online' : 'Offline';
+                    const agentName = asset.agent_name || asset.hostname || 'Unknown';
+                    const critical = asset.vulnerabilities_critical || 0;
+                    const high = asset.vulnerabilities_high || 0;
+                    
+                    return `
+                    <tr class="border-t border-t-[#3b4754] hover:bg-[#1c2127] cursor-pointer">
+                        <td class="h-[72px] px-4 py-2 text-white text-sm font-normal leading-normal">${agentName}</td>
+                        <td class="h-[72px] px-4 py-2 text-[#9dabb9] text-sm font-normal leading-normal">${asset.ip || 'N/A'}</td>
+                        <td class="h-[72px] px-4 py-2 text-[#9dabb9] text-sm font-normal leading-normal">${asset.os || 'Unknown'}</td>
+                        <td class="h-[72px] px-4 py-2 text-sm font-normal leading-normal">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusClass}">${statusText}</span>
+                        </td>
+                        <td class="h-[72px] px-4 py-2 text-sm font-normal leading-normal">
+                            <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-500/20 text-red-400 font-bold">${critical}</span>
+                        </td>
+                        <td class="h-[72px] px-4 py-2 text-sm font-normal leading-normal">
+                            <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-orange-500/20 text-orange-400 font-bold">${high}</span>
+                        </td>
+                    </tr>
+                    `;
+                }).join('');
+                
+            } catch (err) {
+                console.error('Error cargando assets:', err);
+                tbody.innerHTML = `<tr><td colspan="6" class="h-[72px] px-4 py-2 text-center text-red-400 text-sm">Error: ${err.message}</td></tr>`;
             }
-
-            let critical = 0;
-            let high = 0;
-
-            vulnData.vulnerabilities.forEach(v => {
-                if (v.cvss >= 9.0) critical++;
-                else if (v.cvss >= 7.0) high++;
-            });
-
-            const statusClass = sysData.status === 'Active' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400';
-
-            const agentName = sysData.agent_name || sysData.hostname;
-
-            tbody.innerHTML = `
-            <tr class="border-t border-t-[#3b4754] hover:bg-[#1c2127] cursor-pointer">
-                <td class="h-[72px] px-4 py-2 text-white text-sm font-normal leading-normal">${agentName}</td>
-                <td class="h-[72px] px-4 py-2 text-[#9dabb9] text-sm font-normal leading-normal">${sysData.ip}</td>
-                <td class="h-[72px] px-4 py-2 text-[#9dabb9] text-sm font-normal leading-normal">${sysData.os}</td>
-                <td class="h-[72px] px-4 py-2 text-sm font-normal leading-normal"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusClass}">${sysData.status}</span></td>
-                <td class="h-[72px] px-4 py-2 text-sm font-normal leading-normal"><span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-500/20 text-red-400 font-bold">${critical}</span></td>
-                <td class="h-[72px] px-4 py-2 text-sm font-normal leading-normal"><span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-orange-500/20 text-orange-400 font-bold">${high}</span></td>
-            </tr>
-        `;
-        } catch (err) {
-            console.error('Error completo:', err);
-            console.error('Error message:', err.message);
-            document.getElementById('assets-table').innerHTML = '<tr><td colspan="6" class="h-[72px] px-4 py-2 text-center text-[#9dabb9] text-sm">Error: ' + err.message + '</td></tr>';
         }
-    }
 
-    loadAssets();
-    setInterval(loadAssets, 30000);
-</script>
+        // Cargar al iniciar
+        document.addEventListener('DOMContentLoaded', loadAssets);
+        
+        // Auto-refresh cada 10 segundos para ver cambios en tiempo real
+        setInterval(loadAssets, 10000);
+    </script>
 </body>
-
 </html>

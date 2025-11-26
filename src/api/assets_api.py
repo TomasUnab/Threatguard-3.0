@@ -110,27 +110,92 @@ async def get_system_information():
 
 @router.get("/assets")
 async def get_assets():
-    """Endpoint para obtener lista de activos"""
+    """Endpoint para obtener lista de activos desde la base de datos"""
+    import os
+    from sqlalchemy import create_engine, text
+    from datetime import datetime, timezone
+    
     try:
-        system_info = get_system_info()
+        db_url = os.getenv("DATABASE_URL")
+        if not db_url:
+            # Fallback al sistema local si no hay BD
+            system_info = get_system_info()
+            return {"assets": [{
+                "id": 1,
+                "hostname": system_info["hostname"],
+                "ip": system_info["ip"],
+                "os": system_info["os"],
+                "status": system_info["status"],
+                "agent_name": system_info["agent_name"],
+                "last_seen": datetime.now().isoformat(),
+                "vulnerabilities_critical": 0,
+                "vulnerabilities_high": 0
+            }], "total": 1}
         
-        # En un sistema real, esto consultaría una base de datos
-        # Por ahora retornamos el sistema actual
-        assets = [{
+        engine = create_engine(db_url)
+        
+        with engine.connect() as conn:
+            result = conn.execute(text("""
+                SELECT id, hostname, ip_address, os_type, os_version,
+                       antivirus_active, telemetry_enabled, status, risk_score, 
+                       last_seen, created_at
+                FROM assets
+                ORDER BY last_seen DESC NULLS LAST
+            """))
+            
+            assets = []
+            for row in result:
+                asset_id = str(row[0])
+                db_status = row[7]
+                last_seen_db = row[9]
+                
+                # Calcular estado real - timeout de 120 segundos para considerar offline
+                if db_status == 'inactive':
+                    actual_status = "Offline"
+                elif last_seen_db:
+                    # Usar hora local sin timezone para comparar correctamente
+                    if last_seen_db.tzinfo is not None:
+                        last_seen_db = last_seen_db.replace(tzinfo=None)
+                    now = datetime.now()
+                    seconds_since_last_seen = (now - last_seen_db).total_seconds()
+                    actual_status = "Active" if seconds_since_last_seen <= 120 else "Offline"
+                else:
+                    actual_status = "Offline"
+                
+                # Construir display de OS
+                os_type = row[3] or "Unknown"
+                os_version = row[4] or ""
+                os_display = f"{os_type.capitalize()} {os_version}".strip()
+                
+                assets.append({
+                    "id": asset_id,
+                    "hostname": row[1],
+                    "ip": row[2],
+                    "os": os_display,
+                    "status": actual_status,
+                    "agent_name": row[1],  # hostname as agent_name
+                    "last_seen": str(row[9]) if row[9] else None,
+                    "vulnerabilities_critical": 0,  # TODO: Calcular desde vulnerabilities table
+                    "vulnerabilities_high": 0
+                })
+            
+            return {"assets": assets, "total": len(assets)}
+            
+    except Exception as e:
+        print(f"Error getting assets: {e}")
+        # Fallback al sistema local
+        system_info = get_system_info()
+        return {"assets": [{
             "id": 1,
             "hostname": system_info["hostname"],
             "ip": system_info["ip"],
             "os": system_info["os"],
             "status": system_info["status"],
             "agent_name": system_info["agent_name"],
-            "last_seen": "2024-01-01T00:00:00Z",
+            "last_seen": datetime.now().isoformat() if 'datetime' in dir() else "2024-01-01T00:00:00Z",
             "vulnerabilities_critical": 0,
             "vulnerabilities_high": 0
-        }]
-        
-        return {"assets": assets, "total": len(assets)}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        }], "total": 1}
 
 @router.get("/assets/{asset_id}")
 async def get_asset_details(asset_id: int):

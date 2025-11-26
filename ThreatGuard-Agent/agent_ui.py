@@ -7,6 +7,7 @@ import time
 from datetime import datetime
 import os
 import sys
+import json
 from pystray import Icon, Menu, MenuItem
 from PIL import Image, ImageDraw
 
@@ -20,7 +21,7 @@ class ThreatGuardAgentUI(ctk.CTk):
         super().__init__()
         
         self.title("ThreatGuard Agent")
-        self.geometry("650x600")
+        self.geometry("500x450")
         self.resizable(False, False)
         self.protocol("WM_DELETE_WINDOW", self.hide_window)
         
@@ -35,104 +36,104 @@ class ThreatGuardAgentUI(ctk.CTk):
         self.setup_tray()
         
     def setup_ui(self):
+        # Main container with scrolling
+        main_container = ctk.CTkScrollableFrame(self, fg_color="transparent")
+        main_container.pack(fill="both", expand=True, padx=0, pady=0)
+        
         # Header mejorado
-        header = ctk.CTkFrame(self, fg_color="#0f172a", height=110)
+        header = ctk.CTkFrame(main_container, fg_color="#0f172a", height=90)
         header.pack(fill="x", padx=0, pady=0)
         
         title = ctk.CTkLabel(header, text="🛡️ ThreatGuard Agent", 
-                            font=("Segoe UI", 32, "bold"),
+                            font=("Segoe UI", 28, "bold"),
                             text_color="#3b82f6")
-        title.pack(pady=(20,5))
+        title.pack(pady=(15,3))
         
         subtitle = ctk.CTkLabel(header, text="Sistema de Monitoreo y Seguridad",
-                               font=("Segoe UI", 12),
+                               font=("Segoe UI", 11),
                                text_color="#94a3b8")
-        subtitle.pack(pady=(0,20))
+        subtitle.pack(pady=(0,15))
         
-        # Status Panel profesional
-        status_frame = ctk.CTkFrame(self, fg_color="#1e293b", corner_radius=15)
-        status_frame.pack(fill="x", padx=30, pady=25)
+        # Status Panel compacto
+        status_frame = ctk.CTkFrame(main_container, fg_color="#1e293b", corner_radius=12)
+        status_frame.pack(fill="x", padx=20, pady=15)
         
-        indicator_frame = ctk.CTkFrame(status_frame, fg_color="transparent")
-        indicator_frame.grid(row=0, column=0, rowspan=3, padx=30, pady=25)
+        status_inner = ctk.CTkFrame(status_frame, fg_color="transparent")
+        status_inner.pack(fill="x", padx=15, pady=12)
         
-        self.status_indicator = ctk.CTkLabel(indicator_frame, text="●", 
-                                            font=("Arial", 55), text_color="#ef4444")
-        self.status_indicator.pack()
+        self.status_indicator = ctk.CTkLabel(status_inner, text="●", 
+                                            font=("Arial", 35), text_color="#ef4444")
+        self.status_indicator.pack(side="left", padx=(5,15))
         
-        info_frame = ctk.CTkFrame(status_frame, fg_color="transparent")
-        info_frame.grid(row=0, column=1, sticky="w", padx=15, pady=25)
-        
-        ctk.CTkLabel(info_frame, text="ESTADO DEL AGENTE", 
-                    font=("Segoe UI", 10, "bold"), 
-                    text_color="#64748b").pack(anchor="w")
+        info_frame = ctk.CTkFrame(status_inner, fg_color="transparent")
+        info_frame.pack(side="left", fill="x", expand=True)
         
         self.status_label = ctk.CTkLabel(info_frame, text="Desconectado", 
-                                        font=("Segoe UI", 22, "bold"),
+                                        font=("Segoe UI", 18, "bold"),
                                         text_color="#ef4444")
-        self.status_label.pack(anchor="w", pady=(8,0))
+        self.status_label.pack(anchor="w")
         
         self.server_label = ctk.CTkLabel(info_frame, text="No configurado", 
-                                        font=("Segoe UI", 13),
+                                        font=("Segoe UI", 11),
                                         text_color="#94a3b8")
-        self.server_label.pack(anchor="w", pady=(8,0))
+        self.server_label.pack(anchor="w")
         
-        # Stats con cards
-        stats_container = ctk.CTkFrame(self, fg_color="transparent")
-        stats_container.pack(fill="x", padx=30, pady=15)
+        # Stats compactos
+        stats_container = ctk.CTkFrame(main_container, fg_color="transparent")
+        stats_container.pack(fill="x", padx=20, pady=10)
         
-        card1 = ctk.CTkFrame(stats_container, fg_color="#1e293b", corner_radius=12)
-        card1.pack(side="left", fill="both", expand=True, padx=(0,12))
+        card1 = ctk.CTkFrame(stats_container, fg_color="#1e293b", corner_radius=10)
+        card1.pack(side="left", fill="both", expand=True, padx=(0,8))
         
-        ctk.CTkLabel(card1, text="📊", font=("Arial", 28)).pack(pady=(20,8))
+        ctk.CTkLabel(card1, text="📊", font=("Arial", 20)).pack(pady=(12,5))
         self.logs_label = ctk.CTkLabel(card1, text="0", 
-                                      font=("Segoe UI", 32, "bold"),
+                                      font=("Segoe UI", 24, "bold"),
                                       text_color="#3b82f6")
         self.logs_label.pack()
         ctk.CTkLabel(card1, text="Logs Enviados",
-                    font=("Segoe UI", 12),
-                    text_color="#64748b").pack(pady=(5,20))
+                    font=("Segoe UI", 10),
+                    text_color="#64748b").pack(pady=(3,12))
         
-        card2 = ctk.CTkFrame(stats_container, fg_color="#1e293b", corner_radius=12)
-        card2.pack(side="left", fill="both", expand=True, padx=(12,0))
+        card2 = ctk.CTkFrame(stats_container, fg_color="#1e293b", corner_radius=10)
+        card2.pack(side="left", fill="both", expand=True, padx=(8,0))
         
-        ctk.CTkLabel(card2, text="🕐", font=("Arial", 28)).pack(pady=(20,8))
+        ctk.CTkLabel(card2, text="🕐", font=("Arial", 20)).pack(pady=(12,5))
         self.last_update = ctk.CTkLabel(card2, text="Nunca", 
-                                       font=("Segoe UI", 16, "bold"),
+                                       font=("Segoe UI", 13, "bold"),
                                        text_color="#3b82f6")
         self.last_update.pack()
         ctk.CTkLabel(card2, text="Última Actualización",
-                    font=("Segoe UI", 12),
-                    text_color="#64748b").pack(pady=(5,20))
+                    font=("Segoe UI", 10),
+                    text_color="#64748b").pack(pady=(3,12))
         
         # Controls mejorados
-        controls_frame = ctk.CTkFrame(self, fg_color="transparent")
-        controls_frame.pack(fill="x", padx=30, pady=20)
+        controls_frame = ctk.CTkFrame(main_container, fg_color="transparent")
+        controls_frame.pack(fill="x", padx=20, pady=15)
         
         self.start_btn = ctk.CTkButton(controls_frame, text="▶  INICIAR AGENTE", 
                                       command=self.toggle_agent,
-                                      font=("Segoe UI", 16, "bold"),
-                                      height=55, 
+                                      font=("Segoe UI", 14, "bold"),
+                                      height=48, 
                                       fg_color="#10b981",
                                       hover_color="#059669",
-                                      corner_radius=12)
-        self.start_btn.pack(side="left", padx=(0,12), expand=True, fill="x")
+                                      corner_radius=10)
+        self.start_btn.pack(side="left", padx=(0,8), expand=True, fill="x")
         
         ctk.CTkButton(controls_frame, text="⚙️  CONFIGURACIÓN", 
                      command=self.open_settings,
-                     font=("Segoe UI", 16, "bold"),
-                     height=55,
+                     font=("Segoe UI", 14, "bold"),
+                     height=48,
                      fg_color="#3b82f6",
                      hover_color="#2563eb",
-                     corner_radius=12).pack(side="left", padx=(12,0), expand=True, fill="x")
+                     corner_radius=10).pack(side="left", padx=(8,0), expand=True, fill="x")
         
         # Footer
-        footer_frame = ctk.CTkFrame(self, fg_color="#0f172a", height=45)
-        footer_frame.pack(side="bottom", fill="x")
+        footer_frame = ctk.CTkFrame(main_container, fg_color="#0f172a", height=35)
+        footer_frame.pack(fill="x", pady=(10,0))
         
         footer = ctk.CTkLabel(footer_frame, text="ThreatGuard Agent v1.0.0 | © 2024 ThreatGuard Security", 
                              font=("Segoe UI", 9), text_color="#475569")
-        footer.pack(pady=14)
+        footer.pack(pady=10)
     
     def load_config(self):
         """Cargar configuración guardada"""
@@ -338,6 +339,7 @@ class SettingsDialog(ctk.CTkToplevel):
             self.destroy()
         except Exception as e:
             print(f"Error guardando configuración: {e}")
+
 
 if __name__ == "__main__":
     app = ThreatGuardAgentUI()

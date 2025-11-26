@@ -154,16 +154,19 @@ class WindowsInstaller extends InstallerCommon {
                 progressCallback && progressCallback({ step: 'remove-path', message: `Failed to remove installPath: ${err.message}` });
             }
 
-            // Remove desktop shortcut
+            // Remove desktop shortcut (both .lnk and .url)
             try {
-                const shortcut = path.join(os.homedir(), 'Desktop', 'ThreatGuard Dashboard.url');
-                progressCallback && progressCallback({ step: 'remove-shortcut', message: `Removing desktop shortcut if present...` });
-                if (await fs.pathExists(shortcut)) {
-                    await fs.remove(shortcut);
-                    results.removedPaths.push(shortcut);
-                    progressCallback && progressCallback({ step: 'remove-shortcut', message: `Removed desktop shortcut` });
-                } else {
-                    progressCallback && progressCallback({ step: 'remove-shortcut', message: `No desktop shortcut found` });
+                const shortcuts = [
+                    path.join(os.homedir(), 'Desktop', 'ThreatGuard Dashboard.url'),
+                    path.join(os.homedir(), 'Desktop', 'ThreatGuard.lnk')
+                ];
+                progressCallback && progressCallback({ step: 'remove-shortcut', message: `Removing desktop shortcuts if present...` });
+                for (const shortcut of shortcuts) {
+                    if (await fs.pathExists(shortcut)) {
+                        await fs.remove(shortcut);
+                        results.removedPaths.push(shortcut);
+                        progressCallback && progressCallback({ step: 'remove-shortcut', message: `Removed desktop shortcut: ${path.basename(shortcut)}` });
+                    }
                 }
             } catch (err) {
                 results.errors.push(`remove shortcut: ${err.message}`);
@@ -1105,8 +1108,10 @@ ALTER DATABASE threatguard_db OWNER TO threatguard_user;
         if (await fs.pathExists(envTemplate)) {
             await this.processTemplate(envTemplate, envPath, {
                 DATABASE_PASSWORD: dbPassword,
+                DATABASE_PORT: config.dbPort || 5432,
                 API_PORT: config.apiPort || 9000,
                 FRONTEND_PORT: config.frontendPort || 3000,
+                REDIS_PORT: config.redisPort || 6379,
                 SECRET_KEY: this.generateSecretKey(),
                 JWT_SECRET: this.generateSecretKey(),
                 INTERFACE: config.networkInterface ? (config.networkInterface.index || '1') : '1'
@@ -1115,9 +1120,18 @@ ALTER DATABASE threatguard_db OWNER TO threatguard_user;
         } else {
             this.log(`Warning: .env.template not found at ${envTemplate}. Creating default .env file.`, 'warn');
             // Create a basic .env file if template is missing
-            const basicEnv = `DATABASE_URL=postgresql://threatguard_user:${dbPassword}@127.0.0.1:5432/threatguard_db
+            const dbPort = config.dbPort || 5432;
+            const basicEnv = `DATABASE_URL=postgresql://threatguard_user:${dbPassword}@127.0.0.1:${dbPort}/threatguard_db
+DATABASE_PASSWORD=${dbPassword}
+DATABASE_PORT=${dbPort}
+DATABASE_HOST=127.0.0.1
+DATABASE_NAME=threatguard_db
+DATABASE_USER=threatguard_user
 API_HOST=127.0.0.1
 API_PORT=${config.apiPort || 9000}
+FRONTEND_PORT=${config.frontendPort || 3000}
+REDIS_HOST=localhost
+REDIS_PORT=${config.redisPort || 6379}
 SECRET_KEY=${this.generateSecretKey()}
 JWT_SECRET=${this.generateSecretKey()}
 `;
@@ -1249,13 +1263,27 @@ JWT_SECRET=${this.generateSecretKey()}
         const frontendPath = `${this.installPath}\\PAGINA WEB`;
         const packageJsonPath = `${frontendPath}\\package.json`;
 
+        // Install http-server globally for serving static files
+        this.log('Installing http-server for static file serving...');
+        try {
+            await this.execCommand('npm install -g http-server');
+            this.log('http-server installed globally');
+        } catch (error) {
+            this.log(`Warning: Failed to install http-server: ${error.message}`, 'warn');
+        }
+
         if (await fs.pathExists(packageJsonPath)) {
             try {
-                // Install dependencies
+                // Install dependencies (for tailwind CSS build)
                 await this.execCommand(`cd /d "${frontendPath}" && npm install`);
 
-                // Build
-                await this.execCommand(`cd /d "${frontendPath}" && npm run build`);
+                // Build CSS with Tailwind if script exists
+                try {
+                    await this.execCommand(`cd /d "${frontendPath}" && npm run build:css`);
+                    this.log('Tailwind CSS built');
+                } catch (cssError) {
+                    this.log(`Tailwind CSS build skipped: ${cssError.message}`, 'warn');
+                }
 
                 this.log('Frontend built');
             } catch (error) {
@@ -1369,18 +1397,63 @@ except Exception as e:
         this.log('Creating desktop shortcut...');
         try {
             const desktopPath = path.join(os.homedir(), 'Desktop');
-            const shortcutPath = path.join(desktopPath, 'ThreatGuard Dashboard.url');
-            const iconPath = `${this.installPath}\\assets\\icon.ico`;
-
-            // Create desktop shortcut without icon (skip icon copy to avoid asset errors)
-            const content = `[InternetShortcut]
+            
+            // First, try to copy the ThreatGuard Desktop app
+            const desktopAppSource = path.join(__dirname, '..', '..', '..', '..', 'ThreatGuard-Desktop');
+            const desktopAppDest = path.join(this.installPath, 'ThreatGuard-Desktop');
+            
+            // Check if desktop app exists and copy it
+            if (await fs.pathExists(desktopAppSource)) {
+                this.log('Copying ThreatGuard Desktop app...');
+                await fs.copy(desktopAppSource, desktopAppDest, { overwrite: true });
+                
+                // Install npm dependencies if node_modules doesn't exist
+                const nodeModulesPath = path.join(desktopAppDest, 'node_modules');
+                if (!await fs.pathExists(nodeModulesPath)) {
+                    this.log('Installing ThreatGuard Desktop dependencies...');
+                    try {
+                        await this.execCommand(`cd "${desktopAppDest}" && npm install --production`);
+                    } catch (e) {
+                        this.log(`Failed to install desktop app dependencies: ${e.message}`, 'warn');
+                    }
+                }
+                
+                // Create a batch launcher
+                const launcherPath = path.join(this.installPath, 'ThreatGuard.bat');
+                const launcherContent = `@echo off
+cd /d "${desktopAppDest}"
+start "" npx electron .
+`;
+                await fs.writeFile(launcherPath, launcherContent);
+                
+                // Create .lnk shortcut using PowerShell
+                const shortcutPath = path.join(desktopPath, 'ThreatGuard.lnk');
+                const iconPath = path.join(this.installPath, 'assets', 'icon.ico');
+                
+                const psScript = `
+$WshShell = New-Object -ComObject WScript.Shell
+$Shortcut = $WshShell.CreateShortcut("${shortcutPath.replace(/\\/g, '\\\\')}")
+$Shortcut.TargetPath = "${launcherPath.replace(/\\/g, '\\\\')}"
+$Shortcut.WorkingDirectory = "${this.installPath.replace(/\\/g, '\\\\')}"
+$Shortcut.IconLocation = "${iconPath.replace(/\\/g, '\\\\')}"
+$Shortcut.Description = "ThreatGuard - Security Operations Center"
+$Shortcut.WindowStyle = 7
+$Shortcut.Save()
+`;
+                await this.execCommand(`powershell -NoProfile -Command "${psScript.replace(/"/g, '\\"').replace(/\n/g, ' ')}"`);
+                this.log('Desktop shortcut created with ThreatGuard Desktop app');
+            } else {
+                // Fallback to URL shortcut if desktop app not found
+                this.log('ThreatGuard Desktop app not found, creating URL shortcut as fallback...');
+                const shortcutPath = path.join(desktopPath, 'ThreatGuard Dashboard.url');
+                const content = `[InternetShortcut]
 URL=http://localhost:3000
 IconIndex=0
 `;
-            // Ensure desktop directory exists
-            try { await fs.ensureDir(path.dirname(shortcutPath)); } catch (e) { this.log(`Failed to ensure Desktop directory: ${e && e.message}`, 'warn'); }
-            await fs.writeFile(shortcutPath, content);
-            this.log('Desktop shortcut created');
+                try { await fs.ensureDir(path.dirname(shortcutPath)); } catch (e) { this.log(`Failed to ensure Desktop directory: ${e && e.message}`, 'warn'); }
+                await fs.writeFile(shortcutPath, content);
+                this.log('Desktop shortcut (URL) created');
+            }
         } catch (error) {
             this.log(`Failed to create desktop shortcut: ${error.message}`, 'warn');
         }

@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ThreatGuard - Error de Conexión</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #111621 0%, #1a2332 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+        
+        .container {
+            text-align: center;
+            padding: 40px;
+            max-width: 500px;
+        }
+        
+        .error-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 30px;
+            background: rgba(239, 68, 68, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .error-icon svg {
+            width: 40px;
+            height: 40px;
+            color: #ef4444;
+        }
+        
+        h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: #fff;
+        }
+        
+        .description {
+            font-size: 1rem;
+            color: #9dabb9;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+        
+        .services-status {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #283039;
+            border-radius: 12px;
+        }
+        
+        .service-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #3b4754;
+        }
+        
+        .service-row:last-child {
+            border-bottom: none;
+        }
+        
+        .service-name {
+            font-weight: 500;
+        }
+        
+        .service-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        
+        .status-dot.error {
+            background: #ef4444;
+        }
+        
+        .status-dot.success {
+            background: #10b981;
+        }
+        
+        .status-dot.warning {
+            background: #fbbf24;
+        }
+        
+        .buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+        
+        .btn {
+            padding: 12px 28px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+        
+        .btn-primary {
+            background: #2463eb;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #1d4ed8;
+            transform: translateY(-2px);
+        }
+        
+        .btn-primary:disabled {
+            background: #4b5563;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-secondary {
+            background: #283039;
+            color: #9dabb9;
+            border: 1px solid #3b4754;
+        }
+        
+        .btn-secondary:hover {
+            background: #3b4754;
+            color: white;
+        }
+        
+        .help-text {
+            margin-top: 30px;
+            font-size: 0.85rem;
+            color: #6b7280;
+        }
+        
+        .help-text a {
+            color: #2463eb;
+            text-decoration: none;
+        }
+        
+        .help-text a:hover {
+            text-decoration: underline;
+        }
+        
+        .spinner {
+            width: 18px;
+            height: 18px;
+            border: 2px solid transparent;
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            display: none;
+        }
+        
+        .btn-primary.loading .spinner {
+            display: inline-block;
+            margin-right: 8px;
+        }
+        
+        .btn-primary.loading .btn-text {
+            display: none;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="error-icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+            </svg>
+        </div>
+        
+        <h1>No se puede conectar</h1>
+        <p class="description">
+            Los servicios de ThreatGuard no están respondiendo. Esto puede deberse a que los servicios no se han iniciado o hay un problema de red.
+        </p>
+        
+        <div class="services-status">
+            <div class="service-row">
+                <span class="service-name">Frontend Web</span>
+                <span class="service-status">
+                    <span class="status-dot error" id="frontend-dot"></span>
+                    <span id="frontend-status">Desconectado</span>
+                </span>
+            </div>
+            <div class="service-row">
+                <span class="service-name">API Backend</span>
+                <span class="service-status">
+                    <span class="status-dot error" id="api-dot"></span>
+                    <span id="api-status">Desconectado</span>
+                </span>
+            </div>
+        </div>
+        
+        <div class="buttons">
+            <button class="btn btn-primary" id="retry-btn" onclick="retryConnection()">
+                <span class="spinner"></span>
+                <span class="btn-text">Reintentar Conexión</span>
+            </button>
+            <button class="btn btn-secondary" onclick="openInBrowser()">
+                Abrir en Navegador
+            </button>
+        </div>
+        
+        <p class="help-text">
+            Si el problema persiste, intente reiniciar los servicios desde el icono de la bandeja del sistema, 
+            o consulte la <a href="#" onclick="openDocs()">documentación</a>.
+        </p>
+    </div>
+    
+    <script>
+        const frontendDot = document.getElementById('frontend-dot');
+        const apiDot = document.getElementById('api-dot');
+        const frontendStatus = document.getElementById('frontend-status');
+        const apiStatus = document.getElementById('api-status');
+        const retryBtn = document.getElementById('retry-btn');
+        
+        async function checkServices() {
+            if (window.threatguard) {
+                try {
+                    const status = await window.threatguard.checkServices();
+                    
+                    if (status.frontend) {
+                        frontendDot.className = 'status-dot success';
+                        frontendStatus.textContent = 'Conectado';
+                    } else {
+                        frontendDot.className = 'status-dot error';
+                        frontendStatus.textContent = 'Desconectado';
+                    }
+                    
+                    if (status.api) {
+                        apiDot.className = 'status-dot success';
+                        apiStatus.textContent = 'Conectado';
+                    } else {
+                        apiDot.className = 'status-dot error';
+                        apiStatus.textContent = 'Desconectado';
+                    }
+                } catch (e) {
+                    console.error('Error checking services:', e);
+                }
+            }
+        }
+        
+        async function retryConnection() {
+            retryBtn.classList.add('loading');
+            retryBtn.disabled = true;
+            
+            if (window.threatguard) {
+                const success = await window.threatguard.retryConnection();
+                
+                if (!success) {
+                    retryBtn.classList.remove('loading');
+                    retryBtn.disabled = false;
+                    checkServices();
+                }
+            } else {
+                setTimeout(() => {
+                    retryBtn.classList.remove('loading');
+                    retryBtn.disabled = false;
+                }, 3000);
+            }
+        }
+        
+        function openInBrowser() {
+            if (window.threatguard) {
+                window.threatguard.openExternal('http://localhost:3000');
+            }
+        }
+        
+        function openDocs() {
+            if (window.threatguard) {
+                window.threatguard.openExternal('https://github.com/TomasUnab/Threatguard-3.0/wiki');
+            }
+        }
+        
+        // Check services every 5 seconds
+        setInterval(checkServices, 5000);
+        checkServices();
+    </script>
+</body>
+</html>

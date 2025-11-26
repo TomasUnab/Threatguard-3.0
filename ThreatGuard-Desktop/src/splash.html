@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ThreatGuard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(145deg, #0a0f1a 0%, #111827 50%, #0f172a 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            overflow: hidden;
+            -webkit-app-region: drag;
+        }
+        
+        .container {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 30px;
+        }
+        
+        .logo-container {
+            position: relative;
+            width: 120px;
+            height: 120px;
+        }
+        
+        .logo {
+            width: 100%;
+            height: 100%;
+            filter: drop-shadow(0 0 30px rgba(37, 99, 235, 0.5));
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        .logo-glow {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 150px;
+            height: 150px;
+            background: radial-gradient(circle, rgba(37, 99, 235, 0.3) 0%, transparent 70%);
+            animation: pulse-glow 2s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+        
+        @keyframes pulse-glow {
+            0%, 100% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
+            50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+        }
+        
+        .brand {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .brand-name {
+            font-size: 2rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            background: linear-gradient(135deg, #fff 0%, #94a3b8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .brand-tagline {
+            font-size: 0.85rem;
+            color: #64748b;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+        
+        .loading-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .status-text {
+            font-size: 0.9rem;
+            color: #3b82f6;
+            min-height: 24px;
+            animation: fade-pulse 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes fade-pulse {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; }
+        }
+        
+        .progress-container {
+            width: 200px;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #2563eb 0%, #3b82f6 50%, #60a5fa 100%);
+            border-radius: 2px;
+            transition: width 0.3s ease;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+        }
+        
+        .version {
+            position: absolute;
+            bottom: 20px;
+            font-size: 0.75rem;
+            color: #475569;
+        }
+        
+        /* Shield logo SVG animation */
+        .shield-icon {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .shield-path {
+            fill: none;
+            stroke: url(#shield-gradient);
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            animation: draw-shield 2s ease-out forwards;
+        }
+        
+        .shield-fill {
+            fill: url(#shield-fill-gradient);
+            opacity: 0;
+            animation: fade-in 0.5s ease-out 1s forwards;
+        }
+        
+        @keyframes draw-shield {
+            0% { stroke-dasharray: 200; stroke-dashoffset: 200; }
+            100% { stroke-dasharray: 200; stroke-dashoffset: 0; }
+        }
+        
+        @keyframes fade-in {
+            to { opacity: 1; }
+        }
+        
+        /* Particles background */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: -1;
+        }
+        
+        .particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: rgba(59, 130, 246, 0.5);
+            border-radius: 50%;
+            animation: float-particle 8s infinite linear;
+        }
+        
+        @keyframes float-particle {
+            0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-100vh) rotate(720deg); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="particles" id="particles"></div>
+    
+    <div class="container">
+        <div class="logo-container">
+            <div class="logo-glow"></div>
+            <svg class="shield-icon" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <linearGradient id="shield-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#3b82f6"/>
+                        <stop offset="100%" style="stop-color:#1d4ed8"/>
+                    </linearGradient>
+                    <linearGradient id="shield-fill-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#2563eb;stop-opacity:0.3"/>
+                        <stop offset="100%" style="stop-color:#1e40af;stop-opacity:0.1"/>
+                    </linearGradient>
+                </defs>
+                <!-- Shield outline -->
+                <path class="shield-fill" d="M32 4 L56 14 L56 30 C56 44 44 54 32 60 C20 54 8 44 8 30 L8 14 Z"/>
+                <path class="shield-path" d="M32 4 L56 14 L56 30 C56 44 44 54 32 60 C20 54 8 44 8 30 L8 14 Z"/>
+                <!-- Checkmark inside -->
+                <path class="shield-path" style="animation-delay: 1s" d="M22 32 L28 38 L42 24" stroke-width="3"/>
+            </svg>
+        </div>
+        
+        <div class="brand">
+            <span class="brand-name">THREATGUARD</span>
+            <span class="brand-tagline">Security Operations Center</span>
+        </div>
+        
+        <div class="loading-section">
+            <div class="progress-container">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            <span class="status-text" id="statusText">Iniciando servicios...</span>
+        </div>
+    </div>
+    
+    <span class="version">v1.0.0</span>
+    
+    <script>
+        // Create floating particles
+        const particlesContainer = document.getElementById('particles');
+        for (let i = 0; i < 20; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.style.left = Math.random() * 100 + '%';
+            particle.style.animationDelay = Math.random() * 8 + 's';
+            particle.style.animationDuration = (6 + Math.random() * 4) + 's';
+            particlesContainer.appendChild(particle);
+        }
+        
+        // Progress and status updates
+        const progressBar = document.getElementById('progressBar');
+        const statusText = document.getElementById('statusText');
+        
+        const stages = [
+            { progress: 10, text: 'Iniciando servicios...' },
+            { progress: 25, text: 'Verificando base de datos...' },
+            { progress: 40, text: 'Conectando con PostgreSQL...' },
+            { progress: 55, text: 'Iniciando servidor frontend...' },
+            { progress: 70, text: 'Cargando módulos de seguridad...' },
+            { progress: 85, text: 'Preparando interfaz...' },
+            { progress: 95, text: 'Casi listo...' },
+            { progress: 100, text: 'Lanzando aplicación...' }
+        ];
+        
+        let currentStage = 0;
+        
+        function updateProgress() {
+            if (currentStage < stages.length) {
+                const stage = stages[currentStage];
+                progressBar.style.width = stage.progress + '%';
+                statusText.textContent = stage.text;
+                currentStage++;
+            }
+        }
+        
+        // Simulate progress (will be replaced by actual IPC messages)
+        const interval = setInterval(() => {
+            updateProgress();
+            if (currentStage >= stages.length) {
+                clearInterval(interval);
+            }
+        }, 500);
+        
+        // Listen for IPC messages from main process
+        if (window.threatguard) {
+            window.threatguard.onProgress((data) => {
+                progressBar.style.width = data.progress + '%';
+                statusText.textContent = data.message;
+            });
+        }
+    </script>
+</body>
+</html>

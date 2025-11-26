@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ThreatGuard - Cargando...</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #111621 0%, #1a2332 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+        
+        .container {
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .logo {
+            width: 120px;
+            height: 120px;
+            margin-bottom: 30px;
+            animation: pulse 2s infinite;
+        }
+        
+        .logo svg {
+            width: 100%;
+            height: 100%;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.8; }
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: #fff;
+        }
+        
+        .subtitle {
+            font-size: 1rem;
+            color: #9dabb9;
+            margin-bottom: 40px;
+        }
+        
+        .loading-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid #283039;
+            border-top-color: #2463eb;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .status {
+            font-size: 0.95rem;
+            color: #9dabb9;
+        }
+        
+        .status-detail {
+            font-size: 0.8rem;
+            color: #6b7280;
+            margin-top: 5px;
+        }
+        
+        .services-status {
+            display: flex;
+            gap: 30px;
+            margin-top: 30px;
+            justify-content: center;
+        }
+        
+        .service {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background: #283039;
+            border-radius: 8px;
+        }
+        
+        .service-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #fbbf24;
+            animation: blink 1s infinite;
+        }
+        
+        .service-dot.connected {
+            background: #10b981;
+            animation: none;
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2L4 5v6c0 5.5 3.58 10.37 8 11 4.42-.63 8-5.5 8-11V5l-8-3z" fill="#2463eb" stroke="#3b82f6" stroke-width="0.5"/>
+                <circle cx="12" cy="10" r="3" fill="white"/>
+                <path d="M12 16c-2.5 0-4.5 1.5-4.5 1.5S9.5 19 12 19s4.5-1.5 4.5-1.5S14.5 16 12 16z" fill="white"/>
+            </svg>
+        </div>
+        
+        <h1>ThreatGuard</h1>
+        <p class="subtitle">Security Operations Center</p>
+        
+        <div class="loading-container">
+            <div class="spinner"></div>
+            <div>
+                <p class="status" id="status">Iniciando servicios...</p>
+                <p class="status-detail" id="status-detail">Conectando con el backend de seguridad</p>
+            </div>
+        </div>
+        
+        <div class="services-status">
+            <div class="service">
+                <div class="service-dot" id="frontend-status"></div>
+                <span>Frontend</span>
+            </div>
+            <div class="service">
+                <div class="service-dot" id="api-status"></div>
+                <span>API</span>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const statusEl = document.getElementById('status');
+        const detailEl = document.getElementById('status-detail');
+        const frontendDot = document.getElementById('frontend-status');
+        const apiDot = document.getElementById('api-status');
+        
+        const messages = [
+            { status: 'Verificando servicios...', detail: 'Comprobando disponibilidad del sistema' },
+            { status: 'Conectando con el API...', detail: 'Estableciendo conexión segura' },
+            { status: 'Cargando dashboard...', detail: 'Preparando interfaz de usuario' },
+            { status: 'Casi listo...', detail: 'Finalizando inicialización' }
+        ];
+        
+        let messageIndex = 0;
+        
+        setInterval(() => {
+            messageIndex = (messageIndex + 1) % messages.length;
+            statusEl.textContent = messages[messageIndex].status;
+            detailEl.textContent = messages[messageIndex].detail;
+        }, 3000);
+        
+        // Check services status
+        async function checkServices() {
+            if (window.threatguard) {
+                try {
+                    const status = await window.threatguard.checkServices();
+                    
+                    if (status.frontend) {
+                        frontendDot.classList.add('connected');
+                    }
+                    if (status.api) {
+                        apiDot.classList.add('connected');
+                    }
+                } catch (e) {
+                    console.error('Error checking services:', e);
+                }
+            }
+        }
+        
+        setInterval(checkServices, 2000);
+        checkServices();
+    </script>
+</body>
+</html>
