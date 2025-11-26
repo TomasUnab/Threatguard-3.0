@@ -178,10 +178,11 @@ GRANT ALL PRIVILEGES ON DATABASE threatguard_db TO threatguard_user;
 ALTER DATABASE threatguard_db OWNER TO threatguard_user;
 "@
 
-$SqlScript | Out-File -FilePath "C:\temp_setup_db.sql" -Encoding UTF8
+$tempDb = Join-Path $env:TEMP ("temp_setup_db_{0}.sql" -f ([DateTime]::UtcNow.Ticks))
+$SqlScript | Out-File -FilePath $tempDb -Encoding UTF8
 
-& "C:\Program Files\PostgreSQL\15\bin\psql.exe" -U postgres -f "C:\temp_setup_db.sql"
-Remove-Item "C:\temp_setup_db.sql"
+& "C:\Program Files\PostgreSQL\15\bin\psql.exe" -U postgres -f "$tempDb"
+Remove-Item $tempDb -ErrorAction SilentlyContinue
 
 # Create .env file
 $SecretKey = -join ((48..57) + (65..90) + (97..122) | Get-Random -Count 64 | ForEach-Object { [char]$_ })
@@ -284,10 +285,11 @@ db.close()
 print("Admin user created")
 "@
 
-$CreateAdminScript | Out-File -FilePath "C:\temp_create_admin.py" -Encoding UTF8
+$tempCreate = Join-Path $env:TEMP ("temp_create_admin_{0}.py" -f ([guid]::NewGuid().ToString()))
+$CreateAdminScript | Out-File -FilePath $tempCreate -Encoding UTF8
 
-& "$InstallPath\venv\Scripts\python.exe" "C:\temp_create_admin.py"
-Remove-Item "C:\temp_create_admin.py"
+& "$InstallPath\venv\Scripts\python.exe" "$tempCreate"
+Remove-Item $tempCreate -ErrorAction SilentlyContinue
 
 Write-Success "Admin user created"
 

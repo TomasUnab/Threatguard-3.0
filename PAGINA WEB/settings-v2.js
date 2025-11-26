@@ -1,11 +1,11 @@
 // Settings v2 - JavaScript para gestión de configuración
-const API_URL = 'http://localhost:9000';
+const API_URL = 'http://localhost:8000';
 
 // Navegación entre secciones
 document.querySelectorAll('.menu-item').forEach(item => {
     item.addEventListener('click', () => {
         const section = item.dataset.section;
-        
+
         // Actualizar menú activo
         document.querySelectorAll('.menu-item').forEach(i => {
             i.classList.remove('bg-primary/20', 'text-primary');
@@ -13,16 +13,16 @@ document.querySelectorAll('.menu-item').forEach(item => {
             i.querySelector('p').classList.remove('text-primary');
             i.querySelector('p').classList.add('text-white');
         });
-        
+
         item.classList.add('bg-primary/20', 'text-primary');
         item.classList.remove('hover:bg-primary/10');
         item.querySelector('p').classList.remove('text-white');
         item.querySelector('p').classList.add('text-primary');
-        
+
         // Mostrar sección correspondiente
         document.querySelectorAll('.section-content').forEach(s => s.classList.add('hidden'));
         document.getElementById(`section-${section}`).classList.remove('hidden');
-        
+
         // Cargar datos según la sección
         if (section === 'model') {
             loadModelInfo();
@@ -40,31 +40,31 @@ async function loadModelInfo() {
     try {
         const response = await fetch(`${API_URL}/settings/model`);
         const data = await response.json();
-        
+
         console.log('Model data:', data);
-        
+
         // Actualizar información del modelo
         document.querySelector('[data-model-dataset]').textContent = data.dataset || 'N/A';
         document.querySelector('[data-model-accuracy]').textContent = data.accuracy || 'N/A';
         document.querySelector('[data-model-last-training]').textContent = data.last_training || 'N/A';
         document.querySelector('[data-model-status]').textContent = data.status || 'Inactivo';
-        
+
         // Actualizar descripciones adicionales
         const descEl = document.querySelector('[data-model-dataset-desc]');
         if (descEl) descEl.textContent = data.loaded ? 'Versión completa' : 'Sin modelo';
-        
+
         const changeEl = document.querySelector('[data-model-accuracy-change]');
         if (changeEl) changeEl.textContent = data.loaded ? '↑ +2.3% vs anterior' : '-';
-        
+
         const agoEl = document.querySelector('[data-model-training-ago]');
         if (agoEl) agoEl.textContent = data.loaded ? 'Hace 14 días' : '-';
-        
+
         const sizeEl = document.querySelector('[data-model-size]');
         if (sizeEl) sizeEl.textContent = data.loaded ? '124.5 MB' : '-';
-        
+
         const algoEl = document.querySelector('[data-model-algorithm]');
         if (algoEl) algoEl.textContent = data.loaded ? 'Random Forest' : '-';
-        
+
         // Actualizar estado visual
         const statusBadge = document.querySelector('[data-model-status]').parentElement;
         if (data.loaded) {
@@ -94,22 +94,22 @@ document.getElementById('model-file').addEventListener('change', (e) => {
 
 document.getElementById('upload-model-btn').addEventListener('click', async () => {
     if (!selectedFile) return;
-    
+
     const formData = new FormData();
     formData.append('file', selectedFile);
-    
+
     const btn = document.getElementById('upload-model-btn');
     btn.disabled = true;
     btn.innerHTML = '<span class="material-symbols-outlined animate-spin">refresh</span><span>Subiendo...</span>';
-    
+
     try {
         const response = await fetch(`${API_URL}/settings/model/upload`, {
             method: 'POST',
             body: formData
         });
-        
+
         const result = await response.json();
-        
+
         if (response.ok) {
             const info = result.model_info;
             const message = `✅ Modelo cargado exitosamente\n\n` +
@@ -161,7 +161,7 @@ async function loadIntegrations() {
     try {
         const response = await fetch(`${API_URL}/settings/integrations`);
         const integrations = await response.json();
-        
+
         // Actualizar estado de cada integración
         Object.keys(integrations).forEach(key => {
             const card = document.querySelector(`[data-integration="${key}"]`);
@@ -169,7 +169,7 @@ async function loadIntegrations() {
                 const status = integrations[key].status;
                 const dot = card.querySelector('.status-dot');
                 const text = card.querySelector('.status-text');
-                
+
                 if (status === 'connected') {
                     dot.className = 'status-dot w-2 h-2 rounded-full bg-green-500';
                     text.textContent = 'Conectado';
@@ -191,20 +191,20 @@ document.querySelectorAll('[data-integration] button').forEach(btn => {
     btn.addEventListener('click', async (e) => {
         const card = e.target.closest('[data-integration]');
         const integration = card.dataset.integration;
-        
+
         btn.disabled = true;
         btn.innerHTML = '<span class="material-symbols-outlined animate-spin">refresh</span><span>Probando...</span>';
-        
+
         try {
             const response = await fetch(`${API_URL}/settings/integrations/${integration}/test`);
             const result = await response.json();
-            
+
             if (result.status === 'success') {
                 alert('✅ ' + result.message);
             } else {
                 alert('❌ ' + result.message);
             }
-            
+
             loadIntegrations();
         } catch (error) {
             alert('❌ Error: ' + error.message);
@@ -221,12 +221,12 @@ async function loadUsers() {
     try {
         const response = await fetch(`${API_URL}/settings/users`);
         const data = await response.json();
-        
+
         // Actualizar estadísticas
         document.getElementById('total-users').textContent = data.users.length;
         document.getElementById('active-users').textContent = data.users.filter(u => u.is_active).length;
         document.getElementById('admin-users').textContent = data.users.filter(u => u.is_admin).length;
-        
+
         // Renderizar tabla
         const tbody = document.getElementById('users-table-body');
         tbody.innerHTML = data.users.map(user => `
@@ -277,7 +277,7 @@ async function loadAssets() {
     try {
         const response = await fetch(`${API_URL}/settings/assets`);
         const data = await response.json();
-        
+
         const tbody = document.getElementById('assets-table-body');
         tbody.innerHTML = data.assets.map(asset => `
             <tr class="border-b border-[#3b4754] hover:bg-[#1c2127] transition-colors">
@@ -342,7 +342,7 @@ async function loadTags() {
     try {
         const response = await fetch(`${API_URL}/settings/tags`);
         const data = await response.json();
-        
+
         const grid = document.getElementById('tags-grid');
         grid.innerHTML = data.tags.map(tag => `
             <div class="bg-[#111418] border border-[#3b4754] rounded-xl p-4">
@@ -367,11 +367,11 @@ async function loadTags() {
 async function loadModelHistory() {
     const historyContainer = document.querySelector('#model-history-list');
     if (!historyContainer) return;
-    
+
     try {
         const response = await fetch(`${API_URL}/settings/model/history`);
         const data = await response.json();
-        
+
         if (!data.models || data.models.length === 0) {
             historyContainer.innerHTML = `
                 <div class="bg-[#1c2127] p-6 rounded-lg border border-[#3b4754] text-center">
@@ -381,7 +381,7 @@ async function loadModelHistory() {
             `;
             return;
         }
-        
+
         historyContainer.innerHTML = data.models.map(model => `
             <div class="bg-[#1c2127] p-4 rounded-lg border border-[#3b4754] ${model.is_current ? 'border-l-4 border-l-green-500' : ''}">
                 <div class="flex items-center justify-between mb-2">

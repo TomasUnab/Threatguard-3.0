@@ -1,178 +1,178 @@
 <!DOCTYPE html>
 
-<html class="dark" lang="en"><head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>ThreatGuard - Reporting and Auditing</title>
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
-<style>
+<html class="dark" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Reports - ThreatGuard</title>
+    <link href="../output.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&amp;display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+    <style>
         .material-symbols-outlined {
             font-variation-settings:
-            'FILL' 0,
-            'wght' 400,
-            'GRAD' 0,
-            'opsz' 24
+                'FILL' 0,
+                'wght' 400,
+                'GRAD' 0,
+                'opsz' 24
         }
     </style>
-<script id="tailwind-config">
-        tailwind.config = {
-            darkMode: "class",
-            theme: {
-                extend: {
-                    colors: {
-                        "primary": "#137fec",
-                        "background-light": "#f6f7f8",
-                        "background-dark": "#101922",
-                    },
-                    fontFamily: {
-                        "display": ["Inter", "sans-serif"]
-                    },
-                    borderRadius: {
-                        "DEFAULT": "0.25rem",
-                        "lg": "0.5rem",
-                        "xl": "0.75rem",
-                        "full": "9999px"
-                    },
-                },
-            },
-        }
-    </script>
 </head>
+
 <body class="bg-background-light dark:bg-background-dark font-display">
-<div class="relative flex h-auto min-h-screen w-full flex-col">
-<header class="sticky top-0 z-50 flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#283039] bg-background-dark px-10 py-3">
-<div class="flex items-center gap-8">
-<div class="flex items-center gap-4 text-white">
-<div class="size-6 text-primary">
-<span class="material-symbols-outlined !text-3xl">security</span>
-</div>
-<h2 class="text-white text-xl font-bold leading-tight tracking-[-0.015em]">ThreatGuard</h2>
-</div>
-<div class="flex items-center gap-9">
-<a class="text-white text-sm font-medium leading-normal" href="/executive_summary/code.html">Dashboard</a>
-<a class="text-white text-sm font-medium leading-normal" href="/alerts/code.html">Alerts</a>
-<a class="text-white text-sm font-medium leading-normal" href="/assets/code.html">Assets</a>
-<a class="text-white text-sm font-medium leading-normal" href="/vulnerability_management/code.html">Vulnerability Management</a>
-<a class="text-white text-sm font-medium leading-normal" href="/soar/code.html">SOAR</a>
-<a class="text-white text-sm font-medium leading-normal" href="/reports/code.html">Reports</a>
-<a class="text-white text-sm font-medium leading-normal" href="/settings/code.html">Settings</a>
-</div>
-</div>
-<div class="flex flex-1 justify-end gap-4">
-<div class="flex gap-2 relative">
-<button id="btn-notifications" class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 bg-[#283039] text-white gap-2 text-sm font-bold leading-normal tracking-[0.015em] min-w-0 px-3 hover:bg-[#3b4754]">
-<span class="material-symbols-outlined">notifications</span>
-</button>
-<button id="btn-settings" class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 bg-[#283039] text-white gap-2 text-sm font-bold leading-normal tracking-[0.015em] min-w-0 px-3 hover:bg-[#3b4754]">
-<span class="material-symbols-outlined">settings</span>
-</button>
-<div id="settings-menu" class="hidden absolute right-0 top-12 w-48 bg-[#1c2127] border border-[#3b4754] rounded-lg shadow-lg z-50">
-<button onclick="toggleTheme()" class="w-full px-4 py-3 text-left text-white hover:bg-[#283039] flex items-center gap-2">
-<span class="material-symbols-outlined">dark_mode</span>
-Cambiar Tema
-</button>
-</div>
-</div>
-</div>
-</header>
-<script src="/header-utils.js"></script>
-<div class="px-10 flex flex-1 justify-center py-5">
-<div class="layout-content-container flex flex-col max-w-[1200px] flex-1">
-<div class="flex flex-wrap justify-between gap-3 p-4 mb-6">
-<div>
-<p class="text-white text-4xl font-black leading-tight tracking-[-0.033em]">Reportes</p>
-<p class="text-[#9dabb9] text-sm mt-2">Genera, edita y gestiona reportes de seguridad</p>
-</div>
-<div class="flex gap-3">
-<button id="new-report-template" class="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors flex items-center gap-2">
-<span class="material-symbols-outlined">add</span>
-Con Template
-</button>
-<button id="new-report-custom" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2">
-<span class="material-symbols-outlined">edit_note</span>
-Sin Template
-</button>
-</div>
-</div>
+    <div class="relative flex h-auto min-h-screen w-full flex-col">
+        <header
+            class="sticky top-0 z-50 flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#283039] bg-background-dark px-10 py-3">
+            <div class="flex items-center gap-8">
+                <div class="flex items-center gap-4 text-white">
+                    <div class="size-6 text-primary">
+                        <span class="material-symbols-outlined !text-3xl">security</span>
+                    </div>
+                    <h2 class="text-white text-xl font-bold leading-tight tracking-[-0.015em]">ThreatGuard</h2>
+                </div>
+                <div class="flex items-center gap-9">
+                    <a class="text-white text-sm font-medium leading-normal"
+                        href="/executive_summary/code.html">Dashboard</a>
+                    <a class="text-white text-sm font-medium leading-normal" href="/alerts/code.html">Alerts</a>
+                    <a class="text-white text-sm font-medium leading-normal" href="/assets/code.html">Assets</a>
+                    <a class="text-white text-sm font-medium leading-normal"
+                        href="/vulnerability_management/code.html">Vulnerability Management</a>
+                    <a class="text-white text-sm font-medium leading-normal" href="/soar/code.html">SOAR</a>
+                    <a class="text-white text-sm font-medium leading-normal" href="/reports/code.html">Reports</a>
+                    <a class="text-white text-sm font-medium leading-normal" href="/settings/code.html">Settings</a>
+                </div>
+            </div>
+            <div class="flex flex-1 justify-end gap-4">
+                <div class="flex gap-2 relative">
+                    <button id="btn-notifications"
+                        class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 bg-[#283039] text-white gap-2 text-sm font-bold leading-normal tracking-[0.015em] min-w-0 px-3 hover:bg-[#3b4754]">
+                        <span class="material-symbols-outlined">notifications</span>
+                    </button>
+                    <button id="btn-settings"
+                        class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 bg-[#283039] text-white gap-2 text-sm font-bold leading-normal tracking-[0.015em] min-w-0 px-3 hover:bg-[#3b4754]">
+                        <span class="material-symbols-outlined">settings</span>
+                    </button>
+                    <div id="settings-menu"
+                        class="hidden absolute right-0 top-12 w-48 bg-[#1c2127] border border-[#3b4754] rounded-lg shadow-lg z-50">
+                        <button onclick="toggleTheme()"
+                            class="w-full px-4 py-3 text-left text-white hover:bg-[#283039] flex items-center gap-2">
+                            <span class="material-symbols-outlined">dark_mode</span>
+                            Cambiar Tema
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+        <script src="/header-utils.js"></script>
+        <div class="px-10 flex flex-1 justify-center py-5">
+            <div class="layout-content-container flex flex-col max-w-[1200px] flex-1">
+                <div class="flex flex-wrap justify-between gap-3 p-4 mb-6">
+                    <div>
+                        <p class="text-white text-4xl font-black leading-tight tracking-[-0.033em]">Reportes</p>
+                        <p class="text-[#9dabb9] text-sm mt-2">Genera, edita y gestiona reportes de seguridad</p>
+                    </div>
+                    <div class="flex gap-3">
+                        <button id="new-report-template"
+                            class="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors flex items-center gap-2">
+                            <span class="material-symbols-outlined">add</span>
+                            Con Template
+                        </button>
+                        <button id="new-report-custom"
+                            class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2">
+                            <span class="material-symbols-outlined">edit_note</span>
+                            Sin Template
+                        </button>
+                    </div>
+                </div>
 
-<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 px-4">
-<div class="bg-[#111418] p-4 rounded-xl border border-[#3b4754]">
-<div class="flex items-center gap-3 mb-2">
-<span class="material-symbols-outlined text-blue-400">description</span>
-<p class="text-[#9dabb9] text-sm">Total Reportes</p>
-</div>
-<p class="text-white text-2xl font-bold" id="total-reports">0</p>
-</div>
-<div class="bg-[#111418] p-4 rounded-xl border border-[#3b4754]">
-<div class="flex items-center gap-3 mb-2">
-<span class="material-symbols-outlined text-green-400">schedule</span>
-<p class="text-[#9dabb9] text-sm">Este Mes</p>
-</div>
-<p class="text-white text-2xl font-bold">3</p>
-</div>
-<div class="bg-[#111418] p-4 rounded-xl border border-[#3b4754]">
-<div class="flex items-center gap-3 mb-2">
-<span class="material-symbols-outlined text-purple-400">folder_special</span>
-<p class="text-[#9dabb9] text-sm">Templates</p>
-</div>
-<p class="text-white text-2xl font-bold">5</p>
-</div>
-</div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 px-4">
+                    <div class="bg-[#111418] p-4 rounded-xl border border-[#3b4754]">
+                        <div class="flex items-center gap-3 mb-2">
+                            <span class="material-symbols-outlined text-blue-400">description</span>
+                            <p class="text-[#9dabb9] text-sm">Total Reportes</p>
+                        </div>
+                        <p class="text-white text-2xl font-bold" id="total-reports">0</p>
+                    </div>
+                    <div class="bg-[#111418] p-4 rounded-xl border border-[#3b4754]">
+                        <div class="flex items-center gap-3 mb-2">
+                            <span class="material-symbols-outlined text-green-400">schedule</span>
+                            <p class="text-[#9dabb9] text-sm">Este Mes</p>
+                        </div>
+                        <p class="text-white text-2xl font-bold">3</p>
+                    </div>
+                    <div class="bg-[#111418] p-4 rounded-xl border border-[#3b4754]">
+                        <div class="flex items-center gap-3 mb-2">
+                            <span class="material-symbols-outlined text-purple-400">folder_special</span>
+                            <p class="text-[#9dabb9] text-sm">Templates</p>
+                        </div>
+                        <p class="text-white text-2xl font-bold">5</p>
+                    </div>
+                </div>
 
-<h2 class="text-white text-xl font-bold px-4 mb-4">Templates Disponibles</h2>
-<div class="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 mb-8">
-<div class="report-template bg-[#111418] p-6 rounded-xl border border-[#3b4754] hover:border-primary transition-colors cursor-pointer" data-template="vulnerabilities">
-<span class="material-symbols-outlined text-primary text-4xl mb-3">bug_report</span>
-<h3 class="text-white font-bold mb-2">Vulnerabilidades</h3>
-<p class="text-[#9dabb9] text-sm">Resumen de vulnerabilidades detectadas por OpenVAS</p>
-</div>
-<div class="report-template bg-[#111418] p-6 rounded-xl border border-[#3b4754] hover:border-primary transition-colors cursor-pointer" data-template="alerts">
-<span class="material-symbols-outlined text-primary text-4xl mb-3">notifications_active</span>
-<h3 class="text-white font-bold mb-2">Alertas</h3>
-<p class="text-[#9dabb9] text-sm">Resumen de alertas de Snort y clasificación IA</p>
-</div>
-<div class="report-template bg-[#111418] p-6 rounded-xl border border-[#3b4754] hover:border-primary transition-colors cursor-pointer" data-template="compliance">
-<span class="material-symbols-outlined text-primary text-4xl mb-3">verified_user</span>
-<h3 class="text-white font-bold mb-2">Cumplimiento</h3>
-<p class="text-[#9dabb9] text-sm">Estado de parches y cumplimiento normativo</p>
-</div>
-<div class="report-template bg-[#111418] p-6 rounded-xl border border-[#3b4754] hover:border-primary transition-colors cursor-pointer" data-template="assets">
-<span class="material-symbols-outlined text-primary text-4xl mb-3">devices</span>
-<h3 class="text-white font-bold mb-2">Activos</h3>
-<p class="text-[#9dabb9] text-sm">Inventario y estado de activos monitoreados</p>
-</div>
-<div class="report-template bg-[#111418] p-6 rounded-xl border border-[#3b4754] hover:border-primary transition-colors cursor-pointer" data-template="executive">
-<span class="material-symbols-outlined text-primary text-4xl mb-3">summarize</span>
-<h3 class="text-white font-bold mb-2">Ejecutivo</h3>
-<p class="text-[#9dabb9] text-sm">Resumen ejecutivo para dirección</p>
-</div>
-</div>
+                <h2 class="text-white text-xl font-bold px-4 mb-4">Templates Disponibles</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 mb-8">
+                    <div class="report-template bg-[#111418] p-6 rounded-xl border border-[#3b4754] hover:border-primary transition-colors cursor-pointer"
+                        data-template="vulnerabilities">
+                        <span class="material-symbols-outlined text-primary text-4xl mb-3">bug_report</span>
+                        <h3 class="text-white font-bold mb-2">Vulnerabilidades</h3>
+                        <p class="text-[#9dabb9] text-sm">Resumen de vulnerabilidades detectadas por OpenVAS</p>
+                    </div>
+                    <div class="report-template bg-[#111418] p-6 rounded-xl border border-[#3b4754] hover:border-primary transition-colors cursor-pointer"
+                        data-template="alerts">
+                        <span class="material-symbols-outlined text-primary text-4xl mb-3">notifications_active</span>
+                        <h3 class="text-white font-bold mb-2">Alertas</h3>
+                        <p class="text-[#9dabb9] text-sm">Resumen de alertas de Snort y clasificación IA</p>
+                    </div>
+                    <div class="report-template bg-[#111418] p-6 rounded-xl border border-[#3b4754] hover:border-primary transition-colors cursor-pointer"
+                        data-template="compliance">
+                        <span class="material-symbols-outlined text-primary text-4xl mb-3">verified_user</span>
+                        <h3 class="text-white font-bold mb-2">Cumplimiento</h3>
+                        <p class="text-[#9dabb9] text-sm">Estado de parches y cumplimiento normativo</p>
+                    </div>
+                    <div class="report-template bg-[#111418] p-6 rounded-xl border border-[#3b4754] hover:border-primary transition-colors cursor-pointer"
+                        data-template="assets">
+                        <span class="material-symbols-outlined text-primary text-4xl mb-3">devices</span>
+                        <h3 class="text-white font-bold mb-2">Activos</h3>
+                        <p class="text-[#9dabb9] text-sm">Inventario y estado de activos monitoreados</p>
+                    </div>
+                    <div class="report-template bg-[#111418] p-6 rounded-xl border border-[#3b4754] hover:border-primary transition-colors cursor-pointer"
+                        data-template="executive">
+                        <span class="material-symbols-outlined text-primary text-4xl mb-3">summarize</span>
+                        <h3 class="text-white font-bold mb-2">Ejecutivo</h3>
+                        <p class="text-[#9dabb9] text-sm">Resumen ejecutivo para dirección</p>
+                    </div>
+                </div>
 
-<h2 class="text-white text-xl font-bold px-4 mb-4">Reportes Generados</h2>
-<div class="bg-[#111418] rounded-xl border border-[#3b4754] overflow-hidden mx-4">
-<table class="w-full">
-<thead class="bg-[#1c2127]">
-<tr class="border-b border-[#3b4754]">
-<th class="px-6 py-3 text-left text-[#9dabb9] text-xs font-medium uppercase">Nombre</th>
-<th class="px-6 py-3 text-left text-[#9dabb9] text-xs font-medium uppercase">Tipo</th>
-<th class="px-6 py-3 text-left text-[#9dabb9] text-xs font-medium uppercase">Fecha</th>
-<th class="px-6 py-3 text-left text-[#9dabb9] text-xs font-medium uppercase">Formato</th>
-<th class="px-6 py-3 text-left text-[#9dabb9] text-xs font-medium uppercase">Acciones</th>
-</tr>
-</thead>
-<tbody id="reports-table">
-<tr>
-<td colspan="5" class="px-6 py-8 text-center text-[#9dabb9]">Cargando reportes...</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
-</div>
-</div>
+                <h2 class="text-white text-xl font-bold px-4 mb-4">Reportes Generados</h2>
+                <div class="bg-[#111418] rounded-xl border border-[#3b4754] overflow-hidden mx-4">
+                    <table class="w-full">
+                        <thead class="bg-[#1c2127]">
+                            <tr class="border-b border-[#3b4754]">
+                                <th class="px-6 py-3 text-left text-[#9dabb9] text-xs font-medium uppercase">Nombre</th>
+                                <th class="px-6 py-3 text-left text-[#9dabb9] text-xs font-medium uppercase">Tipo</th>
+                                <th class="px-6 py-3 text-left text-[#9dabb9] text-xs font-medium uppercase">Fecha</th>
+                                <th class="px-6 py-3 text-left text-[#9dabb9] text-xs font-medium uppercase">Formato
+                                </th>
+                                <th class="px-6 py-3 text-left text-[#9dabb9] text-xs font-medium uppercase">Acciones
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="reports-table">
+                            <tr>
+                                <td colspan="5" class="px-6 py-8 text-center text-[#9dabb9]">Cargando reportes...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
 
-</div>
-<script src="reports-new.js"></script>
-</body></html>
+    </div>
+    <script src="reports-new.js"></script>
+</body>
+
+</html>
