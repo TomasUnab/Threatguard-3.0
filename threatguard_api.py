@@ -3349,6 +3349,369 @@ async def save_snort_lists(lists_data: dict):
         logger.error(f"Error guardando listas: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+# ============================================================================
+# GESTIÓN DE MÓDULOS DE SEGURIDAD DE AGENTES
+# ============================================================================
+
+# Almacenamiento de configuraciones de módulos por agente
+AGENT_MODULES_CONFIG = {}
+
+# Configuración por defecto de módulos de seguridad
+DEFAULT_MODULE_CONFIG = {
+    "anti_malware": {
+        "enabled": True,
+        "rules": {
+            "scan_realtime": True,
+            "scan_downloads": True,
+            "scan_usb": True,
+            "quarantine_auto": True,
+            "scan_compressed": False
+        }
+    },
+    "firewall": {
+        "enabled": True,
+        "rules": {
+            "block_inbound": True,
+            "block_outbound": True,
+            "log_blocked": True,
+            "stealth_mode": False
+        }
+    },
+    "intrusion_prevention": {
+        "enabled": True,
+        "rules": {
+            "prevent_sql_injection": True,
+            "prevent_xss": True,
+            "prevent_rce": True,
+            "prevent_lfi": True,
+            "block_known_exploits": True
+        }
+    },
+    "integrity_monitoring": {
+        "enabled": True,
+        "rules": {
+            "monitor_system": True,
+            "monitor_registry": True,
+            "monitor_config": True,
+            "alert_changes": True
+        }
+    },
+    "log_inspection": {
+        "enabled": True,
+        "rules": {
+            "inspect_security": True,
+            "inspect_system": True,
+            "inspect_application": True,
+            "detect_anomalies": False
+        }
+    },
+    "web_reputation": {
+        "enabled": False,
+        "rules": {
+            "block_malicious": True,
+            "block_phishing": True,
+            "warn_unknown": False,
+            "block_crypto": True
+        }
+    },
+    "activity_monitoring": {
+        "enabled": False,
+        "rules": {
+            "monitor_processes": True,
+            "monitor_network": True,
+            "monitor_files": False
+        }
+    },
+    "device_control": {
+        "enabled": False,
+        "rules": {
+            "block_usb": False,
+            "log_usb": True,
+            "allow_known_devices": True
+        }
+    },
+    "application_control": {
+        "enabled": False,
+        "rules": {
+            "whitelist_mode": False,
+            "block_unknown": False,
+            "alert_new_apps": True
+        }
+    }
+}
+
+@app.get("/agent/modules/{agent_id}")
+async def get_agent_modules(agent_id: str):
+    """Obtiene la configuración de módulos de seguridad de un agente"""
+    try:
+        # Primero intentar obtener de Redis
+        cached = redis_client.get(f"agent:modules:{agent_id}")
+        if cached:
+            config = json.loads(cached)
+            return {"success": True, "agent_id": agent_id, "modules": config}
+        
+        # Si no hay caché, devolver configuración por defecto
+        config = AGENT_MODULES_CONFIG.get(agent_id, DEFAULT_MODULE_CONFIG.copy())
+        
+        # Calcular conteo de reglas activas
+        for module_name, module_data in config.items():
+            if isinstance(module_data, dict) and 'rules' in module_data:
+                active_rules = sum(1 for v in module_data['rules'].values() if v)
+                module_data['active_rules'] = active_rules
+                module_data['total_rules'] = len(module_data['rules'])
+        
+        return {"success": True, "agent_id": agent_id, "modules": config}
+    except Exception as e:
+        logger.error(f"Error obteniendo módulos del agente {agent_id}: {e}")
+        return {"success": False, "error": str(e), "modules": DEFAULT_MODULE_CONFIG.copy()}
+
+@app.post("/agent/modules/{agent_id}")
+async def save_agent_modules(agent_id: str, config: dict):
+    """Guarda la configuración de módulos de seguridad de un agente"""
+    try:
+        modules_config = config.get('modules', config)
+        
+        # Guardar en memoria
+        AGENT_MODULES_CONFIG[agent_id] = modules_config
+        
+        # Guardar en Redis con expiración de 24 horas
+        redis_client.setex(f"agent:modules:{agent_id}", 86400, json.dumps(modules_config))
+        
+        # Notificar al agente que hay nueva configuración
+        redis_client.publish(f"agent:config:update:{agent_id}", json.dumps({
+            "type": "modules_update",
+            "timestamp": datetime.now().isoformat(),
+            "config": modules_config
+        }))
+        
+        logger.info(f"✅ Configuración de módulos guardada para agente {agent_id}")
+        
+        return {
+            "success": True,
+            "message": f"Configuración guardada para agente {agent_id}",
+            "modules_count": len(modules_config)
+        }
+    except Exception as e:
+        logger.error(f"Error guardando módulos del agente {agent_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/agent/modules/{agent_id}/toggle")
+async def toggle_agent_module(agent_id: str, data: dict):
+    """Activa o desactiva un módulo específico de un agente"""
+    try:
+        module_name = data.get('module')
+        enabled = data.get('enabled', False)
+        
+        if not module_name:
+            raise HTTPException(status_code=400, detail="Module name required")
+        
+        # Obtener configuración actual
+        cached = redis_client.get(f"agent:modules:{agent_id}")
+        if cached:
+            config = json.loads(cached)
+        else:
+            config = AGENT_MODULES_CONFIG.get(agent_id, DEFAULT_MODULE_CONFIG.copy())
+        
+        # Actualizar el módulo
+        if module_name in config:
+            config[module_name]['enabled'] = enabled
+        else:
+            config[module_name] = {"enabled": enabled, "rules": {}}
+        
+        # Guardar cambios
+        AGENT_MODULES_CONFIG[agent_id] = config
+        redis_client.setex(f"agent:modules:{agent_id}", 86400, json.dumps(config))
+        
+        logger.info(f"✅ Módulo {module_name} {'activado' if enabled else 'desactivado'} para agente {agent_id}")
+        
+        return {
+            "success": True,
+            "module": module_name,
+            "enabled": enabled,
+            "message": f"Módulo {module_name} {'activado' if enabled else 'desactivado'}"
+        }
+    except Exception as e:
+        logger.error(f"Error toggling module: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/agent/modules/{agent_id}/rule")
+async def toggle_agent_module_rule(agent_id: str, data: dict):
+    """Activa o desactiva una regla específica de un módulo"""
+    try:
+        module_name = data.get('module')
+        rule_id = data.get('rule_id')
+        enabled = data.get('enabled', False)
+        
+        if not module_name or not rule_id:
+            raise HTTPException(status_code=400, detail="Module name and rule_id required")
+        
+        # Obtener configuración actual
+        cached = redis_client.get(f"agent:modules:{agent_id}")
+        if cached:
+            config = json.loads(cached)
+        else:
+            config = AGENT_MODULES_CONFIG.get(agent_id, DEFAULT_MODULE_CONFIG.copy())
+        
+        # Actualizar la regla
+        if module_name in config and 'rules' in config[module_name]:
+            config[module_name]['rules'][rule_id] = enabled
+        
+        # Guardar cambios
+        AGENT_MODULES_CONFIG[agent_id] = config
+        redis_client.setex(f"agent:modules:{agent_id}", 86400, json.dumps(config))
+        
+        logger.info(f"✅ Regla {rule_id} de {module_name} {'activada' if enabled else 'desactivada'} para agente {agent_id}")
+        
+        return {
+            "success": True,
+            "module": module_name,
+            "rule_id": rule_id,
+            "enabled": enabled
+        }
+    except Exception as e:
+        logger.error(f"Error toggling rule: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/agent/modules/sync")
+async def sync_all_agents_modules(config: dict):
+    """Sincroniza la configuración de módulos a todos los agentes activos"""
+    try:
+        modules_config = config.get('modules', config)
+        
+        # Obtener todos los agentes activos
+        db_url = os.getenv("DATABASE_URL")
+        if not db_url:
+            raise HTTPException(status_code=500, detail="Database not configured")
+        
+        from sqlalchemy import create_engine, text
+        engine = create_engine(db_url)
+        
+        synced_agents = []
+        with engine.connect() as conn:
+            result = conn.execute(text("""
+                SELECT id, hostname FROM assets 
+                WHERE status = 'active' 
+                AND last_seen > NOW() - INTERVAL '5 minutes'
+            """))
+            
+            for row in result:
+                agent_id = str(row[0])
+                hostname = row[1]
+                
+                # Guardar configuración para cada agente
+                AGENT_MODULES_CONFIG[agent_id] = modules_config
+                redis_client.setex(f"agent:modules:{agent_id}", 86400, json.dumps(modules_config))
+                
+                # Publicar notificación de actualización
+                redis_client.publish(f"agent:config:update:{agent_id}", json.dumps({
+                    "type": "modules_update",
+                    "timestamp": datetime.now().isoformat(),
+                    "config": modules_config
+                }))
+                
+                synced_agents.append({"id": agent_id, "hostname": hostname})
+        
+        logger.info(f"✅ Configuración sincronizada a {len(synced_agents)} agentes")
+        
+        return {
+            "success": True,
+            "message": f"Configuración sincronizada a {len(synced_agents)} agentes",
+            "synced_agents": synced_agents
+        }
+    except Exception as e:
+        logger.error(f"Error sincronizando módulos: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/agent/modules/events/{agent_id}")
+async def get_agent_module_events(agent_id: str, limit: int = 50):
+    """Obtiene eventos de módulos de seguridad de un agente"""
+    try:
+        events = []
+        
+        # Intentar obtener eventos de Redis
+        cached = redis_client.lrange(f"agent:events:{agent_id}", 0, limit - 1)
+        if cached:
+            events = [json.loads(e) for e in cached]
+        else:
+            # Eventos de ejemplo si no hay datos reales
+            events = [
+                {
+                    "id": 1,
+                    "timestamp": datetime.now().isoformat(),
+                    "module": "anti_malware",
+                    "type": "threat_detected",
+                    "severity": "high",
+                    "description": "Malware detectado: Trojan.Gen.2",
+                    "action": "quarantined",
+                    "file_path": "C:\\Downloads\\suspicious.exe"
+                },
+                {
+                    "id": 2,
+                    "timestamp": datetime.now().isoformat(),
+                    "module": "firewall",
+                    "type": "connection_blocked",
+                    "severity": "medium",
+                    "description": "Conexión entrante bloqueada",
+                    "action": "blocked",
+                    "source_ip": "192.168.1.105",
+                    "dest_port": 445
+                },
+                {
+                    "id": 3,
+                    "timestamp": datetime.now().isoformat(),
+                    "module": "intrusion_prevention",
+                    "type": "attack_prevented",
+                    "severity": "critical",
+                    "description": "SQL Injection detectado y bloqueado",
+                    "action": "blocked",
+                    "source_ip": "10.0.0.50"
+                }
+            ]
+        
+        return {
+            "success": True,
+            "agent_id": agent_id,
+            "events": events,
+            "total": len(events)
+        }
+    except Exception as e:
+        logger.error(f"Error obteniendo eventos: {e}")
+        return {"success": False, "error": str(e), "events": []}
+
+@app.post("/agent/modules/event")
+async def log_agent_module_event(event: dict):
+    """Registra un evento de módulo de seguridad desde un agente"""
+    try:
+        agent_id = event.get('agent_id')
+        if not agent_id:
+            raise HTTPException(status_code=400, detail="agent_id required")
+        
+        # Añadir timestamp si no existe
+        if 'timestamp' not in event:
+            event['timestamp'] = datetime.now().isoformat()
+        
+        # Guardar en Redis (lista FIFO con máximo 1000 eventos)
+        redis_client.lpush(f"agent:events:{agent_id}", json.dumps(event))
+        redis_client.ltrim(f"agent:events:{agent_id}", 0, 999)
+        
+        # Si es un evento crítico, crear una alerta
+        if event.get('severity') in ['critical', 'high']:
+            await create_alert(AlertCreate(
+                source=f"Agent:{agent_id}",
+                severity=event.get('severity', 'medium'),
+                title=f"[{event.get('module', 'unknown')}] {event.get('description', 'Security event')}",
+                description=json.dumps(event),
+                status="open",
+                ai_classification=event.get('type', 'security_event')
+            ))
+        
+        logger.info(f"✅ Evento registrado para agente {agent_id}: {event.get('type')}")
+        
+        return {"success": True, "message": "Evento registrado"}
+    except Exception as e:
+        logger.error(f"Error registrando evento: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 # Importar rutas de assets
 try:
     from src.api.assets_api import router as assets_router

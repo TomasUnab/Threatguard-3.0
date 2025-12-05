@@ -36,31 +36,46 @@
             font-size: inherit;
             vertical-align: bottom;
         }
-        
+
         .screen {
             display: none;
         }
-        
+
         .screen.active {
             display: block;
         }
-        
-        /* Radio button styles for network interface selection */
-        .interface-radio:checked + label {
-            border-color: #2463eb !important;
-            background-color: rgba(36, 99, 235, 0.05) !important;
+
+        /* Mejorar selector de base de datos */
+        .db-option {
+            border: 2px solid #e2e8f0;
+            transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
         }
-        
-        .interface-radio:checked + label .radio-border {
+        .db-option.selected {
             border-color: #2463eb !important;
+            background: #e6f0ff !important;
+            box-shadow: 0 0 0 3px rgba(36,99,235,0.15);
         }
-        
-        .interface-radio:checked + label .radio-dot {
-            transform: scale(1) !important;
+        .db-option:hover {
+            border-color: #2463eb;
+            background: #f0f6ff;
         }
     </style>
 </head>
 <body class="font-display antialiased bg-background-light dark:bg-background-dark text-gray-900 dark:text-gray-100 flex flex-col min-h-screen">
+        <!-- Modal instalación previa -->
+        <div id="existing-modal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 hidden">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 max-w-md w-full">
+                <h2 class="text-2xl font-bold mb-4 text-gray-800 dark:text-white">ThreatGuard ya está instalado</h2>
+                <p class="mb-6 text-gray-600 dark:text-gray-300">¿Qué acción deseas realizar?</p>
+                <div class="flex gap-4">
+                    <button id="btn-remove" class="px-6 py-2 rounded-lg bg-red-600 text-white font-semibold hover:bg-red-700">Remover</button>
+                    <button id="btn-repair" class="px-6 py-2 rounded-lg bg-primary text-white font-semibold hover:bg-blue-700">Reparar</button>
+                </div>
+                <div class="mt-4 text-center">
+                    <button id="btn-force-continue" class="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 underline">Continuar de todos modos (Forzar)</button>
+                </div>
+            </div>
+        </div>
     <!-- Header -->
     <header class="bg-primary text-white py-8 px-10">
         <div class="max-w-4xl mx-auto flex flex-col items-center text-center">
@@ -563,57 +578,6 @@
     </footer>
 
     <script src="installer.js"></script>
-    <script>
-        const { ipcRenderer } = require('electron');
-
-        document.getElementById('browse-button').addEventListener('click', async () => {
-            const result = await ipcRenderer.invoke('select-directory');
-            if (result.success) {
-                document.getElementById('install-directory').value = result.path;
-            } else {
-                alert(result.message);
-            }
-        });
-
-        document.getElementById('directory-form').addEventListener('submit', async (event) => {
-            event.preventDefault();
-            const directoryPath = document.getElementById('install-directory').value;
-            if (!directoryPath) {
-                alert('Por favor, selecciona un directorio de instalación.');
-                return;
-            }
-
-            const result = await ipcRenderer.invoke('create-directory', directoryPath);
-            if (result.success) {
-                alert('Directorio creado correctamente.');
-            } else {
-                alert(result.error);
-            }
-        });
-
-        // Navegar entre pantallas y validar selección de directorio
-        document.getElementById('btn-next').addEventListener('click', async () => {
-            const currentScreen = document.querySelector('.screen.active');
-            const nextScreen = currentScreen.nextElementSibling;
-
-            if (currentScreen.id === 'screen-installation-directory') {
-                const directoryPath = document.getElementById('install-directory').value;
-                if (!directoryPath) {
-                    alert('Por favor, selecciona un directorio de instalación antes de continuar.');
-                    return;
-                }
-                const result = await ipcRenderer.invoke('create-directory', directoryPath);
-                if (!result.success) {
-                    alert(`Error al crear el directorio: ${result.error}`);
-                    return;
-                }
-                await ipcRenderer.invoke('set-install-path', directoryPath);
-            }
-
-            currentScreen.classList.remove('active');
-            nextScreen.classList.add('active');
-        });
-    </script>
 </body>
 </html>
 </body>

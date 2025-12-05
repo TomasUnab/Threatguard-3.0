@@ -113,17 +113,20 @@ Install-ThreatGuardService `
         "SNORT_ALERT_FILE" = "C:\Snort\log\alert"
     }
 
-# Install Frontend Service
+# Install Frontend Service (static HTML server)
+# First install http-server globally if not present
+Write-Host "Ensuring http-server is installed..." -ForegroundColor Yellow
+& npm install -g http-server 2>$null
+
 Install-ThreatGuardService `
     -ServiceName "ThreatGuardFrontend" `
     -DisplayName "ThreatGuard Frontend" `
-    -Description "ThreatGuard Web Frontend Service" `
-    -ExePath "$NodePath" `
-    -Arguments @("node_modules\.bin\next", "start") `
+    -Description "ThreatGuard Web Frontend Service (Static HTTP Server)" `
+    -ExePath "npx.cmd" `
+    -Arguments @("http-server", ".", "-p", "3000", "-c-1", "--cors", "-s") `
     -WorkingDirectory "$InstallPath\PAGINA WEB" `
     -Environment @{
         "NODE_ENV" = "production"
-        "NEXT_PUBLIC_API_URL" = "http://localhost:8000"
     }
 
 Write-Host "`nAll services installed successfully!" -ForegroundColor Green

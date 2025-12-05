@@ -356,16 +356,43 @@ class AlertRepository:
 
 def get_database_url() -> str:
     """Obtener URL de base de datos desde configuración."""
-    return os.getenv("DATABASE_URL", "postgresql://threatguard_user:secure_password_2024!@localhost:5432/threatguard_db")
+    # Primero intentar obtener DATABASE_URL directamente
+    db_url = os.getenv("DATABASE_URL")
+    if db_url:
+        return db_url
+    
+    # Si no existe, construir la URL desde componentes individuales
+    db_user = os.getenv("DATABASE_USER", "threatguard_user")
+    db_password = os.getenv("DATABASE_PASSWORD", "secure_password_2024!")
+    db_host = os.getenv("DATABASE_HOST", "127.0.0.1")
+    db_port = os.getenv("DATABASE_PORT", "5432")
+    db_name = os.getenv("DATABASE_NAME", "threatguard_db")
+    
+    return f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
 
-# Instancia global del database manager
-db_manager = DatabaseManager(get_database_url())
+# Instancia global del database manager - se inicializa de forma lazy
+_db_manager = None
+
+def get_db_manager():
+    """Obtener instancia del database manager (lazy initialization)."""
+    global _db_manager
+    if _db_manager is None:
+        _db_manager = DatabaseManager(get_database_url())
+    return _db_manager
+
+# Para compatibilidad con código existente que usa db_manager directamente
+class _LazyDbManager:
+    """Proxy para inicialización lazy del database manager."""
+    def __getattr__(self, name):
+        return getattr(get_db_manager(), name)
+
+db_manager = _LazyDbManager()
 
 def get_db() -> Generator[Session, None, None]:
     """Dependency para obtener sesión de base de datos."""
-    return db_manager.get_session()
+    return get_db_manager().get_session()
 
 def init_database():
     """Inicializar base de datos."""
-    db_manager.create_tables()
+    get_db_manager().create_tables()
     print("✓ Base de datos inicializada correctamente")

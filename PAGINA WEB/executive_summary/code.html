@@ -1,399 +1,309 @@
 <!DOCTYPE html>
+'GRAD' 0,
+'opsz' 24
+}
 
-<html class="dark" lang="en"><head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-<meta http-equiv="Pragma" content="no-cache" />
-<meta http-equiv="Expires" content="0" />
-<title>ThreatGuard Dashboard v3.1</title>
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
-<script>
-        tailwind.config = {
-            darkMode: "class",
-            theme: {
-                extend: {
-                    colors: {
-                        "primary": "#137fec",
-                        "background-light": "#f6f7f8",
-                        "background-dark": "#101922",
-                    },
-                    fontFamily: {
-                        "display": ["Inter", "sans-serif"]
-                    },
-                    borderRadius: {
-                        "DEFAULT": "0.25rem",
-                        "lg": "0.5rem",
-                        "xl": "0.75rem",
-                        "full": "9999px"
-                    },
-                },
-            },
-        }  
-    </script>
-<style>
-        .material-symbols-outlined {
-            font-variation-settings:
-            'FILL' 0,
-            'wght' 400,
-            'GRAD' 0,
-            'opsz' 24
-        }
-        
-        /* Scrollbar para tabla Snort */
-        #snort-table-container::-webkit-scrollbar {
-            width: 14px;
-            height: 14px;
-        }
-        
-        #snort-table-container::-webkit-scrollbar-track {
-            background: #1a1d23;
-            border: 1px solid #3b4754;
-        }
-        
-        #snort-table-container::-webkit-scrollbar-thumb {
-            background: #4a5568;
-            border-radius: 4px;
-            border: 2px solid #1a1d23;
-        }
-        
-        #snort-table-container::-webkit-scrollbar-thumb:hover {
-            background: #5a6578;
-        }
-        
-        #snort-table-container::-webkit-scrollbar-corner {
-            background: #1a1d23;
-        }
-    </style>
+/* Scrollbar para tabla Snort */
+#snort-table-container::-webkit-scrollbar {
+width: 14px;
+height: 14px;
+}
+
+#snort-table-container::-webkit-scrollbar-track {
+background: #1a1d23;
+border: 1px solid #3b4754;
+}
+
+#snort-table-container::-webkit-scrollbar-thumb {
+background: #4a5568;
+border-radius: 4px;
+border: 2px solid #1a1d23;
+}
+
+#snort-table-container::-webkit-scrollbar-thumb:hover {
+background: #5a6578;
+}
+
+#snort-table-container::-webkit-scrollbar-corner {
+background: #1a1d23;
+}
+</style>
 </head>
+
 <body class="bg-background-dark text-white font-display">
-<div class="relative flex min-h-screen w-full flex-col">
-<header class="sticky top-0 z-50 flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#283039] bg-background-dark px-10 py-3">
-<div class="flex items-center gap-8">
-<div class="flex items-center gap-4 text-white">
-<div class="size-6 text-primary">
-<span class="material-symbols-outlined !text-3xl">security</span>
-</div>
-<h2 class="text-white text-xl font-bold leading-tight tracking-[-0.015em]">ThreatGuard</h2>
-</div>
-<div class="flex items-center gap-9">
-<a class="text-white text-sm font-medium leading-normal" href="/executive_summary/code.html">Dashboard</a>
-<a class="text-white text-sm font-medium leading-normal" href="/alerts/code.html">Alerts</a>
-<a class="text-white text-sm font-medium leading-normal" href="/assets/code.html">Assets</a>
-<a class="text-white text-sm font-medium leading-normal" href="/vulnerability_management/code.html">Vulnerability Management</a>
-<a class="text-white text-sm font-medium leading-normal" href="/soar/code.html">SOAR</a>
-<a class="text-white text-sm font-medium leading-normal" href="/reports/code.html">Reports</a>
-<a class="text-white text-sm font-medium leading-normal" href="/settings/code.html">Settings</a>
-</div>
-<div class="flex flex-1 justify-end gap-4">
-<div class="flex gap-2 relative">
-<button id="btn-notifications" class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 bg-[#283039] text-white gap-2 text-sm font-bold leading-normal tracking-[0.015em] min-w-0 px-3 hover:bg-[#3b4754]">
-<span class="material-symbols-outlined">notifications</span>
-</button>
-<button id="btn-settings" class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 bg-[#283039] text-white gap-2 text-sm font-bold leading-normal tracking-[0.015em] min-w-0 px-3 hover:bg-[#3b4754]">
-<span class="material-symbols-outlined">settings</span>
-</button>
-<div id="settings-menu" class="hidden absolute right-0 top-12 w-48 bg-[#1c2127] border border-[#3b4754] rounded-lg shadow-lg z-50">
-<button onclick="toggleTheme()" class="w-full px-4 py-3 text-left text-white hover:bg-[#283039] flex items-center gap-2">
-<span class="material-symbols-outlined">dark_mode</span>
-Cambiar Tema
-</button>
-</div>
-</div>
-</div>
-</header>
-<main class="flex-1 p-4">
-<div class="grid grid-cols-4 gap-4 mb-4">
-<div class="flex flex-col gap-2 rounded-lg p-6 bg-[#283039] border border-high-priority/50">
-<p class="text-white text-base font-medium leading-normal">Alertas de Prioridad ALTA (IA)</p>
-<p id="alertas-alta" class="text-high-priority tracking-light text-4xl font-bold leading-tight">-</p>
-</div>
-<div class="flex flex-col gap-2 rounded-lg p-6 bg-[#283039] border border-high-priority/50">
-<p class="text-white text-base font-medium leading-normal">Alertas de Prioridad MEDIA (IA)</p>
-<p id="alertas-media" class="text-high-priority tracking-light text-4xl font-bold leading-tight">-</p>
-</div>
-<div class="flex flex-col gap-2 rounded-lg p-6 bg-[#283039]">
-<p class="text-white text-base font-medium leading-normal">Alertas de Prioridad BAJA (IA)</p>
-<p id="alertas-baja" class="text-white tracking-light text-4xl font-bold leading-tight">-</p>
-</div>
-<div class="flex flex-col gap-2 rounded-lg p-6 bg-[#283039]">
-<p class="text-white text-base font-medium leading-normal">Total Alertas</p>
-<p id="total-alertas" class="text-white tracking-light text-4xl font-bold leading-tight">-</p>
-</div>
-</div>
-<!-- Gráfico de Dona -->
-<div class="flex flex-col gap-1 rounded-lg border border-[#3b4754] bg-[#283039] p-2 mb-4">
-<p class="text-white text-xs font-medium leading-normal">Gráfico de Dona Priorización de Alertas (IA) - 24h</p>
-<div class="flex items-center justify-center relative" style="height: 100px;">
-<svg id="donut-chart" class="transform -rotate-90" height="100" viewbox="0 0 36 36" width="100">
-<circle id="circle-benigno" cx="18" cy="18" fill="transparent" r="15.9154943092" stroke="#10B981" stroke-dasharray="0 100" stroke-width="3" class="transition-all duration-500 ease-in-out cursor-pointer hover:stroke-width-4" data-label="Benigno"></circle>
-<circle id="circle-baja" cx="18" cy="18" fill="transparent" r="15.9154943092" stroke="#4A90E2" stroke-dasharray="0 100" stroke-dashoffset="0" stroke-width="3" class="transition-all duration-500 ease-in-out cursor-pointer hover:stroke-width-4" data-label="Baja"></circle>
-<circle id="circle-media" cx="18" cy="18" fill="transparent" r="15.9154943092" stroke="#FFA500" stroke-dasharray="0 100" stroke-dashoffset="0" stroke-width="3" class="transition-all duration-500 ease-in-out cursor-pointer hover:stroke-width-4" data-label="Media"></circle>
-<circle id="circle-alta" cx="18" cy="18" fill="transparent" r="15.9154943092" stroke="#FF4D4D" stroke-dasharray="0 100" stroke-dashoffset="0" stroke-width="3" class="transition-all duration-500 ease-in-out cursor-pointer hover:stroke-width-4" data-label="Alta"></circle>
-</svg>
-<div id="donut-center" class="absolute flex flex-col items-center pointer-events-none">
-<span id="donut-total" class="text-lg font-bold">0</span>
-<span id="donut-label" class="text-[9px] text-[#9dabb9]">Total</span>
-</div>
-</div>
-<div class="grid grid-cols-4 gap-1 text-[10px] mt-1">
-<div class="text-center">
-<p class="font-medium text-red-500">A</p>
-<p id="donut-alta" class="font-bold text-xs">0</p>
-</div>
-<div class="text-center">
-<p class="font-medium text-yellow-500">M</p>
-<p id="donut-media" class="font-bold text-xs">0</p>
-</div>
-<div class="text-center">
-<p class="font-medium text-blue-500">B</p>
-<p id="donut-baja" class="font-bold text-xs">0</p>
-</div>
-<div class="text-center">
-<p class="font-medium text-green-500">Ben</p>
-<p id="donut-benigno" class="font-bold text-xs">0</p>
-</div>
-</div>
-</div>
+    <div class="relative flex min-h-screen w-full flex-col">
+        <header
+            class="sticky top-0 z-50 flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#283039] bg-background-dark px-10 py-3">
+            <div class="flex items-center gap-8">
+                <div class="flex items-center gap-4 text-white">
+                    <div class="size-6 text-primary">
+                        <span class="material-symbols-outlined !text-3xl">security</span>
+                    </div>
+                    <h2 class="text-white text-xl font-bold leading-tight tracking-[-0.015em]">ThreatGuard</h2>
+                </div>
+                <div class="flex items-center gap-9">
+                    <a class="text-white text-sm font-medium leading-normal"
+                        href="/executive_summary/code.html">Dashboard</a>
+                    <a class="text-white text-sm font-medium leading-normal" href="/alerts/code.html">Alerts</a>
+                    <a class="text-white text-sm font-medium leading-normal" href="/assets/code.html">Assets</a>
+                    <a class="text-white text-sm font-medium leading-normal"
+                        href="/vulnerability_management/code.html">Vulnerability Management</a>
+                    <a class="text-white text-sm font-medium leading-normal" href="/soar/code.html">SOAR</a>
+                    <a class="text-white text-sm font-medium leading-normal" href="/reports/code.html">Reports</a>
+                    <a class="text-white text-sm font-medium leading-normal" href="/settings/code.html">Settings</a>
+                </div>
+                <div class="flex flex-1 justify-end gap-4">
+                    <div class="flex gap-2 relative">
+                        <button id="btn-notifications"
+                            class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 bg-[#283039] text-white gap-2 text-sm font-bold leading-normal tracking-[0.015em] min-w-0 px-3 hover:bg-[#3b4754]">
+                            <span class="material-symbols-outlined">notifications</span>
+                        </button>
+                        <button id="btn-settings"
+                            class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 bg-[#283039] text-white gap-2 text-sm font-bold leading-normal tracking-[0.015em] min-w-0 px-3 hover:bg-[#3b4754]">
+                            <span class="material-symbols-outlined">settings</span>
+                        </button>
+                        <div id="settings-menu"
+                            class="hidden absolute right-0 top-12 w-48 bg-[#1c2127] border border-[#3b4754] rounded-lg shadow-lg z-50">
+                            <button onclick="toggleTheme()"
+                                class="w-full px-4 py-3 text-left text-white hover:bg-[#283039] flex items-center gap-2">
+                                <span class="material-symbols-outlined">dark_mode</span>
+                                Cambiar Tema
+                            </button>
+                        </div>
+                    </div>
+                </div>
+        </header>
+        <main class="flex-1 p-4">
+            <div class="grid grid-cols-4 gap-4 mb-4">
+                <div class="flex flex-col gap-2 rounded-lg p-6 bg-[#283039] border border-high-priority/50">
+                    <p class="text-white text-base font-medium leading-normal">Alertas de Prioridad ALTA (IA)</p>
+                    <p id="alertas-alta" class="text-high-priority tracking-light text-4xl font-bold leading-tight">-
+                    </p>
+                </div>
+                <div class="flex flex-col gap-2 rounded-lg p-6 bg-[#283039] border border-high-priority/50">
+                    <p class="text-white text-base font-medium leading-normal">Alertas de Prioridad MEDIA (IA)</p>
+                    <p id="alertas-media" class="text-high-priority tracking-light text-4xl font-bold leading-tight">-
+                    </p>
+                </div>
+                <div class="flex flex-col gap-2 rounded-lg p-6 bg-[#283039]">
+                    <p class="text-white text-base font-medium leading-normal">Alertas de Prioridad BAJA (IA)</p>
+                    <p id="alertas-baja" class="text-white tracking-light text-4xl font-bold leading-tight">-</p>
+                </div>
+                <div class="flex flex-col gap-2 rounded-lg p-6 bg-[#283039]">
+                    <p class="text-white text-base font-medium leading-normal">Total Alertas</p>
+                    <p id="total-alertas" class="text-white tracking-light text-4xl font-bold leading-tight">-</p>
+                </div>
+            </div>
+            <!-- Gráfico de Dona -->
+            <div class="flex flex-col gap-1 rounded-lg border border-[#3b4754] bg-[#283039] p-2 mb-4">
+                <p class="text-white text-xs font-medium leading-normal">Gráfico de Dona Priorización de Alertas (IA) -
+                    24h</p>
+                <div class="flex items-center justify-center relative" style="height: 100px;">
+                    <svg id="donut-chart" class="transform -rotate-90" height="100" viewbox="0 0 36 36" width="100">
+                        <circle id="circle-benigno" cx="18" cy="18" fill="transparent" r="15.9154943092"
+                            stroke="#10B981" stroke-dasharray="0 100" stroke-width="3"
+                            class="transition-all duration-500 ease-in-out cursor-pointer hover:stroke-width-4"
+                            data-label="Benigno"></circle>
+                        <circle id="circle-baja" cx="18" cy="18" fill="transparent" r="15.9154943092" stroke="#4A90E2"
+                            stroke-dasharray="0 100" stroke-dashoffset="0" stroke-width="3"
+                            class="transition-all duration-500 ease-in-out cursor-pointer hover:stroke-width-4"
+                            data-label="Baja"></circle>
+                        <circle id="circle-media" cx="18" cy="18" fill="transparent" r="15.9154943092" stroke="#FFA500"
+                            stroke-dasharray="0 100" stroke-dashoffset="0" stroke-width="3"
+                            class="transition-all duration-500 ease-in-out cursor-pointer hover:stroke-width-4"
+                            data-label="Media"></circle>
+                        <circle id="circle-alta" cx="18" cy="18" fill="transparent" r="15.9154943092" stroke="#FF4D4D"
+                            stroke-dasharray="0 100" stroke-dashoffset="0" stroke-width="3"
+                            class="transition-all duration-500 ease-in-out cursor-pointer hover:stroke-width-4"
+                            data-label="Alta"></circle>
+                    </svg>
+                    <div id="donut-center" class="absolute flex flex-col items-center pointer-events-none">
+                        <span id="donut-total" class="text-lg font-bold">0</span>
+                        <span id="donut-label" class="text-[9px] text-[#9dabb9]">Total</span>
+                    </div>
+                </div>
+                <div class="grid grid-cols-4 gap-1 text-[10px] mt-1">
+                    <div class="text-center">
+                        <p class="font-medium text-red-500">A</p>
+                        <p id="donut-alta" class="font-bold text-xs">0</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="font-medium text-yellow-500">M</p>
+                        <p id="donut-media" class="font-bold text-xs">0</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="font-medium text-blue-500">B</p>
+                        <p id="donut-baja" class="font-bold text-xs">0</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="font-medium text-green-500">Ben</p>
+                        <p id="donut-benigno" class="font-bold text-xs">0</p>
+                    </div>
+                </div>
+            </div>
 
-<!-- Gráfico de Área: Volumen de Tráfico 24h -->
-<div class="flex flex-col gap-2 rounded-lg border border-[#3b4754] bg-[#283039] p-4 mb-4">
-<div class="flex items-center justify-between">
-<p class="text-white text-base font-medium leading-normal">📊 Volumen de Tráfico (24h)</p>
-<div class="flex items-center gap-2">
-<span id="area-total" class="text-[#9dabb9] text-sm">0 eventos</span>
-<button onclick="adjustChartHeight(-10)" class="px-2 py-1 bg-[#3b4754] hover:bg-[#4a5562] rounded text-white text-xs">-</button>
-<span id="chart-height-label" class="text-[#9dabb9] text-xs">80px</span>
-<button onclick="adjustChartHeight(10)" class="px-2 py-1 bg-[#3b4754] hover:bg-[#4a5562] rounded text-white text-xs">+</button>
-</div>
-</div>
-<div id="chart-container" class="relative" style="height: 80px; width: 100%;">
-<canvas id="stacked-area-chart" style="width: 100%; height: 100%;"></canvas>
-<div id="area-resize-handle" style="position: absolute; bottom: 0; left: 0; right: 0; height: 8px; cursor: ns-resize; background: linear-gradient(to bottom, transparent, rgba(59, 71, 84, 0.3)); display: flex; align-items: center; justify-content: center; z-index: 10;">
-<div style="width: 40px; height: 3px; background: #6b7280; border-radius: 2px;"></div>
-</div>
-</div>
-<p id="area-change" class="text-[#0bda5b] text-sm font-medium leading-normal mt-1">+0%</p>
-</div>
+            <!-- Gráfico de Área: Volumen de Tráfico 24h -->
+            <div class="flex flex-col gap-2 rounded-lg border border-[#3b4754] bg-[#283039] p-4 mb-4">
+                <div class="flex items-center justify-between">
+                    <p class="text-white text-base font-medium leading-normal">📊 Volumen de Tráfico (24h)</p>
+                    <div class="flex items-center gap-2">
+                        <span id="area-total" class="text-[#9dabb9] text-sm">0 eventos</span>
+                        <button onclick="adjustChartHeight(-10)"
+                            class="px-2 py-1 bg-[#3b4754] hover:bg-[#4a5562] rounded text-white text-xs">-</button>
+                        <span id="chart-height-label" class="text-[#9dabb9] text-xs">80px</span>
+                        <button onclick="adjustChartHeight(10)"
+                            class="px-2 py-1 bg-[#3b4754] hover:bg-[#4a5562] rounded text-white text-xs">+</button>
+                    </div>
+                </div>
+                <div id="chart-container" class="relative" style="height: 80px; width: 100%;">
+                    <canvas id="stacked-area-chart" style="width: 100%; height: 100%;"></canvas>
+                    <div id="area-resize-handle"
+                        style="position: absolute; bottom: 0; left: 0; right: 0; height: 8px; cursor: ns-resize; background: linear-gradient(to bottom, transparent, rgba(59, 71, 84, 0.3)); display: flex; align-items: center; justify-content: center; z-index: 10;">
+                        <div style="width: 40px; height: 3px; background: #6b7280; border-radius: 2px;"></div>
+                    </div>
+                </div>
+                <p id="area-change" class="text-[#0bda5b] text-sm font-medium leading-normal mt-1">+0%</p>
+            </div>
 
-<!-- Gráfico de Barras: Top 10 Tipos de Amenazas -->
-<div class="flex flex-col gap-2 rounded-lg border border-[#3b4754] bg-[#283039] p-4 mb-4">
-<div class="flex items-center justify-between">
-<p class="text-white text-base font-medium leading-normal">🎯 Top 10 Tipos de Amenazas</p>
-<div class="flex items-center gap-2">
-<span id="threats-total" class="text-[#9dabb9] text-sm">0 amenazas</span>
-<button onclick="adjustThreatChartHeight(-20)" class="px-2 py-1 bg-[#3b4754] hover:bg-[#4a5562] rounded text-white text-xs">-</button>
-<span id="threat-height-label" class="text-[#9dabb9] text-xs">250px</span>
-<button onclick="adjustThreatChartHeight(20)" class="px-2 py-1 bg-[#3b4754] hover:bg-[#4a5562] rounded text-white text-xs">+</button>
-</div>
-</div>
-<div id="threat-chart-container" class="relative" style="height: 250px; width: 100%;">
-<canvas id="threat-bar-chart" style="width: 100%; height: 100%;"></canvas>
-<div id="threat-resize-handle" style="position: absolute; bottom: 0; left: 0; right: 0; height: 8px; cursor: ns-resize; background: linear-gradient(to bottom, transparent, rgba(59, 71, 84, 0.3)); display: flex; align-items: center; justify-content: center; z-index: 10;">
-<div style="width: 40px; height: 3px; background: #6b7280; border-radius: 2px;"></div>
-</div>
-</div>
-</div>
+            <!-- Gráfico de Barras: Top 10 Tipos de Amenazas -->
+            <div class="flex flex-col gap-2 rounded-lg border border-[#3b4754] bg-[#283039] p-4 mb-4">
+                <div class="flex items-center justify-between">
+                    <p class="text-white text-base font-medium leading-normal">🎯 Top 10 Tipos de Amenazas</p>
+                    <div class="flex items-center gap-2">
+                        <span id="threats-total" class="text-[#9dabb9] text-sm">0 amenazas</span>
+                        <button onclick="adjustThreatChartHeight(-20)"
+                            class="px-2 py-1 bg-[#3b4754] hover:bg-[#4a5562] rounded text-white text-xs">-</button>
+                        <span id="threat-height-label" class="text-[#9dabb9] text-xs">250px</span>
+                        <button onclick="adjustThreatChartHeight(20)"
+                            class="px-2 py-1 bg-[#3b4754] hover:bg-[#4a5562] rounded text-white text-xs">+</button>
+                    </div>
+                </div>
+                <div id="threat-chart-container" class="relative" style="height: 250px; width: 100%;">
+                    <canvas id="threat-bar-chart" style="width: 100%; height: 100%;"></canvas>
+                    <div id="threat-resize-handle"
+                        style="position: absolute; bottom: 0; left: 0; right: 0; height: 8px; cursor: ns-resize; background: linear-gradient(to bottom, transparent, rgba(59, 71, 84, 0.3)); display: flex; align-items: center; justify-content: center; z-index: 10;">
+                        <div style="width: 40px; height: 3px; background: #6b7280; border-radius: 2px;"></div>
+                    </div>
+                </div>
+            </div>
 
-<!-- Tablas en Grid 2 columnas -->
-<div class="grid grid-cols-2 gap-6 mb-4">
-<div class="flex flex-col gap-4 rounded-lg border border-[#3b4754] bg-[#283039] p-4 h-fit">
-<p class="text-white text-base font-medium leading-normal px-2">Tabla Top 5 Hosts con Más Alertas</p>
-<div class="overflow-hidden rounded-lg">
-<table class="w-full">
-<thead>
-<tr class="bg-[#1c2127]">
-<th class="px-4 py-3 text-left text-white text-sm font-medium leading-normal">Host/IP</th>
-<th class="px-4 py-3 text-left text-white text-sm font-medium leading-normal"># Altas</th>
-<th class="px-4 py-3 text-left text-white text-sm font-medium leading-normal"># Medias</th>
-<th class="px-4 py-3 text-left text-white text-sm font-medium leading-normal"># Benignas</th>
-<th class="px-4 py-3 text-left text-white text-sm font-medium leading-normal">Total</th>
-</tr>
-</thead>
-<tbody id="hosts-table">
-<tr class="border-t border-t-[#3b4754]">
-<td colspan="5" class="h-[60px] px-4 py-2 text-center text-[#9dabb9] text-sm">Cargando...</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
-<div class="flex flex-col gap-4 rounded-lg border border-[#3b4754] bg-[#283039] p-4 h-fit">
-<p class="text-white text-base font-medium leading-normal px-2">Tabla Top 5 Alertas Recientes (IA/ML)</p>
-<div class="overflow-hidden rounded-lg">
-<table class="w-full">
-<thead>
-<tr class="bg-[#1c2127]">
-<th class="px-4 py-3 text-left text-white text-sm font-medium leading-normal w-2/5">Descripción</th>
-<th class="px-4 py-3 text-left text-white text-sm font-medium leading-normal w-2/5">Host</th>
-<th class="px-4 py-3 text-left text-white text-sm font-medium leading-normal w-1/5">Prioridad IA</th>
-</tr>
-</thead>
-<tbody id="alerts-table-body">
-<!-- Las alertas se cargarán dinámicamente desde el backend -->
-<tr class="border-t border-t-[#3b4754]">
-<td colspan="3" class="h-[60px] px-4 py-2 text-[#9dabb9] text-sm text-center">No hay alertas recientes</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
-</div>
+            <!-- Tablas en Grid 2 columnas -->
+            <div class="grid grid-cols-2 gap-6 mb-4">
+                <div class="flex flex-col gap-4 rounded-lg border border-[#3b4754] bg-[#283039] p-4 h-fit">
+                    <p class="text-white text-base font-medium leading-normal px-2">Tabla Top 5 Hosts con Más Alertas
+                    </p>
+                    <div class="overflow-hidden rounded-lg">
+                        <table class="w-full">
+                            <thead>
+                                <tr class="bg-[#1c2127]">
+                                    <th class="px-4 py-3 text-left text-white text-sm font-medium leading-normal">
+                                        Host/IP</th>
+                                    <th class="px-4 py-3 text-left text-white text-sm font-medium leading-normal">#
+                                        Altas</th>
+                                    <th class="px-4 py-3 text-left text-white text-sm font-medium leading-normal">#
+                                        Medias</th>
+                                    <th class="px-4 py-3 text-left text-white text-sm font-medium leading-normal">#
+                                        Benignas</th>
+                                    <th class="px-4 py-3 text-left text-white text-sm font-medium leading-normal">Total
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody id="hosts-table">
+                                <tr class="border-t border-t-[#3b4754]">
+                                    <td colspan="5" class="h-[60px] px-4 py-2 text-center text-[#9dabb9] text-sm">
+                                        Cargando...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="flex flex-col gap-4 rounded-lg border border-[#3b4754] bg-[#283039] p-4 h-fit">
+                    <p class="text-white text-base font-medium leading-normal px-2">Tabla Top 5 Alertas Recientes
+                        (IA/ML)</p>
+                    <div class="overflow-hidden rounded-lg">
+                        <table class="w-full">
+                            <thead>
+                                <tr class="bg-[#1c2127]">
+                                    <th class="px-4 py-3 text-left text-white text-sm font-medium leading-normal w-2/5">
+                                        Descripción</th>
+                                    <th class="px-4 py-3 text-left text-white text-sm font-medium leading-normal w-2/5">
+                                        Host</th>
+                                    <th class="px-4 py-3 text-left text-white text-sm font-medium leading-normal w-1/5">
+                                        Prioridad IA</th>
+                                </tr>
+                            </thead>
+                            <tbody id="alerts-table-body">
+                                <!-- Las alertas se cargarán dinámicamente desde el backend -->
+                                <tr class="border-t border-t-[#3b4754]">
+                                    <td colspan="3" class="h-[60px] px-4 py-2 text-[#9dabb9] text-sm text-center">No hay
+                                        alertas recientes</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
 
-<!-- Nueva sección: Alertas de Snort IDS -->
-<div class="flex flex-col gap-4 rounded-lg border border-[#3b4754] bg-[#283039] p-4 h-fit">
-<div class="flex items-center justify-between px-2">
-<p class="text-white text-base font-medium leading-normal">🛡️ Alertas de Snort IDS (Tiempo Real)</p>
-<span id="snort-count" class="text-[#9dabb9] text-sm">0 alertas</span>
-</div>
-<div id="snort-table-container" style="max-height: 400px; overflow: auto; scrollbar-width: thin; scrollbar-color: #4a5568 #1a1d23;" class="rounded-lg">
-<table class="w-full results-table" style="width: 100%; min-width: 1200px;">
-<thead>
-<tr class="bg-[#1c2127]">
-<th class="px-4 py-3 text-left text-white text-sm font-medium leading-normal" style="position: sticky; top: 0; background: #1c2127; z-index: 10;">Timestamp</th>
-<th class="px-4 py-3 text-left text-white text-sm font-medium leading-normal" style="position: sticky; top: 0; background: #1c2127; z-index: 10;">Tipo de Alerta</th>
-<th class="px-4 py-3 text-left text-white text-sm font-medium leading-normal" style="position: sticky; top: 0; background: #1c2127; z-index: 10;">Protocolo</th>
-<th class="px-4 py-3 text-left text-white text-sm font-medium leading-normal" style="position: sticky; top: 0; background: #1c2127; z-index: 10;">IP Origen</th>
-<th class="px-4 py-3 text-left text-white text-sm font-medium leading-normal" style="position: sticky; top: 0; background: #1c2127; z-index: 10;">IP Destino</th>
-<th class="px-4 py-3 text-left text-white text-sm font-medium leading-normal" style="position: sticky; top: 0; background: #1c2127; z-index: 10;">Prioridad</th>
-</tr>
-</thead>
-<tbody id="snort-alerts-table">
-<tr class="border-t border-t-[#3b4754]">
-<td colspan="6" class="h-[60px] px-4 py-2 text-center text-[#9dabb9] text-sm">Cargando alertas de Snort...</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
+            <!-- Nueva sección: Alertas de Snort IDS -->
+            <div class="flex flex-col gap-4 rounded-lg border border-[#3b4754] bg-[#283039] p-4 h-fit">
+                <div class="flex items-center justify-between px-2">
+                    <p class="text-white text-base font-medium leading-normal">🛡️ Alertas de Snort IDS (Tiempo Real)
+                    </p>
+                    <span id="snort-count" class="text-[#9dabb9] text-sm">0 alertas</span>
+                </div>
+                <div id="snort-table-container"
+                    style="max-height: 400px; overflow: auto; scrollbar-width: thin; scrollbar-color: #4a5568 #1a1d23;"
+                    class="rounded-lg">
+                    <table class="w-full results-table" style="width: 100%; min-width: 1200px;">
+                        <thead>
+                            <tr class="bg-[#1c2127]">
+                                <th class="px-4 py-3 text-left text-white text-sm font-medium leading-normal"
+                                    style="position: sticky; top: 0; background: #1c2127; z-index: 10;">Timestamp</th>
+                                <th class="px-4 py-3 text-left text-white text-sm font-medium leading-normal"
+                                    style="position: sticky; top: 0; background: #1c2127; z-index: 10;">Tipo de Alerta
+                                </th>
+                                <th class="px-4 py-3 text-left text-white text-sm font-medium leading-normal"
+                                    style="position: sticky; top: 0; background: #1c2127; z-index: 10;">Protocolo</th>
+                                <th class="px-4 py-3 text-left text-white text-sm font-medium leading-normal"
+                                    style="position: sticky; top: 0; background: #1c2127; z-index: 10;">IP Origen</th>
+                                <th class="px-4 py-3 text-left text-white text-sm font-medium leading-normal"
+                                    style="position: sticky; top: 0; background: #1c2127; z-index: 10;">IP Destino</th>
+                                <th class="px-4 py-3 text-left text-white text-sm font-medium leading-normal"
+                                    style="position: sticky; top: 0; background: #1c2127; z-index: 10;">Prioridad</th>
+                            </tr>
+                        </thead>
+                        <tbody id="snort-alerts-table">
+                            <tr class="border-t border-t-[#3b4754]">
+                                <td colspan="6" class="h-[60px] px-4 py-2 text-center text-[#9dabb9] text-sm">Cargando
+                                    alertas de Snort...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
 
-</main>
-</div>
-<script src="/header-utils.js"></script>
-<script>
-// Version: 3.0 - Ejes XY
-const API_URL = 'http://localhost:8000/dashboard/stats';
+        </main>
+    </div>
+    <script src="/header-utils.js"></script>
+    <script>
+        // Version: 3.0 - Ejes XY
+        const API_URL = 'http://localhost:8000/dashboard/stats';
 
-let currentChartHeight = 80; // Altura inicial del gráfico
+        let currentChartHeight = 80; // Altura inicial del gráfico
 
-function adjustChartHeight(delta) {
-    currentChartHeight = Math.max(30, Math.min(200, currentChartHeight + delta)); // Límites: 30-200px
-    const container = document.getElementById('chart-container');
-    const canvas = document.getElementById('stacked-area-chart');
-    
-    container.style.height = currentChartHeight + 'px';
-    canvas.style.height = currentChartHeight + 'px';
-    document.getElementById('chart-height-label').textContent = currentChartHeight + 'px';
-    
-    // Guardar preferencia en localStorage
-    localStorage.setItem('chartHeight', currentChartHeight);
-    
-    // Esperar que el navegador aplique los cambios CSS
-    requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-            const total = parseInt(document.getElementById('area-total').textContent.replace(/,/g, '')) || 11862;
-            updateAreaChart(total);
-        });
-    });
-}
+        function adjustChartHeight(delta) {
+            currentChartHeight = Math.max(30, Math.min(200, currentChartHeight + delta)); // Límites: 30-200px
+            const container = document.getElementById('chart-container');
+            const canvas = document.getElementById('stacked-area-chart');
 
-let currentThreatChartHeight = 250; // Altura inicial del gráfico de amenazas
+            container.style.height = currentChartHeight + 'px';
+            canvas.style.height = currentChartHeight + 'px';
+            document.getElementById('chart-height-label').textContent = currentChartHeight + 'px';
 
-function adjustThreatChartHeight(delta) {
-    currentThreatChartHeight = Math.max(100, Math.min(600, currentThreatChartHeight + delta)); // Límites: 100-600px
-    const container = document.getElementById('threat-chart-container');
-    const canvas = document.getElementById('threat-bar-chart');
-    
-    container.style.height = currentThreatChartHeight + 'px';
-    canvas.style.height = currentThreatChartHeight + 'px';
-    document.getElementById('threat-height-label').textContent = currentThreatChartHeight + 'px';
-    
-    // Guardar preferencia en localStorage
-    localStorage.setItem('threatChartHeight', currentThreatChartHeight);
-    
-    // Esperar que el navegador aplique los cambios CSS
-    requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-            // Redibujar el gráfico si ya hay datos
-            const totalText = document.getElementById('threats-total').textContent;
-            if (totalText !== '0 amenazas') {
-                updateThreatChart();
-            }
-        });
-    });
-}
-
-// Cargar altura guardada al iniciar
-window.addEventListener('DOMContentLoaded', () => {
-    const savedHeight = localStorage.getItem('chartHeight');
-    if (savedHeight) {
-        currentChartHeight = parseInt(savedHeight);
-        const container = document.getElementById('chart-container');
-        const canvas = document.getElementById('stacked-area-chart');
-        container.style.height = currentChartHeight + 'px';
-        canvas.style.height = currentChartHeight + 'px';
-        document.getElementById('chart-height-label').textContent = currentChartHeight + 'px';
-    }
-    
-    // Cargar altura del gráfico de amenazas
-    const savedThreatHeight = localStorage.getItem('threatChartHeight');
-    if (savedThreatHeight) {
-        currentThreatChartHeight = parseInt(savedThreatHeight);
-        const container = document.getElementById('threat-chart-container');
-        const canvas = document.getElementById('threat-bar-chart');
-        container.style.height = currentThreatChartHeight + 'px';
-        canvas.style.height = currentThreatChartHeight + 'px';
-        document.getElementById('threat-height-label').textContent = currentThreatChartHeight + 'px';
-    }
-    
-    // Configurar resize draggable para el gráfico de amenazas
-    setupThreatChartResize();
-    
-    // Configurar resize draggable para el gráfico de área
-    setupAreaChartResize();
-});
-
-function setupAreaChartResize() {
-    const handle = document.getElementById('area-resize-handle');
-    const container = document.getElementById('chart-container');
-    const canvas = document.getElementById('stacked-area-chart');
-    let isResizing = false;
-    let startY = 0;
-    let startHeight = 0;
-    
-    handle.addEventListener('mousedown', (e) => {
-        isResizing = true;
-        startY = e.clientY;
-        startHeight = container.offsetHeight;
-        document.body.style.cursor = 'ns-resize';
-        document.body.style.userSelect = 'none';
-        e.preventDefault();
-    });
-    
-    document.addEventListener('mousemove', (e) => {
-        if (!isResizing) return;
-        
-        const deltaY = e.clientY - startY;
-        const newHeight = Math.max(30, Math.min(300, startHeight + deltaY));
-        
-        currentChartHeight = newHeight;
-        container.style.height = newHeight + 'px';
-        canvas.style.height = newHeight + 'px';
-        document.getElementById('chart-height-label').textContent = Math.round(newHeight) + 'px';
-    });
-    
-    document.addEventListener('mouseup', () => {
-        if (isResizing) {
-            isResizing = false;
-            document.body.style.cursor = '';
-            document.body.style.userSelect = '';
-            
-            // Guardar en localStorage
+            // Guardar preferencia en localStorage
             localStorage.setItem('chartHeight', currentChartHeight);
-            
-            // Redibujar el gráfico
+
+            // Esperar que el navegador aplique los cambios CSS
             requestAnimationFrame(() => {
                 requestAnimationFrame(() => {
                     const total = parseInt(document.getElementById('area-total').textContent.replace(/,/g, '')) || 11862;
@@ -401,50 +311,25 @@ function setupAreaChartResize() {
                 });
             });
         }
-    });
-}
 
-function setupThreatChartResize() {
-    const handle = document.getElementById('threat-resize-handle');
-    const container = document.getElementById('threat-chart-container');
-    const canvas = document.getElementById('threat-bar-chart');
-    let isResizing = false;
-    let startY = 0;
-    let startHeight = 0;
-    
-    handle.addEventListener('mousedown', (e) => {
-        isResizing = true;
-        startY = e.clientY;
-        startHeight = container.offsetHeight;
-        document.body.style.cursor = 'ns-resize';
-        document.body.style.userSelect = 'none';
-        e.preventDefault();
-    });
-    
-    document.addEventListener('mousemove', (e) => {
-        if (!isResizing) return;
-        
-        const deltaY = e.clientY - startY;
-        const newHeight = Math.max(100, Math.min(600, startHeight + deltaY));
-        
-        currentThreatChartHeight = newHeight;
-        container.style.height = newHeight + 'px';
-        canvas.style.height = newHeight + 'px';
-        document.getElementById('threat-height-label').textContent = Math.round(newHeight) + 'px';
-    });
-    
-    document.addEventListener('mouseup', () => {
-        if (isResizing) {
-            isResizing = false;
-            document.body.style.cursor = '';
-            document.body.style.userSelect = '';
-            
-            // Guardar en localStorage
+        let currentThreatChartHeight = 250; // Altura inicial del gráfico de amenazas
+
+        function adjustThreatChartHeight(delta) {
+            currentThreatChartHeight = Math.max(100, Math.min(600, currentThreatChartHeight + delta)); // Límites: 100-600px
+            const container = document.getElementById('threat-chart-container');
+            const canvas = document.getElementById('threat-bar-chart');
+
+            container.style.height = currentThreatChartHeight + 'px';
+            canvas.style.height = currentThreatChartHeight + 'px';
+            document.getElementById('threat-height-label').textContent = currentThreatChartHeight + 'px';
+
+            // Guardar preferencia en localStorage
             localStorage.setItem('threatChartHeight', currentThreatChartHeight);
-            
-            // Redibujar el gráfico
+
+            // Esperar que el navegador aplique los cambios CSS
             requestAnimationFrame(() => {
                 requestAnimationFrame(() => {
+                    // Redibujar el gráfico si ya hay datos
                     const totalText = document.getElementById('threats-total').textContent;
                     if (totalText !== '0 amenazas') {
                         updateThreatChart();
@@ -452,76 +337,204 @@ function setupThreatChartResize() {
                 });
             });
         }
-    });
-}
 
-function updateDonutChart(alta, media, baja, benigno, total) {
-    if (total === 0) return;
-    
-    const altaPct = (alta / total) * 100;
-    const mediaPct = (media / total) * 100;
-    const bajaPct = (baja / total) * 100;
-    const benignoPct = (benigno / total) * 100;
-    
-    document.getElementById('circle-benigno').setAttribute('stroke-dasharray', `${benignoPct} ${100 - benignoPct}`);
-    document.getElementById('circle-baja').setAttribute('stroke-dasharray', `${bajaPct} ${100 - bajaPct}`);
-    document.getElementById('circle-baja').setAttribute('stroke-dashoffset', `-${benignoPct}`);
-    document.getElementById('circle-media').setAttribute('stroke-dasharray', `${mediaPct} ${100 - mediaPct}`);
-    document.getElementById('circle-media').setAttribute('stroke-dashoffset', `-${benignoPct + bajaPct}`);
-    document.getElementById('circle-alta').setAttribute('stroke-dasharray', `${altaPct} ${100 - altaPct}`);
-    document.getElementById('circle-alta').setAttribute('stroke-dashoffset', `-${benignoPct + bajaPct + mediaPct}`);
-    
-    document.getElementById('donut-total').textContent = total;
-    document.getElementById('donut-alta').textContent = alta;
-    document.getElementById('donut-media').textContent = media;
-    document.getElementById('donut-baja').textContent = baja;
-    document.getElementById('donut-benigno').textContent = benigno;
-    
-    chartData = { alta, media, baja, benigno, total };
-}
+        // Cargar altura guardada al iniciar
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedHeight = localStorage.getItem('chartHeight');
+            if (savedHeight) {
+                currentChartHeight = parseInt(savedHeight);
+                const container = document.getElementById('chart-container');
+                const canvas = document.getElementById('stacked-area-chart');
+                container.style.height = currentChartHeight + 'px';
+                canvas.style.height = currentChartHeight + 'px';
+                document.getElementById('chart-height-label').textContent = currentChartHeight + 'px';
+            }
 
-async function loadDashboard() {
-    try {
-        // Agregar timestamp para evitar caché del navegador
-        const timestamp = new Date().getTime();
-        const response = await fetch(`${API_URL}?_t=${timestamp}`);
-        const data = await response.json();
-        
-        // Actualizar tarjetas
-        document.getElementById('alertas-alta').textContent = data.alertas_alta;
-        document.getElementById('alertas-media').textContent = data.alertas_media;
-        document.getElementById('alertas-baja').textContent = data.alertas_baja;
-        document.getElementById('total-alertas').textContent = data.total_alertas;
-        
-        // Actualizar gráfico dona
-        updateDonutChart(data.alertas_alta, data.alertas_media, data.alertas_baja, data.alertas_benigno, data.total_alertas);
-        
-        // Actualizar gráfico de área
-        updateAreaChart(data.total_alertas);
-        
-        // Calcular cambio real (comparar con valor anterior)
-        const prevTotal = localStorage.getItem('prev_total') || data.total_alertas;
-        const change = prevTotal > 0 ? (((data.total_alertas - prevTotal) / prevTotal) * 100).toFixed(1) : 0;
-        const changeEl = document.getElementById('area-change');
-        changeEl.textContent = `${change > 0 ? '+' : ''}${change}%`;
-        changeEl.className = change >= 0 ? 'text-[#0bda5b] text-base font-medium leading-normal' : 'text-[#ff4d4d] text-base font-medium leading-normal';
-        localStorage.setItem('prev_total', data.total_alertas);
-        
-        // Actualizar tabla top hosts
-        updateHostsTable();
-        
-        // Actualizar gráfico de amenazas
-        updateThreatChart();
-        
-        // Actualizar tabla top alertas
-        const tbody = document.getElementById('alerts-table-body');
-        if (data.top_alerts && data.top_alerts.length > 0) {
-            tbody.innerHTML = data.top_alerts.map(alert => {
-                const prioClass = alert.prioridad === 'ALTA' ? 'bg-red-500/20 text-red-500' : 
-                                 alert.prioridad === 'MEDIA' ? 'bg-yellow-500/20 text-yellow-500' : 
-                                 alert.prioridad === 'BAJA' ? 'bg-blue-500/20 text-blue-500' : 
-                                 'bg-green-500/20 text-green-500';
-                return `
+            // Cargar altura del gráfico de amenazas
+            const savedThreatHeight = localStorage.getItem('threatChartHeight');
+            if (savedThreatHeight) {
+                currentThreatChartHeight = parseInt(savedThreatHeight);
+                const container = document.getElementById('threat-chart-container');
+                const canvas = document.getElementById('threat-bar-chart');
+                container.style.height = currentThreatChartHeight + 'px';
+                canvas.style.height = currentThreatChartHeight + 'px';
+                document.getElementById('threat-height-label').textContent = currentThreatChartHeight + 'px';
+            }
+
+            // Configurar resize draggable para el gráfico de amenazas
+            setupThreatChartResize();
+
+            // Configurar resize draggable para el gráfico de área
+            setupAreaChartResize();
+        });
+
+        function setupAreaChartResize() {
+            const handle = document.getElementById('area-resize-handle');
+            const container = document.getElementById('chart-container');
+            const canvas = document.getElementById('stacked-area-chart');
+            let isResizing = false;
+            let startY = 0;
+            let startHeight = 0;
+
+            handle.addEventListener('mousedown', (e) => {
+                isResizing = true;
+                startY = e.clientY;
+                startHeight = container.offsetHeight;
+                document.body.style.cursor = 'ns-resize';
+                document.body.style.userSelect = 'none';
+                e.preventDefault();
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (!isResizing) return;
+
+                const deltaY = e.clientY - startY;
+                const newHeight = Math.max(30, Math.min(300, startHeight + deltaY));
+
+                currentChartHeight = newHeight;
+                container.style.height = newHeight + 'px';
+                canvas.style.height = newHeight + 'px';
+                document.getElementById('chart-height-label').textContent = Math.round(newHeight) + 'px';
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (isResizing) {
+                    isResizing = false;
+                    document.body.style.cursor = '';
+                    document.body.style.userSelect = '';
+
+                    // Guardar en localStorage
+                    localStorage.setItem('chartHeight', currentChartHeight);
+
+                    // Redibujar el gráfico
+                    requestAnimationFrame(() => {
+                        requestAnimationFrame(() => {
+                            const total = parseInt(document.getElementById('area-total').textContent.replace(/,/g, '')) || 11862;
+                            updateAreaChart(total);
+                        });
+                    });
+                }
+            });
+        }
+
+        function setupThreatChartResize() {
+            const handle = document.getElementById('threat-resize-handle');
+            const container = document.getElementById('threat-chart-container');
+            const canvas = document.getElementById('threat-bar-chart');
+            let isResizing = false;
+            let startY = 0;
+            let startHeight = 0;
+
+            handle.addEventListener('mousedown', (e) => {
+                isResizing = true;
+                startY = e.clientY;
+                startHeight = container.offsetHeight;
+                document.body.style.cursor = 'ns-resize';
+                document.body.style.userSelect = 'none';
+                e.preventDefault();
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (!isResizing) return;
+
+                const deltaY = e.clientY - startY;
+                const newHeight = Math.max(100, Math.min(600, startHeight + deltaY));
+
+                currentThreatChartHeight = newHeight;
+                container.style.height = newHeight + 'px';
+                canvas.style.height = newHeight + 'px';
+                document.getElementById('threat-height-label').textContent = Math.round(newHeight) + 'px';
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (isResizing) {
+                    isResizing = false;
+                    document.body.style.cursor = '';
+                    document.body.style.userSelect = '';
+
+                    // Guardar en localStorage
+                    localStorage.setItem('threatChartHeight', currentThreatChartHeight);
+
+                    // Redibujar el gráfico
+                    requestAnimationFrame(() => {
+                        requestAnimationFrame(() => {
+                            const totalText = document.getElementById('threats-total').textContent;
+                            if (totalText !== '0 amenazas') {
+                                updateThreatChart();
+                            }
+                        });
+                    });
+                }
+            });
+        }
+
+        function updateDonutChart(alta, media, baja, benigno, total) {
+            if (total === 0) return;
+
+            const altaPct = (alta / total) * 100;
+            const mediaPct = (media / total) * 100;
+            const bajaPct = (baja / total) * 100;
+            const benignoPct = (benigno / total) * 100;
+
+            document.getElementById('circle-benigno').setAttribute('stroke-dasharray', `${benignoPct} ${100 - benignoPct}`);
+            document.getElementById('circle-baja').setAttribute('stroke-dasharray', `${bajaPct} ${100 - bajaPct}`);
+            document.getElementById('circle-baja').setAttribute('stroke-dashoffset', `-${benignoPct}`);
+            document.getElementById('circle-media').setAttribute('stroke-dasharray', `${mediaPct} ${100 - mediaPct}`);
+            document.getElementById('circle-media').setAttribute('stroke-dashoffset', `-${benignoPct + bajaPct}`);
+            document.getElementById('circle-alta').setAttribute('stroke-dasharray', `${altaPct} ${100 - altaPct}`);
+            document.getElementById('circle-alta').setAttribute('stroke-dashoffset', `-${benignoPct + bajaPct + mediaPct}`);
+
+            document.getElementById('donut-total').textContent = total;
+            document.getElementById('donut-alta').textContent = alta;
+            document.getElementById('donut-media').textContent = media;
+            document.getElementById('donut-baja').textContent = baja;
+            document.getElementById('donut-benigno').textContent = benigno;
+
+            chartData = { alta, media, baja, benigno, total };
+        }
+
+        async function loadDashboard() {
+            try {
+                // Agregar timestamp para evitar caché del navegador
+                const timestamp = new Date().getTime();
+                const response = await fetch(`${API_URL}?_t=${timestamp}`);
+                const data = await response.json();
+
+                // Actualizar tarjetas
+                document.getElementById('alertas-alta').textContent = data.alertas_alta;
+                document.getElementById('alertas-media').textContent = data.alertas_media;
+                document.getElementById('alertas-baja').textContent = data.alertas_baja;
+                document.getElementById('total-alertas').textContent = data.total_alertas;
+
+                // Actualizar gráfico dona
+                updateDonutChart(data.alertas_alta, data.alertas_media, data.alertas_baja, data.alertas_benigno, data.total_alertas);
+
+                // Actualizar gráfico de área
+                updateAreaChart(data.total_alertas);
+
+                // Calcular cambio real (comparar con valor anterior)
+                const prevTotal = localStorage.getItem('prev_total') || data.total_alertas;
+                const change = prevTotal > 0 ? (((data.total_alertas - prevTotal) / prevTotal) * 100).toFixed(1) : 0;
+                const changeEl = document.getElementById('area-change');
+                changeEl.textContent = `${change > 0 ? '+' : ''}${change}%`;
+                changeEl.className = change >= 0 ? 'text-[#0bda5b] text-base font-medium leading-normal' : 'text-[#ff4d4d] text-base font-medium leading-normal';
+                localStorage.setItem('prev_total', data.total_alertas);
+
+                // Actualizar tabla top hosts
+                updateHostsTable();
+
+                // Actualizar gráfico de amenazas
+                updateThreatChart();
+
+                // Actualizar tabla top alertas
+                const tbody = document.getElementById('alerts-table-body');
+                if (data.top_alerts && data.top_alerts.length > 0) {
+                    tbody.innerHTML = data.top_alerts.map(alert => {
+                        const prioClass = alert.prioridad === 'ALTA' ? 'bg-red-500/20 text-red-500' :
+                            alert.prioridad === 'MEDIA' ? 'bg-yellow-500/20 text-yellow-500' :
+                                alert.prioridad === 'BAJA' ? 'bg-blue-500/20 text-blue-500' :
+                                    'bg-green-500/20 text-green-500';
+                        return `
                 <tr class="border-t border-t-[#3b4754] hover:bg-[#3b4754]/50">
                     <td class="h-[60px] px-4 py-2 text-[#9dabb9] text-sm font-normal leading-normal">${alert.descripcion}</td>
                     <td class="h-[60px] px-4 py-2 text-[#9dabb9] text-sm font-normal leading-normal">${alert.host}</td>
@@ -530,52 +543,52 @@ async function loadDashboard() {
                     </td>
                 </tr>
                 `;
-            }).join('');
-        } else {
-            tbody.innerHTML = `
+                    }).join('');
+                } else {
+                    tbody.innerHTML = `
                 <tr class="border-t border-t-[#3b4754]">
                     <td colspan="3" class="h-[60px] px-4 py-2 text-[#9dabb9] text-sm text-center">No hay alertas recientes</td>
                 </tr>
             `;
-        }
-    } catch (err) {
-        console.error('Error cargando dashboard:', err);
-    }
-}
-
-let chartData = {};
-
-    async function updateHostsTable() {
-        try {
-            // Añadido timestamp para evitar cache del navegador
-            const timestamp = new Date().getTime();
-            const response = await fetch(`http://localhost:8000/alerts?limit=5000&_t=${timestamp}`);
-            const data = await response.json();        // Agrupar alertas por host/IP
-        const hostStats = {};
-        data.alerts.forEach(alert => {
-            const host = alert.ip_origen || alert.host_afectado || 'Unknown';
-            if (!hostStats[host]) {
-                hostStats[host] = { alta: 0, media: 0, baja: 0, benigno: 0, total: 0 };
+                }
+            } catch (err) {
+                console.error('Error cargando dashboard:', err);
             }
-            
-            if (alert.prioridad_ia === 'ALTA') hostStats[host].alta++;
-            else if (alert.prioridad_ia === 'MEDIA') hostStats[host].media++;
-            else if (alert.prioridad_ia === 'BAJA') hostStats[host].baja++;
-            else if (alert.prioridad_ia === 'BENIGNO') hostStats[host].benigno++;
-            
-            hostStats[host].total++;
-        });
-        
-        // Convertir a array y ordenar por total
-        const sortedHosts = Object.entries(hostStats)
-            .map(([host, stats]) => ({ host, ...stats }))
-            .sort((a, b) => b.total - a.total)
-            .slice(0, 5);
-        
-        // Actualizar tabla
-        const tbody = document.getElementById('hosts-table');
-        if (sortedHosts.length > 0) {
-            tbody.innerHTML = sortedHosts.map(h => `
+        }
+
+        let chartData = {};
+
+        async function updateHostsTable() {
+            try {
+                // Añadido timestamp para evitar cache del navegador
+                const timestamp = new Date().getTime();
+                const response = await fetch(`http://localhost:8000/alerts?limit=5000&_t=${timestamp}`);
+                const data = await response.json();        // Agrupar alertas por host/IP
+                const hostStats = {};
+                data.alerts.forEach(alert => {
+                    const host = alert.ip_origen || alert.host_afectado || 'Unknown';
+                    if (!hostStats[host]) {
+                        hostStats[host] = { alta: 0, media: 0, baja: 0, benigno: 0, total: 0 };
+                    }
+
+                    if (alert.prioridad_ia === 'ALTA') hostStats[host].alta++;
+                    else if (alert.prioridad_ia === 'MEDIA') hostStats[host].media++;
+                    else if (alert.prioridad_ia === 'BAJA') hostStats[host].baja++;
+                    else if (alert.prioridad_ia === 'BENIGNO') hostStats[host].benigno++;
+
+                    hostStats[host].total++;
+                });
+
+                // Convertir a array y ordenar por total
+                const sortedHosts = Object.entries(hostStats)
+                    .map(([host, stats]) => ({ host, ...stats }))
+                    .sort((a, b) => b.total - a.total)
+                    .slice(0, 5);
+
+                // Actualizar tabla
+                const tbody = document.getElementById('hosts-table');
+                if (sortedHosts.length > 0) {
+                    tbody.innerHTML = sortedHosts.map(h => `
                 <tr class="border-t border-t-[#3b4754] hover:bg-[#3b4754]/50">
                     <td class="h-[60px] px-4 py-2 text-[#9dabb9] text-sm font-normal leading-normal">${h.host}</td>
                     <td class="h-[60px] px-4 py-2 text-red-500 text-sm font-bold leading-normal">${h.alta}</td>
@@ -584,354 +597,354 @@ let chartData = {};
                     <td class="h-[60px] px-4 py-2 text-[#9dabb9] text-sm font-normal leading-normal">${h.total}</td>
                 </tr>
             `).join('');
-        } else {
-            tbody.innerHTML = '<tr><td colspan="5" class="h-[60px] px-4 py-2 text-center text-[#9dabb9] text-sm">No hay datos</td></tr>';
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="5" class="h-[60px] px-4 py-2 text-center text-[#9dabb9] text-sm">No hay datos</td></tr>';
+                }
+            } catch (err) {
+                console.error('Error cargando hosts:', err);
+            }
         }
-    } catch (err) {
-        console.error('Error cargando hosts:', err);
-    }
-}
 
-async function updateThreatChart() {
-    try {
-        const timestamp = new Date().getTime();
-        const response = await fetch(`http://localhost:8000/alerts?limit=5000&_t=${timestamp}`);
-        const data = await response.json();
-        
-        // Agrupar alertas por título/descripción
-        const threatStats = {};
-        data.alerts.forEach(alert => {
-            const type = alert.titulo || alert.descripcion || 'Amenaza Desconocida';
-            if (!threatStats[type]) {
-                threatStats[type] = { count: 0, severity: alert.prioridad_ia || 'BAJA' };
+        async function updateThreatChart() {
+            try {
+                const timestamp = new Date().getTime();
+                const response = await fetch(`http://localhost:8000/alerts?limit=5000&_t=${timestamp}`);
+                const data = await response.json();
+
+                // Agrupar alertas por título/descripción
+                const threatStats = {};
+                data.alerts.forEach(alert => {
+                    const type = alert.titulo || alert.descripcion || 'Amenaza Desconocida';
+                    if (!threatStats[type]) {
+                        threatStats[type] = { count: 0, severity: alert.prioridad_ia || 'BAJA' };
+                    }
+                    threatStats[type].count++;
+
+                    // Priorizar la severidad más alta
+                    if (alert.prioridad_ia === 'ALTA') threatStats[type].severity = 'ALTA';
+                    else if (alert.prioridad_ia === 'MEDIA' && threatStats[type].severity !== 'ALTA') {
+                        threatStats[type].severity = 'MEDIA';
+                    }
+                });
+
+                // Convertir a array y ordenar por cantidad
+                const sortedThreats = Object.entries(threatStats)
+                    .map(([type, stats]) => ({ type, ...stats }))
+                    .sort((a, b) => b.count - a.count)
+                    .slice(0, 10);
+
+                // Actualizar contador
+                const totalThreats = sortedThreats.reduce((sum, t) => sum + t.count, 0);
+                document.getElementById('threats-total').textContent = `${totalThreats} amenazas`;
+
+                // Actualizar gráfico
+                updateThreatBarChart(sortedThreats);
+            } catch (err) {
+                console.error('Error cargando amenazas:', err);
             }
-            threatStats[type].count++;
-            
-            // Priorizar la severidad más alta
-            if (alert.prioridad_ia === 'ALTA') threatStats[type].severity = 'ALTA';
-            else if (alert.prioridad_ia === 'MEDIA' && threatStats[type].severity !== 'ALTA') {
-                threatStats[type].severity = 'MEDIA';
+        }
+
+        function updateAreaChart(total) {
+            const canvas = document.getElementById('stacked-area-chart');
+            if (!canvas) return;
+
+            const ctx = canvas.getContext('2d');
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.getBoundingClientRect();
+
+            // Configurar canvas con alta resolución
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+
+            const width = rect.width;
+            const height = rect.height;
+            const points = 48; // Más puntos para suavidad
+            const marginLeft = 50;
+            const marginRight = 20;
+            const marginTop = 5;
+            const marginBottom = 20;
+
+            const plotWidth = width - marginLeft - marginRight;
+            const plotHeight = height - marginTop - marginBottom;
+
+            // Generar datos simulados para 4 series (Alta, Media, Baja, Benigno)
+            const series = {
+                alta: [],
+                media: [],
+                baja: [],
+                benigno: []
+            };
+
+            for (let i = 0; i < points; i++) {
+                const t = i / points;
+                // Simular patrones de tráfico con variaciones
+                series.alta.push(Math.max(0, Math.sin(t * 4) * 10 + Math.random() * 5));
+                series.media.push(Math.max(0, Math.sin(t * 3 + 1) * 20 + Math.random() * 10));
+                series.baja.push(Math.max(0, Math.sin(t * 2) * 30 + Math.random() * 15));
+                series.benigno.push(Math.max(50, total / points * 0.7 + Math.sin(t * 5) * 20 + Math.random() * 10));
             }
-        });
-        
-        // Convertir a array y ordenar por cantidad
-        const sortedThreats = Object.entries(threatStats)
-            .map(([type, stats]) => ({ type, ...stats }))
-            .sort((a, b) => b.count - a.count)
-            .slice(0, 10);
-        
-        // Actualizar contador
-        const totalThreats = sortedThreats.reduce((sum, t) => sum + t.count, 0);
-        document.getElementById('threats-total').textContent = `${totalThreats} amenazas`;
-        
-        // Actualizar gráfico
-        updateThreatBarChart(sortedThreats);
-    } catch (err) {
-        console.error('Error cargando amenazas:', err);
-    }
-}
 
-function updateAreaChart(total) {
-    const canvas = document.getElementById('stacked-area-chart');
-    if (!canvas) return;
-    
-    const ctx = canvas.getContext('2d');
-    const dpr = window.devicePixelRatio || 1;
-    const rect = canvas.getBoundingClientRect();
-    
-    // Configurar canvas con alta resolución
-    canvas.width = rect.width * dpr;
-    canvas.height = rect.height * dpr;
-    ctx.scale(dpr, dpr);
-    
-    const width = rect.width;
-    const height = rect.height;
-    const points = 48; // Más puntos para suavidad
-    const marginLeft = 50;
-    const marginRight = 20;
-    const marginTop = 5;
-    const marginBottom = 20;
-    
-    const plotWidth = width - marginLeft - marginRight;
-    const plotHeight = height - marginTop - marginBottom;
-    
-    // Generar datos simulados para 4 series (Alta, Media, Baja, Benigno)
-    const series = {
-        alta: [],
-        media: [],
-        baja: [],
-        benigno: []
-    };
-    
-    for (let i = 0; i < points; i++) {
-        const t = i / points;
-        // Simular patrones de tráfico con variaciones
-        series.alta.push(Math.max(0, Math.sin(t * 4) * 10 + Math.random() * 5));
-        series.media.push(Math.max(0, Math.sin(t * 3 + 1) * 20 + Math.random() * 10));
-        series.baja.push(Math.max(0, Math.sin(t * 2) * 30 + Math.random() * 15));
-        series.benigno.push(Math.max(50, total / points * 0.7 + Math.sin(t * 5) * 20 + Math.random() * 10));
-    }
-    
-    // Calcular valores apilados
-    const stacked = [];
-    for (let i = 0; i < points; i++) {
-        stacked.push({
-            benigno: series.benigno[i],
-            baja: series.benigno[i] + series.baja[i],
-            media: series.benigno[i] + series.baja[i] + series.media[i],
-            alta: series.benigno[i] + series.baja[i] + series.media[i] + series.alta[i]
-        });
-    }
-    
-    const maxValue = Math.max(...stacked.map(d => d.alta));
-    
-    // Limpiar canvas
-    ctx.clearRect(0, 0, width, height);
-    
-    // Fondo
-    ctx.fillStyle = '#1c2127';
-    ctx.fillRect(0, 0, width, height);
-    
-    // Función para dibujar área
-    function drawArea(values, color, opacity = 0.7) {
-        ctx.fillStyle = color;
-        ctx.globalAlpha = opacity;
-        ctx.beginPath();
-        
-        // Iniciar desde abajo izquierda
-        ctx.moveTo(marginLeft, marginTop + plotHeight);
-        
-        // Dibujar línea superior
-        values.forEach((value, i) => {
-            const x = marginLeft + (i / (points - 1)) * plotWidth;
-            const y = marginTop + plotHeight - (value / maxValue) * plotHeight;
-            ctx.lineTo(x, y);
-        });
-        
-        // Cerrar path por abajo
-        ctx.lineTo(marginLeft + plotWidth, marginTop + plotHeight);
-        ctx.closePath();
-        ctx.fill();
-        ctx.globalAlpha = 1;
-    }
-    
-    // Dibujar áreas apiladas (de mayor a menor)
-    drawArea(stacked.map(d => d.alta), '#5fbeaa', 0.8);      // Verde-azulado (similar a Logstash)
-    drawArea(stacked.map(d => d.media), '#5fa1be', 0.8);     // Azul
-    drawArea(stacked.map(d => d.baja), '#7e5fbe', 0.8);      // Púrpura
-    drawArea(stacked.map(d => d.benigno), '#3b5063', 0.8);   // Gris-azulado oscuro
-    
-    // Dibujar ejes
-    ctx.strokeStyle = '#3b4754';
-    ctx.lineWidth = 1;
-    
-    // Eje X
-    ctx.beginPath();
-    ctx.moveTo(marginLeft, marginTop + plotHeight);
-    ctx.lineTo(marginLeft + plotWidth, marginTop + plotHeight);
-    ctx.stroke();
-    
-    // Eje Y
-    ctx.beginPath();
-    ctx.moveTo(marginLeft, marginTop);
-    ctx.lineTo(marginLeft, marginTop + plotHeight);
-    ctx.stroke();
-    
-    // Etiquetas eje X (horas)
-    ctx.fillStyle = '#9dabb9';
-    ctx.font = '9px system-ui';
-    ctx.textAlign = 'center';
-    const now = new Date();
-    for (let i = 0; i <= 5; i++) {
-        const x = marginLeft + (i / 5) * plotWidth;
-        const hour = new Date(now - (24 - i * 4.8) * 60 * 60 * 1000);
-        ctx.fillText(`${hour.getHours().toString().padStart(2, '0')}:00`, x, height - 5);
-    }
-    
-    // Etiquetas eje Y
-    ctx.textAlign = 'right';
-    for (let i = 0; i <= 4; i++) {
-        const y = marginTop + (i / 4) * plotHeight;
-        const value = Math.round(maxValue * (1 - i / 4));
-        ctx.fillText(value.toString(), marginLeft - 5, y + 4);
-    }
-    
-    // Actualizar total
-    document.getElementById('area-total').textContent = total.toLocaleString();
-}
+            // Calcular valores apilados
+            const stacked = [];
+            for (let i = 0; i < points; i++) {
+                stacked.push({
+                    benigno: series.benigno[i],
+                    baja: series.benigno[i] + series.baja[i],
+                    media: series.benigno[i] + series.baja[i] + series.media[i],
+                    alta: series.benigno[i] + series.baja[i] + series.media[i] + series.alta[i]
+                });
+            }
 
-function updateThreatBarChart(threats) {
-    const canvas = document.getElementById('threat-bar-chart');
-    if (!canvas) return;
-    
-    const ctx = canvas.getContext('2d');
-    const dpr = window.devicePixelRatio || 1;
-    const rect = canvas.getBoundingClientRect();
-    
-    // Configurar canvas con alta resolución
-    canvas.width = rect.width * dpr;
-    canvas.height = rect.height * dpr;
-    ctx.scale(dpr, dpr);
-    
-    const width = rect.width;
-    const height = rect.height;
-    const marginLeft = 200;
-    const marginRight = 80;
-    const marginTop = 20;
-    const marginBottom = 20;
-    const barHeight = 28;
-    const barSpacing = 6;
-    
-    const plotWidth = width - marginLeft - marginRight;
-    const plotHeight = height - marginTop - marginBottom;
-    
-    // Limpiar canvas
-    ctx.clearRect(0, 0, width, height);
-    
-    // Fondo
-    ctx.fillStyle = '#1c2127';
-    ctx.fillRect(0, 0, width, height);
-    
-    // Si no hay amenazas, mostrar mensaje
-    if (!threats || threats.length === 0) {
-        ctx.fillStyle = '#9dabb9';
-        ctx.font = '14px system-ui';
-        ctx.textAlign = 'center';
-        ctx.fillText('No hay amenazas detectadas en las últimas 24h', width / 2, height / 2);
-        return;
-    }
-    
-    const maxValue = Math.max(...threats.map(t => t.count));
-    
-    // Dibujar barras
-    threats.forEach((threat, i) => {
-        const y = marginTop + i * (barHeight + barSpacing);
-        const barWidth = (threat.count / maxValue) * plotWidth;
-        
-        // Color según severidad
-        let color;
-        if (threat.severity === 'ALTA') color = '#FF4D4D';
-        else if (threat.severity === 'MEDIA') color = '#FFA500';
-        else if (threat.severity === 'BAJA') color = '#4A90E2';
-        else color = '#10B981';
-        
-        // Dibujar barra
-        ctx.fillStyle = color + '30'; // 30 = 18% opacity
-        ctx.fillRect(marginLeft, y, barWidth, barHeight);
-        
-        // Borde de la barra
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 2;
-        ctx.strokeRect(marginLeft, y, barWidth, barHeight);
-        
-        // Etiqueta del tipo de amenaza (izquierda)
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '12px system-ui';
-        ctx.textAlign = 'right';
-        const label = threat.type.length > 30 ? threat.type.substring(0, 27) + '...' : threat.type;
-        ctx.fillText(label, marginLeft - 10, y + barHeight / 2 + 4);
-        
-        // Valor (derecha de la barra)
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 12px system-ui';
-        ctx.textAlign = 'left';
-        ctx.fillText(threat.count, marginLeft + barWidth + 10, y + barHeight / 2 + 4);
-        
-        // Badge de severidad (más a la derecha)
-        ctx.fillStyle = '#9dabb9';
-        ctx.font = '11px system-ui';
-        ctx.textAlign = 'left';
-        ctx.fillText(`(${threat.severity})`, marginLeft + barWidth + 45, y + barHeight / 2 + 4);
-    });
-    
-    // Línea vertical de referencia
-    ctx.strokeStyle = '#3b4754';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(marginLeft, marginTop);
-    ctx.lineTo(marginLeft, marginTop + threats.length * (barHeight + barSpacing) - barSpacing);
-    ctx.stroke();
-}
+            const maxValue = Math.max(...stacked.map(d => d.alta));
 
-function setupTooltips() {
-    const circles = ['circle-alta', 'circle-media', 'circle-baja', 'circle-benigno'];
-    const labels = { 'circle-alta': 'Alta', 'circle-media': 'Media', 'circle-baja': 'Baja', 'circle-benigno': 'Benigno' };
-    
-    circles.forEach(id => {
-        const circle = document.getElementById(id);
-        const label = labels[id];
-        
-        circle.addEventListener('mouseenter', () => {
-            const value = chartData[label.toLowerCase()];
-            const total = chartData.total;
-            let percentage = total > 0 ? ((value / total) * 100) : 0;
-            
-            // Mostrar más decimales si el porcentaje es muy pequeño o muy grande
-            const decimals = percentage < 1 ? 3 : (percentage < 10 ? 2 : (percentage >= 99.9 ? 2 : 1));
-            percentage = percentage.toFixed(decimals);
-            
-            document.getElementById('donut-total').textContent = `${percentage}%`;
-            document.getElementById('donut-label').textContent = `${label}: ${value.toLocaleString()}`;
-        });
-        
-        circle.addEventListener('mouseleave', () => {
-            document.getElementById('donut-total').textContent = chartData.total;
-            document.getElementById('donut-label').textContent = 'Total Alerts';
-        });
-    });
-}
+            // Limpiar canvas
+            ctx.clearRect(0, 0, width, height);
 
-async function loadSnortAlerts() {
-    try {
-        const timestamp = new Date().getTime();
-        const response = await fetch(`http://localhost:8000/alerts?limit=100&_t=${timestamp}`);
-        const data = await response.json();
-        
-        // Filtrar SOLO alertas de Snort IDS (por descripción o tipo_alerta)
-        const snortAlerts = data.alerts.filter(alert => 
-            alert.descripcion && (
-                alert.descripcion.includes('Protocolo:') || 
-                alert.descripcion.includes('Snort') ||
-                (alert.tipo_alerta && alert.tipo_alerta !== 'Snort Alert')
-            )
-        );
-        
-        // Actualizar contador
-        document.getElementById('snort-count').textContent = `${snortAlerts.length} alertas`;
-        
-        const tbody = document.getElementById('snort-alerts-table');
-        
-        if (snortAlerts.length > 0) {
-            tbody.innerHTML = snortAlerts.map(alert => {
-                // Parsear información de la descripción
-                const description = alert.descripcion || '';
-                let protocol = 'N/A', srcIp = 'N/A', dstIp = 'N/A', ruleId = '';
-                
-                // Extraer protocolo
-                const protocolMatch = description.match(/Protocolo:\s*(\w+)/);
-                if (protocolMatch) protocol = protocolMatch[1];
-                
-                // Extraer IP origen
-                const srcMatch = description.match(/Origen:\s*([\w.:]+)/);
-                if (srcMatch) srcIp = srcMatch[1];
-                
-                // Extraer IP destino
-                const dstMatch = description.match(/Destino:\s*([\w.:]+)/);
-                if (dstMatch) dstIp = dstMatch[1];
-                
-                // Extraer Rule ID
-                const ruleMatch = description.match(/Rule ID:\s*([\d:]+)/);
-                if (ruleMatch) ruleId = ruleMatch[1];
-                
-                const timestamp = alert.timestamp ? new Date(alert.timestamp).toLocaleString('es-CL', { timeZone: 'America/Santiago', hour12: false, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' }) : 'N/A';
-                const title = alert.tipo_alerta || alert.host_afectado || 'Snort Alert';
-                const priority = alert.prioridad_ia || 'MEDIA';
-                
-                const priorityClass = priority === 'ALTA' ? 'bg-red-500/20 text-red-500' : 
-                                     priority === 'MEDIA' ? 'bg-yellow-500/20 text-yellow-500' : 
-                                     'bg-blue-500/20 text-blue-500';
-                
-                return `
+            // Fondo
+            ctx.fillStyle = '#1c2127';
+            ctx.fillRect(0, 0, width, height);
+
+            // Función para dibujar área
+            function drawArea(values, color, opacity = 0.7) {
+                ctx.fillStyle = color;
+                ctx.globalAlpha = opacity;
+                ctx.beginPath();
+
+                // Iniciar desde abajo izquierda
+                ctx.moveTo(marginLeft, marginTop + plotHeight);
+
+                // Dibujar línea superior
+                values.forEach((value, i) => {
+                    const x = marginLeft + (i / (points - 1)) * plotWidth;
+                    const y = marginTop + plotHeight - (value / maxValue) * plotHeight;
+                    ctx.lineTo(x, y);
+                });
+
+                // Cerrar path por abajo
+                ctx.lineTo(marginLeft + plotWidth, marginTop + plotHeight);
+                ctx.closePath();
+                ctx.fill();
+                ctx.globalAlpha = 1;
+            }
+
+            // Dibujar áreas apiladas (de mayor a menor)
+            drawArea(stacked.map(d => d.alta), '#5fbeaa', 0.8);      // Verde-azulado (similar a Logstash)
+            drawArea(stacked.map(d => d.media), '#5fa1be', 0.8);     // Azul
+            drawArea(stacked.map(d => d.baja), '#7e5fbe', 0.8);      // Púrpura
+            drawArea(stacked.map(d => d.benigno), '#3b5063', 0.8);   // Gris-azulado oscuro
+
+            // Dibujar ejes
+            ctx.strokeStyle = '#3b4754';
+            ctx.lineWidth = 1;
+
+            // Eje X
+            ctx.beginPath();
+            ctx.moveTo(marginLeft, marginTop + plotHeight);
+            ctx.lineTo(marginLeft + plotWidth, marginTop + plotHeight);
+            ctx.stroke();
+
+            // Eje Y
+            ctx.beginPath();
+            ctx.moveTo(marginLeft, marginTop);
+            ctx.lineTo(marginLeft, marginTop + plotHeight);
+            ctx.stroke();
+
+            // Etiquetas eje X (horas)
+            ctx.fillStyle = '#9dabb9';
+            ctx.font = '9px system-ui';
+            ctx.textAlign = 'center';
+            const now = new Date();
+            for (let i = 0; i <= 5; i++) {
+                const x = marginLeft + (i / 5) * plotWidth;
+                const hour = new Date(now - (24 - i * 4.8) * 60 * 60 * 1000);
+                ctx.fillText(`${hour.getHours().toString().padStart(2, '0')}:00`, x, height - 5);
+            }
+
+            // Etiquetas eje Y
+            ctx.textAlign = 'right';
+            for (let i = 0; i <= 4; i++) {
+                const y = marginTop + (i / 4) * plotHeight;
+                const value = Math.round(maxValue * (1 - i / 4));
+                ctx.fillText(value.toString(), marginLeft - 5, y + 4);
+            }
+
+            // Actualizar total
+            document.getElementById('area-total').textContent = total.toLocaleString();
+        }
+
+        function updateThreatBarChart(threats) {
+            const canvas = document.getElementById('threat-bar-chart');
+            if (!canvas) return;
+
+            const ctx = canvas.getContext('2d');
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.getBoundingClientRect();
+
+            // Configurar canvas con alta resolución
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+
+            const width = rect.width;
+            const height = rect.height;
+            const marginLeft = 200;
+            const marginRight = 80;
+            const marginTop = 20;
+            const marginBottom = 20;
+            const barHeight = 28;
+            const barSpacing = 6;
+
+            const plotWidth = width - marginLeft - marginRight;
+            const plotHeight = height - marginTop - marginBottom;
+
+            // Limpiar canvas
+            ctx.clearRect(0, 0, width, height);
+
+            // Fondo
+            ctx.fillStyle = '#1c2127';
+            ctx.fillRect(0, 0, width, height);
+
+            // Si no hay amenazas, mostrar mensaje
+            if (!threats || threats.length === 0) {
+                ctx.fillStyle = '#9dabb9';
+                ctx.font = '14px system-ui';
+                ctx.textAlign = 'center';
+                ctx.fillText('No hay amenazas detectadas en las últimas 24h', width / 2, height / 2);
+                return;
+            }
+
+            const maxValue = Math.max(...threats.map(t => t.count));
+
+            // Dibujar barras
+            threats.forEach((threat, i) => {
+                const y = marginTop + i * (barHeight + barSpacing);
+                const barWidth = (threat.count / maxValue) * plotWidth;
+
+                // Color según severidad
+                let color;
+                if (threat.severity === 'ALTA') color = '#FF4D4D';
+                else if (threat.severity === 'MEDIA') color = '#FFA500';
+                else if (threat.severity === 'BAJA') color = '#4A90E2';
+                else color = '#10B981';
+
+                // Dibujar barra
+                ctx.fillStyle = color + '30'; // 30 = 18% opacity
+                ctx.fillRect(marginLeft, y, barWidth, barHeight);
+
+                // Borde de la barra
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 2;
+                ctx.strokeRect(marginLeft, y, barWidth, barHeight);
+
+                // Etiqueta del tipo de amenaza (izquierda)
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '12px system-ui';
+                ctx.textAlign = 'right';
+                const label = threat.type.length > 30 ? threat.type.substring(0, 27) + '...' : threat.type;
+                ctx.fillText(label, marginLeft - 10, y + barHeight / 2 + 4);
+
+                // Valor (derecha de la barra)
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 12px system-ui';
+                ctx.textAlign = 'left';
+                ctx.fillText(threat.count, marginLeft + barWidth + 10, y + barHeight / 2 + 4);
+
+                // Badge de severidad (más a la derecha)
+                ctx.fillStyle = '#9dabb9';
+                ctx.font = '11px system-ui';
+                ctx.textAlign = 'left';
+                ctx.fillText(`(${threat.severity})`, marginLeft + barWidth + 45, y + barHeight / 2 + 4);
+            });
+
+            // Línea vertical de referencia
+            ctx.strokeStyle = '#3b4754';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(marginLeft, marginTop);
+            ctx.lineTo(marginLeft, marginTop + threats.length * (barHeight + barSpacing) - barSpacing);
+            ctx.stroke();
+        }
+
+        function setupTooltips() {
+            const circles = ['circle-alta', 'circle-media', 'circle-baja', 'circle-benigno'];
+            const labels = { 'circle-alta': 'Alta', 'circle-media': 'Media', 'circle-baja': 'Baja', 'circle-benigno': 'Benigno' };
+
+            circles.forEach(id => {
+                const circle = document.getElementById(id);
+                const label = labels[id];
+
+                circle.addEventListener('mouseenter', () => {
+                    const value = chartData[label.toLowerCase()];
+                    const total = chartData.total;
+                    let percentage = total > 0 ? ((value / total) * 100) : 0;
+
+                    // Mostrar más decimales si el porcentaje es muy pequeño o muy grande
+                    const decimals = percentage < 1 ? 3 : (percentage < 10 ? 2 : (percentage >= 99.9 ? 2 : 1));
+                    percentage = percentage.toFixed(decimals);
+
+                    document.getElementById('donut-total').textContent = `${percentage}%`;
+                    document.getElementById('donut-label').textContent = `${label}: ${value.toLocaleString()}`;
+                });
+
+                circle.addEventListener('mouseleave', () => {
+                    document.getElementById('donut-total').textContent = chartData.total;
+                    document.getElementById('donut-label').textContent = 'Total Alerts';
+                });
+            });
+        }
+
+        async function loadSnortAlerts() {
+            try {
+                const timestamp = new Date().getTime();
+                const response = await fetch(`http://localhost:8000/alerts?limit=100&_t=${timestamp}`);
+                const data = await response.json();
+
+                // Filtrar SOLO alertas de Snort IDS (por descripción o tipo_alerta)
+                const snortAlerts = data.alerts.filter(alert =>
+                    alert.descripcion && (
+                        alert.descripcion.includes('Protocolo:') ||
+                        alert.descripcion.includes('Snort') ||
+                        (alert.tipo_alerta && alert.tipo_alerta !== 'Snort Alert')
+                    )
+                );
+
+                // Actualizar contador
+                document.getElementById('snort-count').textContent = `${snortAlerts.length} alertas`;
+
+                const tbody = document.getElementById('snort-alerts-table');
+
+                if (snortAlerts.length > 0) {
+                    tbody.innerHTML = snortAlerts.map(alert => {
+                        // Parsear información de la descripción
+                        const description = alert.descripcion || '';
+                        let protocol = 'N/A', srcIp = 'N/A', dstIp = 'N/A', ruleId = '';
+
+                        // Extraer protocolo
+                        const protocolMatch = description.match(/Protocolo:\s*(\w+)/);
+                        if (protocolMatch) protocol = protocolMatch[1];
+
+                        // Extraer IP origen
+                        const srcMatch = description.match(/Origen:\s*([\w.:]+)/);
+                        if (srcMatch) srcIp = srcMatch[1];
+
+                        // Extraer IP destino
+                        const dstMatch = description.match(/Destino:\s*([\w.:]+)/);
+                        if (dstMatch) dstIp = dstMatch[1];
+
+                        // Extraer Rule ID
+                        const ruleMatch = description.match(/Rule ID:\s*([\d:]+)/);
+                        if (ruleMatch) ruleId = ruleMatch[1];
+
+                        const timestamp = alert.timestamp ? new Date(alert.timestamp).toLocaleString('es-CL', { timeZone: 'America/Santiago', hour12: false, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' }) : 'N/A';
+                        const title = alert.tipo_alerta || alert.host_afectado || 'Snort Alert';
+                        const priority = alert.prioridad_ia || 'MEDIA';
+
+                        const priorityClass = priority === 'ALTA' ? 'bg-red-500/20 text-red-500' :
+                            priority === 'MEDIA' ? 'bg-yellow-500/20 text-yellow-500' :
+                                'bg-blue-500/20 text-blue-500';
+
+                        return `
                     <tr class="border-t border-t-[#3b4754] hover:bg-[#3b4754]/50">
                         <td class="h-[50px] px-4 py-2 text-[#9dabb9] text-xs">${timestamp}</td>
                         <td class="h-[50px] px-4 py-2 text-[#9dabb9] text-xs font-semibold">${title}</td>
@@ -943,36 +956,38 @@ async function loadSnortAlerts() {
                         </td>
                     </tr>
                 `;
-            }).join('');
-        } else {
-            tbody.innerHTML = `
+                    }).join('');
+                } else {
+                    tbody.innerHTML = `
                 <tr class="border-t border-t-[#3b4754]">
                     <td colspan="6" class="h-[60px] px-4 py-2 text-center text-[#9dabb9] text-sm">No hay alertas de Snort recientes</td>
                 </tr>
             `;
+                }
+            } catch (err) {
+                console.error('Error cargando alertas de Snort:', err);
+            }
         }
-    } catch (err) {
-        console.error('Error cargando alertas de Snort:', err);
-    }
-}
 
-function parseSnortDescription(description) {
-    const parts = description.split(' | ');
-    const result = {};
-    
-    parts.forEach(part => {
-        if (part.includes('Protocolo:')) result.protocol = part.split('Protocolo:')[1].trim();
-        if (part.includes('Origen:')) result.source_ip = part.split('Origen:')[1].trim();
-        if (part.includes('Destino:')) result.destination_ip = part.split('Destino:')[1].trim();
-    });
-    
-    return result;
-}
+        function parseSnortDescription(description) {
+            const parts = description.split(' | ');
+            const result = {};
 
-loadDashboard();
-loadSnortAlerts();
-setupTooltips();
-setInterval(loadDashboard, 1000);
-setInterval(loadSnortAlerts, 1000); // Actualizar alertas de Snort cada 5 segundos
-</script>
-</body></html>
+            parts.forEach(part => {
+                if (part.includes('Protocolo:')) result.protocol = part.split('Protocolo:')[1].trim();
+                if (part.includes('Origen:')) result.source_ip = part.split('Origen:')[1].trim();
+                if (part.includes('Destino:')) result.destination_ip = part.split('Destino:')[1].trim();
+            });
+
+            return result;
+        }
+
+        loadDashboard();
+        loadSnortAlerts();
+        setupTooltips();
+        setInterval(loadDashboard, 1000);
+        setInterval(loadSnortAlerts, 1000); // Actualizar alertas de Snort cada 5 segundos
+    </script>
+</body>
+
+</html>

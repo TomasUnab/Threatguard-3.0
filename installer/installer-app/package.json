@@ -6,9 +6,11 @@
     "scripts": {
         "start": "electron .",
         "build": "electron-builder",
+        "build:inno": "powershell -NoProfile -ExecutionPolicy Bypass -File build\\build_inno.ps1",
         "build:linux": "electron-builder --linux",
-        "build:windows": "electron-builder --windows",
-        "build:all": "electron-builder --linux --windows"
+        "build:windows": "powershell -Command \"npm install --prefix '../../PAGINA WEB'; npm run build:css --prefix '../../PAGINA WEB'; electron-builder --windows\"",
+        "build:all": "powershell -NoProfile -ExecutionPolicy Bypass -File build\\build_all.ps1",
+        "clean:builds": "powershell -NoProfile -ExecutionPolicy Bypass -File build\\clean_old_builds.ps1"
     },
     "keywords": [
         "threatguard",
@@ -43,7 +45,9 @@
             {
                 "from": "../../src",
                 "to": "app/src",
-                "filter": ["**/*"]
+                "filter": [
+                    "**/*"
+                ]
             },
             {
                 "from": "resources_to_package/threatguard_api.py",
@@ -56,17 +60,31 @@
             {
                 "from": "../../PAGINA WEB",
                 "to": "app/PAGINA WEB",
-                "filter": ["**/*"]
+                "filter": [
+                    "**/*"
+                ]
             },
             {
                 "from": "../../config",
                 "to": "app/config",
-                "filter": ["**/*"]
+                "filter": [
+                    "**/*"
+                ]
             },
             {
                 "from": "../../assets",
                 "to": "assets",
-                "filter": ["**/*"]
+                "filter": [
+                    "**/*"
+                ]
+            },
+            {
+                "from": "build/Output/ThreatGuard_Uninstaller.exe",
+                "to": "ThreatGuard_Uninstaller.exe"
+            },
+            {
+                "from": "build/uninstall.ps1",
+                "to": "uninstall.ps1"
             }
         ],
         "linux": {
@@ -77,18 +95,9 @@
             "category": "Utility"
         },
         "win": {
-            "target": [
-                "nsis"
-            ],
+            "target": "portable",
             "forceCodeSigning": false,
             "requestedExecutionLevel": "requireAdministrator"
-        },
-        "nsis": {
-            "oneClick": false,
-            "allowToChangeInstallationDirectory": true,
-            "perMachine": true,
-            "runAfterFinish": true,
-            "shortcutName": "ThreatGuard"
         }
     }
 }

@@ -1,192 +1,167 @@
-<!DOCTYPE html>
-<html class="dark" lang="en"><head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>SOAR: Playbook Builder</title>
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
-<style>
-.material-symbols-outlined {
-    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24
-}
-#workflow-canvas {
-    cursor: crosshair;
-}
-</style>
-<script>
-tailwind.config = {
-    darkMode: "class",
-    theme: {
-        extend: {
-            colors: {
-                "primary": "#137fec",
-                "background-light": "#f6f7f8",
-                "background-dark": "#101922",
-            },
-            fontFamily: {
-                "display": ["Inter", "sans-serif"]
-            }
-        }
-    }
-}
-</script>
-</head>
-<body class="bg-background-light dark:bg-background-dark font-display">
-<div class="relative flex h-screen w-full flex-col overflow-hidden">
-<header class="sticky top-0 z-50 flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#283039] bg-background-dark px-10 py-3">
-<div class="flex items-center gap-8">
-<div class="flex items-center gap-4 text-white">
-<div class="size-6 text-primary">
-<span class="material-symbols-outlined !text-3xl">security</span>
-</div>
-<h2 class="text-white text-xl font-bold leading-tight tracking-[-0.015em]">ThreatGuard</h2>
 </div>
 <div class="flex items-center gap-9">
-<a class="text-white text-sm font-medium leading-normal" href="/executive_summary/code.html">Dashboard</a>
-<a class="text-white text-sm font-medium leading-normal" href="/alerts/code.html">Alerts</a>
-<a class="text-white text-sm font-medium leading-normal" href="/assets/code.html">Assets</a>
-<a class="text-white text-sm font-medium leading-normal" href="/vulnerability_management/code.html">Vulnerability Management</a>
-<a class="text-white text-sm font-medium leading-normal" href="/soar/code.html">SOAR</a>
-<a class="text-white text-sm font-medium leading-normal" href="/reports/code.html">Reports</a>
-<a class="text-white text-sm font-medium leading-normal" href="/settings/code.html">Settings</a>
+    <a class="text-white text-sm font-medium leading-normal" href="/executive_summary/code.html">Dashboard</a>
+    <a class="text-white text-sm font-medium leading-normal" href="/alerts/code.html">Alerts</a>
+    <a class="text-white text-sm font-medium leading-normal" href="/assets/code.html">Assets</a>
+    <a class="text-white text-sm font-medium leading-normal" href="/vulnerability_management/code.html">Vulnerability
+        Management</a>
+    <a class="text-white text-sm font-medium leading-normal" href="/soar/code.html">SOAR</a>
+    <a class="text-white text-sm font-medium leading-normal" href="/reports/code.html">Reports</a>
+    <a class="text-white text-sm font-medium leading-normal" href="/settings/code.html">Settings</a>
 </div>
 </div>
 </header>
 <div class="flex flex-1 overflow-hidden">
-<aside class="w-64 bg-[#1c2127] border-r border-[#283039] p-4 overflow-y-auto">
-<h3 class="text-white font-bold text-lg mb-4">Nodos</h3>
-<div class="space-y-2">
-<div class="node-template p-3 bg-[#283039] rounded-lg cursor-pointer hover:bg-[#3b4754] border-l-4 border-[#FF6B6B]" data-type="trigger">
-<div class="flex items-center gap-2">
-<span class="material-symbols-outlined text-[#FF6B6B]">bolt</span>
-<div>
-<p class="text-white font-semibold text-sm">Trigger</p>
-<p class="text-[#9dabb9] text-xs">Inicia el workflow</p>
-</div>
-</div>
-</div>
-<div class="node-template p-3 bg-[#283039] rounded-lg cursor-pointer hover:bg-[#3b4754] border-l-4 border-[#FFD93D]" data-type="condition">
-<div class="flex items-center gap-2">
-<span class="material-symbols-outlined text-[#FFD93D]">rule</span>
-<div>
-<p class="text-white font-semibold text-sm">Condición</p>
-<p class="text-[#9dabb9] text-xs">IF/THEN logic</p>
-</div>
-</div>
-</div>
-<div class="node-template p-3 bg-[#283039] rounded-lg cursor-pointer hover:bg-[#3b4754] border-l-4 border-[#6BCF7F]" data-type="action">
-<div class="flex items-center gap-2">
-<span class="material-symbols-outlined text-[#6BCF7F]">play_arrow</span>
-<div>
-<p class="text-white font-semibold text-sm">Acción</p>
-<p class="text-[#9dabb9] text-xs">Ejecutar comando</p>
-</div>
-</div>
-</div>
-<div class="node-template p-3 bg-[#283039] rounded-lg cursor-pointer hover:bg-[#3b4754] border-l-4 border-[#4ECDC4]" data-type="notification">
-<div class="flex items-center gap-2">
-<span class="material-symbols-outlined text-[#4ECDC4]">notifications</span>
-<div>
-<p class="text-white font-semibold text-sm">Notificación</p>
-<p class="text-[#9dabb9] text-xs">Enviar alerta</p>
-</div>
-</div>
-</div>
-<div class="node-template p-3 bg-[#283039] rounded-lg cursor-pointer hover:bg-[#3b4754] border-l-4 border-[#9B59B6]" data-type="delay">
-<div class="flex items-center gap-2">
-<span class="material-symbols-outlined text-[#9B59B6]">schedule</span>
-<div>
-<p class="text-white font-semibold text-sm">Delay</p>
-<p class="text-[#9dabb9] text-xs">Esperar tiempo</p>
-</div>
-</div>
-</div>
-<div class="node-template p-3 bg-[#283039] rounded-lg cursor-pointer hover:bg-[#3b4754] border-l-4 border-[#E67E22]" data-type="webhook">
-<div class="flex items-center gap-2">
-<span class="material-symbols-outlined text-[#E67E22]">webhook</span>
-<div>
-<p class="text-white font-semibold text-sm">Webhook</p>
-<p class="text-[#9dabb9] text-xs">HTTP Request</p>
-</div>
-</div>
-</div>
-<div class="node-template p-3 bg-[#283039] rounded-lg cursor-pointer hover:bg-[#3b4754] border-l-4 border-[#3498DB]" data-type="script">
-<div class="flex items-center gap-2">
-<span class="material-symbols-outlined text-[#3498DB]">code</span>
-<div>
-<p class="text-white font-semibold text-sm">Script</p>
-<p class="text-[#9dabb9] text-xs">Ejecutar código</p>
-</div>
-</div>
-</div>
-<div class="node-template p-3 bg-[#283039] rounded-lg cursor-pointer hover:bg-[#3b4754] border-l-4 border-[#1ABC9C]" data-type="database">
-<div class="flex items-center gap-2">
-<span class="material-symbols-outlined text-[#1ABC9C]">storage</span>
-<div>
-<p class="text-white font-semibold text-sm">Database</p>
-<p class="text-[#9dabb9] text-xs">Query DB</p>
-</div>
-</div>
-</div>
-</div>
-<div class="mt-6">
-<h4 class="text-[#9dabb9] text-sm font-semibold mb-2">Instrucciones</h4>
-<ul class="text-[#9dabb9] text-xs space-y-1">
-<li>• Click en nodo para agregar</li>
-<li>• Arrastrar para mover</li>
-<li>• Doble click para configurar</li>
-<li>• Click derecho para conectar</li>
-<li>• Delete para eliminar</li>
-</ul>
-</div>
-</aside>
-<main class="flex-1 flex flex-col overflow-hidden">
-<div class="bg-[#1c2127] border-b border-[#283039] p-3 flex gap-2">
-<button id="btn-save" class="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-600 transition-colors">
-<span class="material-symbols-outlined text-sm">save</span>
-<span class="text-sm font-semibold">Guardar</span>
-</button>
-<button id="btn-activate" class="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
-<span class="material-symbols-outlined text-sm">play_circle</span>
-<span class="text-sm font-semibold">Activar</span>
-</button>
-<button id="btn-config" class="flex items-center gap-2 px-4 py-2 bg-[#FFD93D] text-black rounded-lg hover:bg-yellow-400 transition-colors">
-<span class="material-symbols-outlined text-sm">settings</span>
-<span class="text-sm font-semibold">Configurar</span>
-</button>
-<button id="btn-clear" class="flex items-center gap-2 px-4 py-2 bg-[#283039] text-white rounded-lg hover:bg-[#3b4754] transition-colors">
-<span class="material-symbols-outlined text-sm">delete_sweep</span>
-<span class="text-sm font-semibold">Limpiar</span>
-</button>
-<button id="btn-delete" class="flex items-center gap-2 px-4 py-2 bg-[#283039] text-white rounded-lg hover:bg-[#3b4754] transition-colors">
-<span class="material-symbols-outlined text-sm">delete</span>
-<span class="text-sm font-semibold">Eliminar</span>
-</button>
-</div>
-<div class="flex-1 bg-[#101922] relative overflow-hidden">
-<canvas id="workflow-canvas" class="w-full h-full"></canvas>
-</div>
-</main>
+    <aside class="w-64 bg-[#1c2127] border-r border-[#283039] p-4 overflow-y-auto">
+        <h3 class="text-white font-bold text-lg mb-4">Nodos</h3>
+        <div class="space-y-2">
+            <div class="node-template p-3 bg-[#283039] rounded-lg cursor-pointer hover:bg-[#3b4754] border-l-4 border-[#FF6B6B]"
+                data-type="trigger">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[#FF6B6B]">bolt</span>
+                    <div>
+                        <p class="text-white font-semibold text-sm">Trigger</p>
+                        <p class="text-[#9dabb9] text-xs">Inicia el workflow</p>
+                    </div>
+                </div>
+            </div>
+            <div class="node-template p-3 bg-[#283039] rounded-lg cursor-pointer hover:bg-[#3b4754] border-l-4 border-[#FFD93D]"
+                data-type="condition">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[#FFD93D]">rule</span>
+                    <div>
+                        <p class="text-white font-semibold text-sm">Condición</p>
+                        <p class="text-[#9dabb9] text-xs">IF/THEN logic</p>
+                    </div>
+                </div>
+            </div>
+            <div class="node-template p-3 bg-[#283039] rounded-lg cursor-pointer hover:bg-[#3b4754] border-l-4 border-[#6BCF7F]"
+                data-type="action">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[#6BCF7F]">play_arrow</span>
+                    <div>
+                        <p class="text-white font-semibold text-sm">Acción</p>
+                        <p class="text-[#9dabb9] text-xs">Ejecutar comando</p>
+                    </div>
+                </div>
+            </div>
+            <div class="node-template p-3 bg-[#283039] rounded-lg cursor-pointer hover:bg-[#3b4754] border-l-4 border-[#4ECDC4]"
+                data-type="notification">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[#4ECDC4]">notifications</span>
+                    <div>
+                        <p class="text-white font-semibold text-sm">Notificación</p>
+                        <p class="text-[#9dabb9] text-xs">Enviar alerta</p>
+                    </div>
+                </div>
+            </div>
+            <div class="node-template p-3 bg-[#283039] rounded-lg cursor-pointer hover:bg-[#3b4754] border-l-4 border-[#9B59B6]"
+                data-type="delay">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[#9B59B6]">schedule</span>
+                    <div>
+                        <p class="text-white font-semibold text-sm">Delay</p>
+                        <p class="text-[#9dabb9] text-xs">Esperar tiempo</p>
+                    </div>
+                </div>
+            </div>
+            <div class="node-template p-3 bg-[#283039] rounded-lg cursor-pointer hover:bg-[#3b4754] border-l-4 border-[#E67E22]"
+                data-type="webhook">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[#E67E22]">webhook</span>
+                    <div>
+                        <p class="text-white font-semibold text-sm">Webhook</p>
+                        <p class="text-[#9dabb9] text-xs">HTTP Request</p>
+                    </div>
+                </div>
+            </div>
+            <div class="node-template p-3 bg-[#283039] rounded-lg cursor-pointer hover:bg-[#3b4754] border-l-4 border-[#3498DB]"
+                data-type="script">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[#3498DB]">code</span>
+                    <div>
+                        <p class="text-white font-semibold text-sm">Script</p>
+                        <p class="text-[#9dabb9] text-xs">Ejecutar código</p>
+                    </div>
+                </div>
+            </div>
+            <div class="node-template p-3 bg-[#283039] rounded-lg cursor-pointer hover:bg-[#3b4754] border-l-4 border-[#1ABC9C]"
+                data-type="database">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[#1ABC9C]">storage</span>
+                    <div>
+                        <p class="text-white font-semibold text-sm">Database</p>
+                        <p class="text-[#9dabb9] text-xs">Query DB</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="mt-6">
+            <h4 class="text-[#9dabb9] text-sm font-semibold mb-2">Instrucciones</h4>
+            <ul class="text-[#9dabb9] text-xs space-y-1">
+                <li>• Click en nodo para agregar</li>
+                <li>• Arrastrar para mover</li>
+                <li>• Doble click para configurar</li>
+                <li>• Click derecho para conectar</li>
+                <li>• Delete para eliminar</li>
+            </ul>
+        </div>
+    </aside>
+    <main class="flex-1 flex flex-col overflow-hidden">
+        <div class="bg-[#1c2127] border-b border-[#283039] p-3 flex gap-2">
+            <button id="btn-save"
+                class="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-600 transition-colors">
+                <span class="material-symbols-outlined text-sm">save</span>
+                <span class="text-sm font-semibold">Guardar</span>
+            </button>
+            <button id="btn-activate"
+                class="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                <span class="material-symbols-outlined text-sm">play_circle</span>
+                <span class="text-sm font-semibold">Activar</span>
+            </button>
+            <button id="btn-config"
+                class="flex items-center gap-2 px-4 py-2 bg-[#FFD93D] text-black rounded-lg hover:bg-yellow-400 transition-colors">
+                <span class="material-symbols-outlined text-sm">settings</span>
+                <span class="text-sm font-semibold">Configurar</span>
+            </button>
+            <button id="btn-clear"
+                class="flex items-center gap-2 px-4 py-2 bg-[#283039] text-white rounded-lg hover:bg-[#3b4754] transition-colors">
+                <span class="material-symbols-outlined text-sm">delete_sweep</span>
+                <span class="text-sm font-semibold">Limpiar</span>
+            </button>
+            <button id="btn-delete"
+                class="flex items-center gap-2 px-4 py-2 bg-[#283039] text-white rounded-lg hover:bg-[#3b4754] transition-colors">
+                <span class="material-symbols-outlined text-sm">delete</span>
+                <span class="text-sm font-semibold">Eliminar</span>
+            </button>
+        </div>
+        <div class="flex-1 bg-[#101922] relative overflow-hidden">
+            <canvas id="workflow-canvas" class="w-full h-full"></canvas>
+        </div>
+    </main>
 </div>
 </div>
 <div id="config-modal" class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
-<div class="bg-[#1c2127] rounded-lg max-w-2xl w-full border border-[#3b4754]">
-<div class="p-6">
-<div class="flex justify-between items-center mb-4">
-<h2 class="text-2xl font-bold text-white">Configurar Nodo</h2>
-<button id="btn-close-modal" class="text-[#9dabb9] hover:text-white">
-<span class="material-symbols-outlined text-3xl">close</span>
-</button>
-</div>
-<form id="config-form" class="space-y-4">
-</form>
-<div class="mt-6 flex gap-3 justify-end">
-<button type="button" class="btn-cancel-modal px-4 py-2 bg-[#283039] text-white rounded-lg hover:bg-[#3b4754]">Cancelar</button>
-<button id="btn-save-config" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-600">Guardar</button>
-</div>
-</div>
-</div>
+    <div class="bg-[#1c2127] rounded-lg max-w-2xl w-full border border-[#3b4754]">
+        <div class="p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold text-white">Configurar Nodo</h2>
+                <button id="btn-close-modal" class="text-[#9dabb9] hover:text-white">
+                    <span class="material-symbols-outlined text-3xl">close</span>
+                </button>
+            </div>
+            <form id="config-form" class="space-y-4">
+            </form>
+            <div class="mt-6 flex gap-3 justify-end">
+                <button type="button"
+                    class="btn-cancel-modal px-4 py-2 bg-[#283039] text-white rounded-lg hover:bg-[#3b4754]">Cancelar</button>
+                <button id="btn-save-config"
+                    class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-600">Guardar</button>
+            </div>
+        </div>
+    </div>
 </div>
 <script src="soar-workflow.js"></script>
-</body></html>
+</body>
+
+</html>

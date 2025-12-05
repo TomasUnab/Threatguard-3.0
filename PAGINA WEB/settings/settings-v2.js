@@ -1,3 +1,669 @@
+// ==========================================
+// FUNCIONES GLOBALES PARA AGENTES
+// ==========================================
+const API_URL = 'http://localhost:8000';
+
+// Variable para almacenar el agente seleccionado
+let selectedAgent = null;
+
+// Definición completa de módulos de seguridad con reglas
+const securityModulesRules = {
+    anti_malware: {
+        name: 'Anti-Malware', icon: 'verified_user',
+        rules: [
+            { id: 'scan_realtime', name: 'Escaneo en tiempo real', enabled: true },
+            { id: 'scan_downloads', name: 'Escanear descargas automáticamente', enabled: true },
+            { id: 'scan_usb', name: 'Escanear dispositivos USB', enabled: true },
+            { id: 'quarantine_auto', name: 'Cuarentena automática de amenazas', enabled: true },
+            { id: 'scan_compressed', name: 'Escanear archivos comprimidos', enabled: false }
+        ]
+    },
+    firewall: {
+        name: 'Firewall', icon: 'local_fire_department',
+        rules: [
+            { id: 'block_inbound', name: 'Bloquear conexiones entrantes no autorizadas', enabled: true },
+            { id: 'block_outbound', name: 'Bloquear conexiones salientes sospechosas', enabled: true },
+            { id: 'log_blocked', name: 'Registrar conexiones bloqueadas', enabled: true },
+            { id: 'stealth_mode', name: 'Modo sigiloso (no responder ping)', enabled: false }
+        ]
+    },
+    ips: {
+        name: 'Sistema de Prevención de Intrusiones', icon: 'shield',
+        rules: [
+            { id: 'detect_scan', name: 'Detectar escaneos de puertos', enabled: true },
+            { id: 'block_exploit', name: 'Bloquear exploits conocidos', enabled: true },
+            { id: 'detect_bruteforce', name: 'Detectar ataques de fuerza bruta', enabled: true },
+            { id: 'block_dos', name: 'Protección contra DoS', enabled: true }
+        ]
+    },
+    intrusion_prevention: {
+        name: 'Intrusion Prevention', icon: 'block',
+        rules: [
+            { id: 'prevent_sql_injection', name: 'Prevenir SQL Injection', enabled: true },
+            { id: 'prevent_xss', name: 'Prevenir Cross-Site Scripting', enabled: true },
+            { id: 'prevent_rce', name: 'Prevenir ejecución remota de código', enabled: true },
+            { id: 'prevent_lfi', name: 'Prevenir Local File Inclusion', enabled: true },
+            { id: 'block_known_exploits', name: 'Bloquear exploits conocidos', enabled: true }
+        ]
+    },
+    web_reputation: {
+        name: 'Reputación Web', icon: 'language',
+        rules: [
+            { id: 'block_malicious', name: 'Bloquear sitios maliciosos', enabled: true },
+            { id: 'block_phishing', name: 'Bloquear sitios de phishing', enabled: true },
+            { id: 'warn_unknown', name: 'Advertir sobre sitios desconocidos', enabled: false },
+            { id: 'block_crypto', name: 'Bloquear sitios de cryptojacking', enabled: true }
+        ]
+    },
+    integrity_monitoring: {
+        name: 'Monitoreo de Integridad', icon: 'folder_open',
+        rules: [
+            { id: 'monitor_system', name: 'Monitorear archivos del sistema', enabled: true },
+            { id: 'monitor_registry', name: 'Monitorear registro de Windows', enabled: true },
+            { id: 'monitor_config', name: 'Monitorear archivos de configuración', enabled: true },
+            { id: 'alert_changes', name: 'Alertar cambios no autorizados', enabled: true }
+        ]
+    },
+    log_inspection: {
+        name: 'Inspección de Logs', icon: 'description',
+        rules: [
+            { id: 'inspect_security', name: 'Inspeccionar logs de seguridad', enabled: true },
+            { id: 'inspect_system', name: 'Inspeccionar logs del sistema', enabled: true },
+            { id: 'inspect_application', name: 'Inspeccionar logs de aplicaciones', enabled: true },
+            { id: 'detect_anomalies', name: 'Detectar anomalías en logs', enabled: false }
+        ]
+    },
+    application_control: {
+        name: 'Control de Aplicaciones', icon: 'apps',
+        rules: [
+            { id: 'whitelist_mode', name: 'Modo lista blanca', enabled: false },
+            { id: 'block_unknown', name: 'Bloquear aplicaciones desconocidas', enabled: false },
+            { id: 'alert_new_apps', name: 'Alertar nuevas aplicaciones', enabled: true }
+        ]
+    },
+    activity_monitoring: {
+        name: 'Monitoreo de Actividad', icon: 'visibility',
+        rules: [
+            { id: 'monitor_processes', name: 'Monitorear procesos', enabled: true },
+            { id: 'monitor_network', name: 'Monitorear conexiones de red', enabled: true },
+            { id: 'monitor_files', name: 'Monitorear acceso a archivos', enabled: false }
+        ]
+    },
+    device_control: {
+        name: 'Control de Dispositivos', icon: 'usb',
+        rules: [
+            { id: 'block_usb', name: 'Bloquear dispositivos USB no autorizados', enabled: false },
+            { id: 'log_usb', name: 'Registrar conexiones USB', enabled: true },
+            { id: 'allow_known_devices', name: 'Permitir solo dispositivos conocidos', enabled: true }
+        ]
+    }
+};
+
+let currentModule = null;
+
+// Abrir modal de reglas del módulo - CON API REAL
+async function openModuleRules(moduleKey) {
+    const module = securityModulesRules[moduleKey];
+    if (!module) {
+        showNotification('Módulo no encontrado: ' + moduleKey, 'error');
+        return;
+    }
+    currentModule = moduleKey;
+    
+    const titleEl = document.getElementById('module-rules-title');
+    if (titleEl) {
+        titleEl.innerHTML = `<span class="material-symbols-outlined text-primary">${module.icon}</span> ${module.name} - Reglas`;
+    }
+    
+    // Si hay agente seleccionado, cargar su configuración real
+    let moduleRules = module.rules;
+    if (selectedAgent) {
+        try {
+            const response = await fetch(`${API_URL}/agent/modules/${selectedAgent.id}`);
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success && data.modules && data.modules[moduleKey]) {
+                    const serverRules = data.modules[moduleKey].rules || {};
+                    moduleRules = module.rules.map(rule => ({
+                        ...rule,
+                        enabled: serverRules[rule.id] !== undefined ? serverRules[rule.id] : rule.enabled
+                    }));
+                }
+            }
+        } catch (err) {
+            console.warn('Error cargando config del servidor, usando defaults:', err);
+        }
+    }
+    
+    const content = document.getElementById('module-rules-content');
+    if (content) {
+        content.innerHTML = moduleRules.map(rule => `
+            <div class="flex items-center justify-between p-3 bg-[#1c2127] rounded-lg mb-2 hover:bg-[#283039] transition-colors">
+                <div>
+                    <span class="text-white">${rule.name}</span>
+                    <p class="text-xs text-gray-500 mt-1">${getRuleDescription(rule.id)}</p>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" ${rule.enabled ? 'checked' : ''} class="sr-only peer" data-rule="${rule.id}" onchange="toggleRuleRealtime('${moduleKey}', '${rule.id}', this.checked)">
+                    <div class="w-11 h-6 bg-[#3b4754] rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
+                </label>
+            </div>
+        `).join('');
+    }
+    
+    const modal = document.getElementById('module-rules-modal');
+    if (modal) modal.classList.remove('hidden');
+}
+
+// Descripciones de reglas para mejor UX
+function getRuleDescription(ruleId) {
+    const descriptions = {
+        'scan_realtime': 'Escanea archivos en tiempo real cuando se acceden o modifican',
+        'scan_downloads': 'Analiza automáticamente archivos descargados de internet',
+        'scan_usb': 'Escanea dispositivos USB al conectarse',
+        'quarantine_auto': 'Mueve automáticamente archivos infectados a cuarentena',
+        'scan_compressed': 'Escanea contenido dentro de archivos ZIP, RAR, etc.',
+        'block_inbound': 'Bloquea conexiones entrantes no autorizadas',
+        'block_outbound': 'Bloquea conexiones salientes a IPs sospechosas',
+        'log_blocked': 'Registra todas las conexiones bloqueadas para auditoría',
+        'stealth_mode': 'No responde a solicitudes ping para mayor seguridad',
+        'prevent_sql_injection': 'Detecta y bloquea intentos de SQL Injection',
+        'prevent_xss': 'Previene ataques Cross-Site Scripting',
+        'prevent_rce': 'Bloquea intentos de ejecución remota de código',
+        'prevent_lfi': 'Previene ataques de Local File Inclusion',
+        'block_known_exploits': 'Bloquea exploits conocidos basados en firmas',
+        'monitor_system': 'Monitorea cambios en archivos críticos del sistema',
+        'monitor_registry': 'Detecta modificaciones en el registro de Windows',
+        'monitor_config': 'Vigila cambios en archivos de configuración',
+        'alert_changes': 'Genera alertas cuando se detectan cambios no autorizados',
+        'inspect_security': 'Analiza logs de eventos de seguridad',
+        'inspect_system': 'Monitorea logs del sistema operativo',
+        'inspect_application': 'Revisa logs de aplicaciones instaladas',
+        'detect_anomalies': 'Usa IA para detectar patrones anómalos en logs',
+        'block_malicious': 'Bloquea acceso a sitios web maliciosos conocidos',
+        'block_phishing': 'Previene acceso a sitios de phishing',
+        'warn_unknown': 'Muestra advertencias en sitios sin reputación',
+        'block_crypto': 'Bloquea sitios de minería de criptomonedas no autorizada',
+        'monitor_processes': 'Rastrea todos los procesos en ejecución',
+        'monitor_network': 'Monitorea conexiones de red activas',
+        'monitor_files': 'Registra accesos a archivos sensibles',
+        'whitelist_mode': 'Solo permite aplicaciones en lista blanca',
+        'block_unknown': 'Bloquea aplicaciones no reconocidas',
+        'alert_new_apps': 'Alerta cuando se instalan nuevas aplicaciones',
+        'block_usb': 'Bloquea dispositivos USB no autorizados',
+        'log_usb': 'Registra conexiones de dispositivos USB',
+        'allow_known_devices': 'Permite solo dispositivos USB previamente autorizados'
+    };
+    return descriptions[ruleId] || 'Regla de seguridad';
+}
+
+// Toggle regla en tiempo real
+async function toggleRuleRealtime(moduleKey, ruleId, enabled) {
+    // Actualizar localmente
+    const rule = securityModulesRules[moduleKey]?.rules.find(r => r.id === ruleId);
+    if (rule) rule.enabled = enabled;
+    
+    // Enviar al servidor si hay agente seleccionado
+    if (selectedAgent) {
+        try {
+            await fetch(`${API_URL}/agent/modules/${selectedAgent.id}/rule`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ module: moduleKey, rule_id: ruleId, enabled })
+            });
+        } catch (err) {
+            console.warn('Error guardando regla en servidor:', err);
+        }
+    }
+    
+    updateModulesDisplay();
+}
+
+function closeModuleRulesModal() {
+    const modal = document.getElementById('module-rules-modal');
+    if (modal) modal.classList.add('hidden');
+    currentModule = null;
+}
+
+async function saveModuleRules() {
+    if (currentModule) {
+        const rules = document.querySelectorAll('#module-rules-content input[data-rule]');
+        const rulesConfig = {};
+        
+        rules.forEach(input => {
+            const ruleId = input.dataset.rule;
+            rulesConfig[ruleId] = input.checked;
+            
+            // Actualizar estado local
+            const rule = securityModulesRules[currentModule].rules.find(r => r.id === ruleId);
+            if (rule) rule.enabled = input.checked;
+        });
+        
+        // Guardar en servidor si hay agente
+        if (selectedAgent) {
+            try {
+                const response = await fetch(`${API_URL}/agent/modules/${selectedAgent.id}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        modules: { 
+                            [currentModule]: { 
+                                enabled: true, 
+                                rules: rulesConfig 
+                            } 
+                        } 
+                    })
+                });
+                
+                if (response.ok) {
+                    showNotification(`Reglas de ${securityModulesRules[currentModule].name} guardadas`, 'success');
+                } else {
+                    showNotification('Error guardando reglas en el servidor', 'error');
+                }
+            } catch (err) {
+                showNotification('Error de conexión al guardar reglas', 'error');
+            }
+        } else {
+            showNotification('Reglas guardadas localmente', 'success');
+        }
+    }
+    closeModuleRulesModal();
+    updateModulesDisplay();
+}
+
+// Actualizar display de módulos con conteo real de reglas
+function updateModulesDisplay() {
+    Object.keys(securityModulesRules).forEach(key => {
+        const module = securityModulesRules[key];
+        const enabledCount = module.rules.filter(r => r.enabled).length;
+        const totalCount = module.rules.length;
+        const statusEl = document.querySelector(`[data-module-status="${key}"]`);
+        if (statusEl) {
+            statusEl.textContent = `On, ${enabledCount}/${totalCount} reglas`;
+            statusEl.className = enabledCount > 0 ? 'text-sm text-green-400' : 'text-sm text-gray-400';
+        }
+    });
+}
+
+// Toggle de módulo completo
+async function toggleModule(moduleKey, enabled) {
+    if (securityModulesRules[moduleKey]) {
+        securityModulesRules[moduleKey].enabled = enabled;
+    }
+    
+    if (selectedAgent) {
+        try {
+            await fetch(`${API_URL}/agent/modules/${selectedAgent.id}/toggle`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ module: moduleKey, enabled })
+            });
+            showNotification(`${securityModulesRules[moduleKey]?.name || moduleKey} ${enabled ? 'activado' : 'desactivado'}`, enabled ? 'success' : 'warning');
+        } catch (err) {
+            console.error('Error toggling module:', err);
+        }
+    }
+    
+    updateModulesDisplay();
+}
+
+// Abrir configuración de agente - AHORA CON DATOS REALES
+function openAgentConfig(agentId) {
+    // Buscar el agente en los datos cargados
+    fetch(`${API_URL}/assets`)
+        .then(r => r.json())
+        .then(data => {
+            const agent = (data.assets || []).find(a => a.id == agentId);
+            if (agent) {
+                selectedAgent = agent;
+                populateAgentModal(agent);
+            }
+            const modal = document.getElementById('agent-config-modal');
+            if (modal) modal.classList.remove('hidden');
+        })
+        .catch(err => {
+            console.error('Error:', err);
+            const modal = document.getElementById('agent-config-modal');
+            if (modal) modal.classList.remove('hidden');
+        });
+}
+
+// Poblar el modal con datos del agente
+function populateAgentModal(agent) {
+    // Tab General
+    const hostnameEl = document.querySelector('#agent-config-modal [data-field="hostname"]');
+    const ipEl = document.querySelector('#agent-config-modal [data-field="ip"]');
+    const platformEl = document.querySelector('#agent-config-modal [data-field="platform"]');
+    const lastSeenEl = document.querySelector('#agent-config-modal [data-field="last_seen"]');
+    
+    if (hostnameEl) hostnameEl.textContent = agent.hostname || 'Unknown';
+    if (ipEl) ipEl.textContent = agent.ip || 'N/A';
+    if (platformEl) platformEl.textContent = agent.os || 'Unknown';
+    if (lastSeenEl) lastSeenEl.textContent = agent.last_seen ? new Date(agent.last_seen).toLocaleString() : 'Never';
+    
+    // Actualizar pestañas
+    setupAgentModalTabs();
+}
+
+// Configurar pestañas del modal de agente
+function setupAgentModalTabs() {
+    const tabs = document.querySelectorAll('#agent-config-modal [data-tab]');
+    const contents = document.querySelectorAll('#agent-config-modal [data-tab-content]');
+    
+    tabs.forEach(tab => {
+        tab.onclick = () => {
+            tabs.forEach(t => t.classList.remove('text-primary', 'border-b-2', 'border-primary'));
+            tab.classList.add('text-primary', 'border-b-2', 'border-primary');
+            
+            const tabName = tab.dataset.tab;
+            contents.forEach(c => c.classList.add('hidden'));
+            const content = document.querySelector(`#agent-config-modal [data-tab-content="${tabName}"]`);
+            if (content) content.classList.remove('hidden');
+        };
+    });
+}
+
+function closeAgentConfigModal() {
+    const modal = document.getElementById('agent-config-modal');
+    if (modal) modal.classList.add('hidden');
+    selectedAgent = null;
+}
+
+function saveAgentConfig() {
+    closeAgentConfigModal();
+    showNotification('Configuración del agente guardada', 'success');
+}
+
+// Check Status - AHORA VERIFICA EL ESTADO REAL
+async function checkAgentStatus() {
+    if (!selectedAgent) {
+        showNotification('No hay agente seleccionado', 'error');
+        return;
+    }
+    
+    showNotification('Verificando estado del agente...', 'info');
+    
+    try {
+        const response = await fetch(`${API_URL}/assets`);
+        const data = await response.json();
+        const agent = (data.assets || []).find(a => a.id == selectedAgent.id);
+        
+        if (agent) {
+            const isOnline = agent.status === 'Active';
+            if (isOnline) {
+                showNotification(`Agente ${agent.hostname} está ONLINE`, 'success');
+            } else {
+                showNotification(`Agente ${agent.hostname} está OFFLINE`, 'error');
+            }
+            // Actualizar datos en el modal
+            populateAgentModal(agent);
+        } else {
+            showNotification('Agente no encontrado', 'error');
+        }
+    } catch (err) {
+        showNotification('Error al verificar estado: ' + err.message, 'error');
+    }
+}
+
+// Guardar y aplicar módulos a todos los agentes
+async function saveAgentModules() {
+    showNotification('Guardando configuración de módulos...', 'info');
+    
+    // Construir configuración completa de módulos
+    const modulesConfig = {};
+    Object.keys(securityModulesRules).forEach(key => {
+        const module = securityModulesRules[key];
+        const checkbox = document.querySelector(`input[data-module="${key}"]`);
+        const enabled = checkbox ? checkbox.checked : true;
+        
+        modulesConfig[key] = {
+            enabled: enabled,
+            rules: {}
+        };
+        
+        module.rules.forEach(rule => {
+            modulesConfig[key].rules[rule.id] = rule.enabled;
+        });
+    });
+    
+    try {
+        // Si hay agente seleccionado, guardar para ese agente
+        if (selectedAgent) {
+            const response = await fetch(`${API_URL}/agent/modules/${selectedAgent.id}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ modules: modulesConfig })
+            });
+            
+            if (response.ok) {
+                showNotification(`Configuración guardada para ${selectedAgent.hostname}`, 'success');
+            } else {
+                throw new Error('Error del servidor');
+            }
+        } else {
+            // Guardar como configuración global
+            const response = await fetch(`${API_URL}/agent/modules/sync`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ modules: modulesConfig })
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                showNotification(`Configuración aplicada a ${data.synced_agents?.length || 0} agentes`, 'success');
+            } else {
+                throw new Error('Error del servidor');
+            }
+        }
+    } catch (err) {
+        console.error('Error guardando módulos:', err);
+        showNotification('Error al guardar configuración: ' + err.message, 'error');
+    }
+}
+
+// Sincronizar módulos con todos los agentes activos
+async function syncAgentModules() {
+    showNotification('Sincronizando con agentes activos...', 'info');
+    
+    // Construir configuración actual
+    const modulesConfig = {};
+    Object.keys(securityModulesRules).forEach(key => {
+        const module = securityModulesRules[key];
+        const checkbox = document.querySelector(`input[data-module="${key}"]`);
+        
+        modulesConfig[key] = {
+            enabled: checkbox ? checkbox.checked : true,
+            rules: {}
+        };
+        
+        module.rules.forEach(rule => {
+            modulesConfig[key].rules[rule.id] = rule.enabled;
+        });
+    });
+    
+    try {
+        const response = await fetch(`${API_URL}/agent/modules/sync`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ modules: modulesConfig })
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            const agentCount = data.synced_agents?.length || 0;
+            
+            if (agentCount > 0) {
+                showNotification(`✓ Sincronizado con ${agentCount} agente(s) activo(s)`, 'success');
+                
+                // Mostrar detalles
+                if (data.synced_agents) {
+                    console.log('Agentes sincronizados:', data.synced_agents.map(a => a.hostname));
+                }
+            } else {
+                showNotification('No hay agentes activos para sincronizar', 'warning');
+            }
+        } else {
+            throw new Error('Error del servidor');
+        }
+    } catch (err) {
+        console.error('Error sincronizando:', err);
+        showNotification('Error al sincronizar: ' + err.message, 'error');
+    }
+}
+
+// Cargar eventos del agente seleccionado
+async function loadAgentEvents() {
+    if (!selectedAgent) return;
+    
+    try {
+        const response = await fetch(`${API_URL}/agent/modules/events/${selectedAgent.id}`);
+        if (response.ok) {
+            const data = await response.json();
+            displayAgentEvents(data.events || []);
+        }
+    } catch (err) {
+        console.error('Error cargando eventos:', err);
+    }
+}
+
+// Mostrar eventos en el tab de Eventos
+function displayAgentEvents(events) {
+    const container = document.querySelector('#agent-config-modal [data-tab-content="eventos"]');
+    if (!container) return;
+    
+    if (events.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-8 text-gray-400">
+                <span class="material-symbols-outlined text-4xl mb-2">event_busy</span>
+                <p>No hay eventos recientes</p>
+            </div>
+        `;
+        return;
+    }
+    
+    const severityColors = {
+        critical: 'bg-red-500/20 text-red-400 border-red-500/30',
+        high: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
+        medium: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+        low: 'bg-blue-500/20 text-blue-400 border-blue-500/30'
+    };
+    
+    container.innerHTML = events.map(event => `
+        <div class="p-3 bg-[#1c2127] rounded-lg mb-2 border ${severityColors[event.severity] || 'border-gray-600'}">
+            <div class="flex justify-between items-start">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-lg ${event.severity === 'critical' ? 'text-red-400' : 'text-yellow-400'}">
+                        ${event.severity === 'critical' ? 'error' : 'warning'}
+                    </span>
+                    <span class="text-white font-medium">${event.description}</span>
+                </div>
+                <span class="text-xs text-gray-500">${new Date(event.timestamp).toLocaleString()}</span>
+            </div>
+            <div class="mt-2 flex gap-2">
+                <span class="text-xs px-2 py-1 bg-[#283039] rounded text-gray-300">${event.module}</span>
+                <span class="text-xs px-2 py-1 bg-[#283039] rounded text-gray-300">${event.action || 'detected'}</span>
+            </div>
+        </div>
+    `).join('');
+}
+
+function showNotification(message, type = 'info') {
+    const colors = { 
+        success: 'bg-green-500', 
+        error: 'bg-red-500', 
+        warning: 'bg-yellow-500', 
+        info: 'bg-blue-500' 
+    };
+    const notification = document.createElement('div');
+    notification.className = `fixed bottom-4 right-4 ${colors[type]} text-white px-6 py-3 rounded-lg shadow-lg z-[9999] flex items-center gap-2`;
+    notification.innerHTML = `<span class="material-symbols-outlined">info</span> ${message}`;
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 3000);
+}
+
+// Cargar agentes desde API
+async function loadAgents() {
+    try {
+        const response = await fetch(`${API_URL}/assets`);
+        if (response.ok) {
+            const data = await response.json();
+            const assets = data.assets || [];
+            const agents = assets.map(asset => ({
+                id: asset.id,
+                hostname: asset.hostname || asset.agent_name || 'Unknown',
+                ip: asset.ip || 'N/A',
+                os: asset.os || 'Unknown',
+                online: asset.status === 'Active',
+                last_seen: asset.last_seen ? new Date(asset.last_seen).toLocaleString() : 'Never'
+            }));
+            updateAgentsTable(agents);
+            updateAgentsStats(agents);
+        }
+    } catch (err) {
+        console.error('Error cargando agentes:', err);
+    }
+}
+
+function updateAgentsTable(agents) {
+    const tbody = document.getElementById('agents-table-body');
+    if (!tbody) return;
+    if (!agents.length) {
+        tbody.innerHTML = '<tr><td colspan="6" class="px-4 py-3 text-center text-[#9dabb9]">No hay agentes registrados</td></tr>';
+        return;
+    }
+    tbody.innerHTML = agents.map(agent => `
+        <tr class="border-b border-[#283039] hover:bg-[#1c2127]">
+            <td class="px-4 py-3 text-white font-medium">${agent.hostname}</td>
+            <td class="px-4 py-3 text-[#9dabb9]">${agent.ip}</td>
+            <td class="px-4 py-3 text-[#9dabb9]">${agent.os}</td>
+            <td class="px-4 py-3">
+                <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${agent.online ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}">
+                    <span class="w-2 h-2 rounded-full ${agent.online ? 'bg-green-500' : 'bg-red-500'}"></span>
+                    ${agent.online ? 'Online' : 'Offline'}
+                </span>
+            </td>
+            <td class="px-4 py-3 text-[#9dabb9]">${agent.last_seen}</td>
+            <td class="px-4 py-3">
+                <button onclick="openAgentConfig('${agent.id}')" class="px-3 py-1 bg-primary text-white text-sm rounded hover:bg-primary/90">Configurar</button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function updateAgentsStats(agents) {
+    const online = agents.filter(a => a.online).length;
+    const offline = agents.filter(a => !a.online).length;
+    const el = (id) => document.getElementById(id);
+    if (el('agents-online')) el('agents-online').textContent = online;
+    if (el('agents-offline')) el('agents-offline').textContent = offline;
+    if (el('agents-warnings')) el('agents-warnings').textContent = 0;
+    if (el('agents-protected')) el('agents-protected').textContent = online;
+}
+
+// Cargar agentes cuando se carga la página
+document.addEventListener('DOMContentLoaded', () => {
+    loadAgents();
+    setInterval(loadAgents, 10000);
+    updateModulesDisplay();
+    setupModuleToggles();
+});
+
+// Configurar event listeners para los toggles de módulos
+function setupModuleToggles() {
+    const moduleCheckboxes = document.querySelectorAll('input[data-module]');
+    moduleCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const moduleKey = this.dataset.module;
+            const enabled = this.checked;
+            toggleModule(moduleKey, enabled);
+        });
+    });
+}
+
+// ==========================================
+// CÓDIGO ORIGINAL
+// ==========================================
+
 // Navegación entre secciones
 document.querySelectorAll('.menu-item').forEach(item => {
     item.addEventListener('click', () => {
@@ -21,6 +687,8 @@ document.querySelectorAll('.menu-item').forEach(item => {
         } else if (section === 'assets') {
             loadAssets();
             loadTags();
+        } else if (section === 'agents') {
+            loadAgents();
         }
     });
 });
@@ -746,10 +1414,10 @@ function renderAssetsTable() {
     if (filteredAssets.length === 0) {
         assetsTableBody.innerHTML = `
             <tr>
-                <td colspan="7" class="px-4 py-8 text-center text-[#9dabb9]">
+                <td colspan="8" class="px-4 py-8 text-center text-[#9dabb9]">
                     <div class="flex flex-col items-center gap-3">
                         <span class="material-symbols-outlined text-4xl">devices</span>
-                        <p>No hay activos registrados</p>
+                        <p>No hay activos que coincidan con los filtros</p>
                     </div>
                 </td>
             </tr>
@@ -758,16 +1426,17 @@ function renderAssetsTable() {
     }
     
     assetsTableBody.innerHTML = filteredAssets.map(asset => {
+        // Normalizar OS
+        const normalizedOS = normalizeOS(asset.os_type);
         const osIcons = {
             'windows': 'computer',
             'linux': 'terminal',
             'macos': 'laptop_mac'
         };
-        
-        const statusColors = {
-            'active': 'bg-green-500/20 text-green-400',
-            'inactive': 'bg-gray-500/20 text-gray-400',
-            'offline': 'bg-red-500/20 text-red-400'
+        const osNames = {
+            'windows': 'Windows',
+            'linux': 'Linux',
+            'macos': 'macOS'
         };
         
         const riskColors = {
@@ -779,12 +1448,13 @@ function renderAssetsTable() {
         const riskLevel = asset.risk_score < 30 ? 'low' : asset.risk_score < 60 ? 'medium' : 'high';
         const riskText = asset.risk_score < 30 ? 'Bajo' : asset.risk_score < 60 ? 'Medio' : 'Alto';
         
-        // Usar el estado calculado por el backend (que ya tiene la lógica correcta)
-        console.log(`Asset ${asset.hostname}: backend status = "${asset.status}"`);
+        // Estado online/offline
         const isOnline = asset.status === 'online';
-        const agentStatus = isOnline ? 'active' : 'offline';
         const statusText = isOnline ? 'Online' : 'Offline';
-        console.log(`Asset ${asset.hostname}: isOnline = ${isOnline}, statusText = ${statusText}`);
+        
+        // Formatear versión del OS
+        const osDisplay = osNames[normalizedOS] || asset.os_type || 'Desconocido';
+        const osVersion = asset.os_version || '';
         
         return `
             <tr class="border-t border-[#3b4754] hover:bg-[#1c2127] transition-colors">
@@ -797,11 +1467,11 @@ function renderAssetsTable() {
                 <td class="px-4 py-4">
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                            <span class="material-symbols-outlined text-primary">${osIcons[asset.os_type] || 'devices'}</span>
+                            <span class="material-symbols-outlined text-primary">${osIcons[normalizedOS] || 'devices'}</span>
                         </div>
                         <div>
                             <p class="text-white font-medium">${asset.hostname}</p>
-                            <p class="text-[#9dabb9] text-xs">${asset.status}</p>
+                            <p class="text-[#9dabb9] text-xs">${statusText.toLowerCase()}</p>
                         </div>
                     </div>
                 </td>
@@ -810,19 +1480,20 @@ function renderAssetsTable() {
                     <p class="text-[#9dabb9] text-xs">${asset.mac_address || 'N/A'}</p>
                 </td>
                 <td class="px-4 py-4">
-                    <p class="text-white text-sm">${asset.os_version || 'N/A'}</p>
+                    <p class="text-white text-sm">${osDisplay}</p>
+                    <p class="text-[#9dabb9] text-xs">${osVersion}</p>
                 </td>
                 <td class="px-4 py-4">
                     <div class="space-y-1">
                         ${asset.antivirus_active ? `
                             <div class="flex items-center gap-2">
                                 <span class="w-2 h-2 rounded-full bg-green-500"></span>
-                                <span class="text-white text-xs">${asset.antivirus_name || 'Antivirus Activo'}</span>
+                                <span class="text-white text-xs">Antivirus Activo</span>
                             </div>
                         ` : `
                             <div class="flex items-center gap-2">
                                 <span class="w-2 h-2 rounded-full bg-red-500"></span>
-                                <span class="text-[#9dabb9] text-xs">Sin antivirus</span>
+                                <span class="text-[#9dabb9] text-xs">Sin Antivirus</span>
                             </div>
                         `}
                         ${asset.telemetry_enabled ? `
@@ -833,7 +1504,7 @@ function renderAssetsTable() {
                         ` : `
                             <div class="flex items-center gap-2">
                                 <span class="w-2 h-2 rounded-full bg-orange-500"></span>
-                                <span class="text-[#9dabb9] text-xs">Sin telemetría</span>
+                                <span class="text-[#9dabb9] text-xs">Sin Telemetría</span>
                             </div>
                         `}
                     </div>
@@ -855,7 +1526,7 @@ function renderAssetsTable() {
                 </td>
                 <td class="px-4 py-4">
                     <span class="px-3 py-1 ${riskColors[riskLevel]} rounded-full text-xs font-medium">
-                        ${riskText} (${asset.risk_score})
+                        ${riskText} (${asset.risk_score || 0})
                     </span>
                 </td>
                 <td class="px-4 py-4">
@@ -969,33 +1640,63 @@ document.getElementById('refresh-assets-btn')?.addEventListener('click', () => {
     showNotification('Actualizado', 'Lista de activos actualizada', 'success');
 });
 
-// Filtros
-document.getElementById('filter-os')?.addEventListener('change', (e) => {
-    const osFilter = e.target.value;
-    filteredAssets = assets.filter(asset => !osFilter || asset.os_type === osFilter);
+// Filtros - Variables para mantener estado
+let currentFilters = {
+    os: '',
+    antivirus: '',
+    telemetry: ''
+};
+
+// Aplicar todos los filtros combinados
+function applyFilters() {
+    filteredAssets = assets.filter(asset => {
+        // Filtro de Sistema Operativo
+        if (currentFilters.os) {
+            const assetOS = normalizeOS(asset.os_type);
+            if (assetOS !== currentFilters.os) return false;
+        }
+        
+        // Filtro de Antivirus
+        if (currentFilters.antivirus !== '') {
+            const hasAV = currentFilters.antivirus === 'true';
+            if (asset.antivirus_active !== hasAV) return false;
+        }
+        
+        // Filtro de Telemetría
+        if (currentFilters.telemetry !== '') {
+            const hasTelemetry = currentFilters.telemetry === 'true';
+            if (asset.telemetry_enabled !== hasTelemetry) return false;
+        }
+        
+        return true;
+    });
+    
     renderAssetsTable();
+}
+
+// Normalizar nombre de SO
+function normalizeOS(osType) {
+    if (!osType) return '';
+    const os = osType.toLowerCase();
+    if (os.includes('windows') || os === 'windows') return 'windows';
+    if (os.includes('linux') || os === 'linux') return 'linux';
+    if (os.includes('mac') || os.includes('darwin') || os === 'macos') return 'macos';
+    return os;
+}
+
+document.getElementById('filter-os')?.addEventListener('change', (e) => {
+    currentFilters.os = e.target.value;
+    applyFilters();
 });
 
 document.getElementById('filter-antivirus')?.addEventListener('change', (e) => {
-    const avFilter = e.target.value;
-    if (!avFilter) {
-        filteredAssets = [...assets];
-    } else {
-        const hasAV = avFilter === 'true';
-        filteredAssets = assets.filter(asset => asset.antivirus_active === hasAV);
-    }
-    renderAssetsTable();
+    currentFilters.antivirus = e.target.value;
+    applyFilters();
 });
 
 document.getElementById('filter-telemetry')?.addEventListener('change', (e) => {
-    const telemetryFilter = e.target.value;
-    if (!telemetryFilter) {
-        filteredAssets = [...assets];
-    } else {
-        const hasTelemetry = telemetryFilter === 'true';
-        filteredAssets = assets.filter(asset => asset.telemetry_enabled === hasTelemetry);
-    }
-    renderAssetsTable();
+    currentFilters.telemetry = e.target.value;
+    applyFilters();
 });
 
 // Crear tag
